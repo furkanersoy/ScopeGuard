@@ -1,0 +1,46 @@
+version: 1
+target:
+  base_url: http://127.0.0.1:8000
+  allowed_hosts:
+    - 127.0.0.1
+  max_requests: 10
+  timeout_seconds: 5
+  follow_redirects: false
+
+identities:
+  anonymous:
+    auth: none
+  user_a:
+    auth: bearer
+    token_env: SG_USER_A_TOKEN
+  user_b:
+    auth: bearer
+    token_env: SG_USER_B_TOKEN
+
+checks:
+  - id: anonymous-health-check
+    operation: GET /health
+    identity: anonymous
+    path: {}
+    expected_status: [200]
+
+  - id: user-a-reads-own-record
+    operation: GET /records/{record_id}
+    identity: user_a
+    path:
+      record_id: record-a
+    expected_status: [200]
+
+  - id: user-b-cannot-read-user-a-record
+    operation: GET /records/{record_id}
+    identity: user_b
+    path:
+      record_id: record-a
+    expected_status: [404]
+
+  - id: vulnerable-route-should-deny-cross-user-read
+    operation: GET /vulnerable/records/{record_id}
+    identity: user_b
+    path:
+      record_id: record-a
+    expected_status: [404]

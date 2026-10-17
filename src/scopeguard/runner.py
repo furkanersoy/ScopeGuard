@@ -16,7 +16,7 @@ from urllib.parse import quote, urlsplit
 
 from . import __version__
 from .config import ValidationError, is_loopback_host, load_validated_inputs
-from .report import render_markdown_report
+from .report import SUPPORTED_LANGUAGES, build_findings, render_markdown_report
 
 MAX_RESPONSE_BYTES = 64 * 1024
 MIN_REQUEST_INTERVAL_SECONDS = 0.1
@@ -153,8 +153,11 @@ def run_scenarios(
     *,
     allow_remote: bool = False,
     markdown_output_path: Path | None = None,
+    language: str = "en",
 ) -> dict[str, Any]:
-    """Execute the configured GET checks and write a redacted JSON report."""
+    """Execute the configured GET checks and write localized redacted reports."""
+    if language not in SUPPORTED_LANGUAGES:
+        raise ValidationError(f"unsupported language '{language}'; choose one of: {', '.join(SUPPORTED_LANGUAGES)}")
     protected_paths = {spec_path.resolve(), config_path.resolve()}
     report_paths = [output_path.resolve()]
     if markdown_output_path is not None:
@@ -225,8 +228,10 @@ def run_scenarios(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "spec_file": spec_path.name,
         "scenario_file": config_path.name,
+        "language": language,
         "summary": summary,
         "results": results,
+        "findings": build_findings(results, language),
     }
     _write_text_atomic(output_path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     if markdown_output_path is not None:

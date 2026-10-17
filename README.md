@@ -85,7 +85,15 @@ Add a shareable, redacted Markdown summary with `--markdown-output report.md`:
 scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml --output report.json --markdown-output report.md
 ```
 
-The protected route checks cover anonymous denial (`401`), both users reading their own records (`200`), and each user being denied the other user's record (`404`). Those six checks should pass. The deliberately vulnerable route is expected to fail because it returns `200` where the scenario expects `404` and its JSON `/owner` value identifies another user. The local demo therefore reports six passes and one intentional failure; `scopeguard run` exits with status `1` to make the detected issue visible. JSON assertions are evaluated in memory; the report records only the pointer, operator, and pass/fail result. Exit codes are `0` when all checks pass, `1` when a check fails, and `2` when a check is skipped or encounters an error. Reports omit response bodies, assertion values, and token values.
+Choose the finding and report language with `--language tr` or `--language en` (default: `en`). The localized report includes a finding title, severity, evidence, potential impact, and remediation guidance. For example:
+
+```powershell
+scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml --output report.json --markdown-output report.md --language tr
+```
+
+In the interactive `sg>` console, use the same options after `run`; do not prefix the command with `scopeguard` there.
+
+The protected route checks cover anonymous denial (`401`), both users reading their own records (`200`), and each user being denied the other user's record (`404`). Those six checks should pass. The deliberately vulnerable route is expected to fail because it returns `200` where the scenario expects `404` and its JSON `/owner` assertion indicates cross-user access. The local demo therefore reports six passes and one intentional failure; `scopeguard run` exits with status `1` to make the detected issue visible. Reports include a localized explanation, severity, evidence, potential impact, and remediation advice. They omit response bodies, assertion values, and token values.
 
 An assertion can be attached to a check like this:
 

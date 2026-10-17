@@ -90,15 +90,27 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             return
         if normalized in {"help", "?"}:
             output.write(
-                "Commands:\n"
+                "Commands / Komutlar:\n"
                 "  validate --spec <openapi.yaml> --config <scenario.yaml>\n"
+                "      EN: Check the API spec and scenario without network access.\n"
+                "      TR: API tanımını ve senaryoyu ağ erişimi olmadan doğrular.\n"
                 "  plan --spec <openapi.yaml> --config <scenario.yaml>\n"
+                "      EN: Preview configured requests; sends nothing and reads no tokens.\n"
+                "      TR: Tanımlı istekleri önizler; istek göndermez, token okumaz.\n"
                 "  coverage [--strict] --spec <openapi.yaml> --config <scenario.yaml>\n"
+                "      EN: Show identity/endpoint coverage; --strict enforces required checks.\n"
+                "      TR: Kimlik/uç nokta kapsamını gösterir; --strict zorunlu kontrolleri uygular.\n"
                 "  run --spec <openapi.yaml> --config <scenario.yaml> --output <report.json>\n"
                 "      [--markdown-output <report.md>] [--language tr|en]\n"
-                "      Report language defaults to English; use --language tr for Turkish.\n"
+                "      EN: Run configured read-only GET checks and write reports.\n"
+                "      TR: Tanımlı salt okunur GET kontrollerini çalıştırır ve rapor yazar.\n"
+                "      EN: Report language defaults to English; use --language tr for Turkish.\n"
+                "      TR: Rapor dili varsayılan olarak İngilizcedir; Türkçe için --language tr kullanın.\n"
                 "  version | help | exit\n"
-                "Quote paths that contain spaces. Commands are handled locally; no shell commands are executed.\n"
+                "      EN: Show version | show this help | close the console.\n"
+                "      TR: Sürümü göster | bu yardımı göster | konsolu kapat.\n"
+                "Quote paths containing spaces. Commands run locally; no shell commands are executed.\n"
+                "Boşluk içeren dosya yollarını tırnak içine alın. Komutlar yerelde çalışır; kabuk komutu çalıştırılmaz.\n"
             )
             continue
         if normalized == "version":

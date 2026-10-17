@@ -41,7 +41,17 @@ With the demo API still running, execute the checks in a second terminal:
 scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml --output report.json
 ```
 
-The protected route checks should pass. The deliberately vulnerable route is expected to fail because it returns `200` where the scenario expects `404`. Exit codes are `0` when all checks pass, `1` when a check fails, and `2` when a check is skipped or encounters an error. Reports omit response bodies and token values.
+The protected route checks should pass. The deliberately vulnerable route is expected to fail because it returns `200` where the scenario expects `404` and its JSON `/owner` value identifies another user. JSON assertions are evaluated in memory; the report records only the pointer, operator, and pass/fail result. Exit codes are `0` when all checks pass, `1` when a check fails, and `2` when a check is skipped or encounters an error. Reports omit response bodies, assertion values, and token values.
+
+An assertion can be attached to a check like this:
+
+```yaml
+assert_json:
+  - pointer: /owner
+    not_equals: user-a
+```
+
+`equals` requires the JSON Pointer to exist and match; `not_equals` also passes when the pointer is absent, as it is in the protected route's `404` response.
 
 ## Run the automated tests
 

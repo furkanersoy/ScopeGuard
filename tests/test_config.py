@@ -56,6 +56,15 @@ class ConfigValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValidationError, "path parameters must match"):
                 validate_inputs(SPEC, scenario)
 
+    def test_rejects_invalid_json_pointer(self) -> None:
+        config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+        config["checks"][2]["assert_json"] = [{"pointer": "/owner/~2", "not_equals": "user-a"}]
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.yaml"
+            scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "valid non-root JSON Pointer"):
+                validate_inputs(SPEC, scenario)
+
 
 if __name__ == "__main__":
     unittest.main()

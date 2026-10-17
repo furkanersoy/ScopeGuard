@@ -60,12 +60,17 @@ class RunnerIntegrationTests(unittest.TestCase):
         vulnerable = next(item for item in report["results"] if item["id"] == "vulnerable-route-should-deny-cross-user-read")
         self.assertEqual(vulnerable["status"], "FAIL")
         self.assertEqual(vulnerable["actual_status"], 200)
+        self.assertEqual(vulnerable["assertions"][0]["status"], "FAIL")
+
+        protected = next(item for item in report["results"] if item["id"] == "user-b-cannot-read-user-a-record")
+        self.assertEqual(protected["assertions"][0]["status"], "PASS")
 
         report_text = report_path.read_text(encoding="utf-8")
         parsed_report = json.loads(report_text)
         self.assertEqual(parsed_report["summary"], report["summary"])
         self.assertNotIn("demo-user-a", report_text)
         self.assertNotIn("demo-user-b", report_text)
+        self.assertNotIn('"user-a"', report_text)
         self.assertNotIn("Synthetic record A", report_text)
 
     def test_missing_token_is_skipped_without_request(self) -> None:

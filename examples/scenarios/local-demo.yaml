@@ -37,6 +37,9 @@ checks:
     path:
       record_id: record-a
     expected_status: [404]
+    assert_json:
+      - pointer: /owner
+        not_equals: user-a
 
   - id: vulnerable-route-should-deny-cross-user-read
     operation: GET /vulnerable/records/{record_id}
@@ -44,3 +47,6 @@ checks:
     path:
       record_id: record-a
     expected_status: [404]
+    assert_json:
+      - pointer: /owner
+        not_equals: user-a

@@ -1,6 +1,6 @@
 # ScopeGuard — Mimari ve Geliştirme Yol Haritası
 
-> Durum: Tasarım, yerel demo API, çevrimdışı girdi doğrulama ve salt okunur çalıştırıcı aşaması.
+> Durum: Tasarım, yerel demo API, çevrimdışı girdi doğrulama, salt okunur çalıştırıcı ve JSON yanıt kontrolü aşaması.
 
 ## 1. Proje özeti
 
@@ -28,9 +28,10 @@ Bir uç noktanın giriş gerektirmesi, her kullanıcının yalnızca yetkili old
 4. İlk sürümde yalnızca `GET` istekleriyle salt okunur erişim kontrolleri.
 5. Anonim, düşük yetkili ve başka kullanıcı/tenant kimliğiyle karşılaştırmalı istekler.
 6. Beklenen HTTP durum kodları ile gerçek sonuçları karşılaştırma.
-7. İnsan tarafından okunabilir terminal özeti ve makinece okunabilir JSON raporu.
-8. Güvenli, sentetik ve yerelde çalışan örnek API ile uçtan uca demo.
-9. Hata, kapsam dışı hedef ve eksik test verisi durumlarını açıkça raporlama.
+7. İsteğe bağlı JSON Pointer kontrolleriyle belirli yanıt alanlarının beklenen değere eşit/ayrı olduğunu doğrulama.
+8. İnsan tarafından okunabilir terminal özeti ve makinece okunabilir JSON raporu.
+9. Güvenli, sentetik ve yerelde çalışan örnek API ile uçtan uca demo.
+10. Hata, kapsam dışı hedef ve eksik test verisi durumlarını açıkça raporlama.
 
 ### MVP dışında
 
@@ -244,6 +245,8 @@ scopeguard/
 - JSON ve terminal raporu
 
 İlk sürüm yalnızca açıkça tanımlanan GET kontrollerini sırayla çalıştırır. Redirect izlemez, istek hızını sınırlar, yanıt gövdesini rapora yazmaz ve hedefi loopback ile kısıtlar.
+
+Yanıt kontrolleri JSON gövdesini bellekte ayrıştırır; rapor yalnızca JSON Pointer, karşılaştırma operatörü ve PASS/FAIL sonucunu içerir. Beklenen ve gerçek alan değerleri rapora eklenmez.
 
 ### Aşama 5 — Tekrarlanabilir örnek ve CI (ilk iş akışı hazır)
 

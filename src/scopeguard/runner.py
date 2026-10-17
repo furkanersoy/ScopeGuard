@@ -52,17 +52,65 @@ def _identity_headers(identity: dict[str, Any]) -> tuple[dict[str, str] | None, 
     return {"Authorization": f"Bearer {token}"}, None
 
 
-def _send_get(opener: urllib.request.OpenerDirector, url: str, headers: dict[str, str], timeout: float) -> int:
+def _send_get(opener: urllib.request.OpenerDirector, url: str, headers: dict[str, str], timeout: float) -> tuple[int, bytes, bool]:
     request = urllib.request.Request(url, headers={"User-Agent": f"ScopeGuard/{__version__}", **headers}, method="GET")
     try:
         with opener.open(request, timeout=timeout) as response:
-            response.read(MAX_RESPONSE_BYTES + 1)
-            return response.status
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+            return response.status, body[:MAX_RESPONSE_BYTES], len(body) > MAX_RESPONSE_BYTES
     except urllib.error.HTTPError as exc:
         # Redirects are deliberately not followed; their status is evaluated as returned.
         status = exc.code
+        body = exc.read(MAX_RESPONSE_BYTES + 1)
         exc.close()
-        return status
+        return status, body[:MAX_RESPONSE_BYTES], len(body) > MAX_RESPONSE_BYTES
+
+
+def _json_pointer(document: Any, pointer: str) -> tuple[bool, Any]:
+    current = document
+    for raw_part in pointer[1:].split("/"):
+        part = raw_part.replace("~1", "/").replace("~0", "~")
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+        elif isinstance(current, list) and part.isdecimal():
+            index = int(part)
+            if index >= len(current):
+                return False, None
+            current = current[index]
+        else:
+            return False, None
+    return True, current
+
+
+def _same_json_value(actual: Any, expected: Any) -> bool:
+    # Python considers True == 1; JSON booleans and numbers must remain distinct.
+    if isinstance(actual, bool) != isinstance(expected, bool):
+        return False
+    return type(actual) is type(expected) and actual == expected
+
+
+def _evaluate_json_assertions(assertions: list[dict[str, Any]], body: bytes, truncated: bool) -> tuple[list[dict[str, str]], str | None]:
+    if not assertions:
+        return [], None
+    if truncated:
+        return ([{"pointer": item["pointer"], "operator": "equals" if "equals" in item else "not_equals", "status": "ERROR"} for item in assertions], "response_too_large")
+    try:
+        document = json.loads(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return ([{"pointer": item["pointer"], "operator": "equals" if "equals" in item else "not_equals", "status": "ERROR"} for item in assertions], "response_not_json")
+
+    results: list[dict[str, str]] = []
+    for assertion in assertions:
+        pointer = assertion["pointer"]
+        found, actual = _json_pointer(document, pointer)
+        if "equals" in assertion:
+            passed = found and _same_json_value(actual, assertion["equals"])
+            operator = "equals"
+        else:
+            passed = not found or not _same_json_value(actual, assertion["not_equals"])
+            operator = "not_equals"
+        results.append({"pointer": pointer, "operator": operator, "status": "PASS" if passed else "FAIL"})
+    return results, None
 
 
 def run_scenarios(spec_path: Path, config_path: Path, output_path: Path) -> dict[str, Any]:
@@ -97,9 +145,21 @@ def run_scenarios(spec_path: Path, config_path: Path, output_path: Path) -> dict
             if last_request_at and elapsed < MIN_REQUEST_INTERVAL_SECONDS:
                 time.sleep(MIN_REQUEST_INTERVAL_SECONDS - elapsed)
             last_request_at = time.monotonic()
-            actual_status = _send_get(opener, url, headers or {}, float(target["timeout_seconds"]))
+            actual_status, response_body, truncated = _send_get(opener, url, headers or {}, float(target["timeout_seconds"]))
             result["actual_status"] = actual_status
-            result["status"] = "PASS" if actual_status in check["expected_status"] else "FAIL"
+            assertion_results, assertion_error = _evaluate_json_assertions(check.get("assert_json", []), response_body, truncated)
+            if assertion_results:
+                result["assertions"] = assertion_results
+            status_matches = actual_status in check["expected_status"]
+            assertion_failures = any(assertion["status"] == "FAIL" for assertion in assertion_results)
+            assertion_errors = any(assertion["status"] == "ERROR" for assertion in assertion_results)
+            if not status_matches or assertion_failures:
+                result["status"] = "FAIL"
+            elif assertion_errors:
+                result["status"] = "ERROR"
+                result["reason"] = assertion_error or "json_assertion_error"
+            else:
+                result["status"] = "PASS"
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
             # Avoid recording exception details that could contain user-controlled data.
             result.update({"status": "ERROR", "reason": type(exc).__name__})

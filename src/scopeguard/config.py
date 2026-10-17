@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import math
 import re
 from pathlib import Path
 from typing import Any
@@ -147,6 +148,21 @@ def _validate_checks(config: dict[str, Any], spec: dict[str, Any]) -> int:
             isinstance(status, bool) or not isinstance(status, int) or not 100 <= status <= 599 for status in statuses
         ):
             raise ValidationError(f"check '{check_id}' expected_status must be a non-empty list of HTTP status codes")
+
+        assertions = check_map.get("assert_json", [])
+        if not isinstance(assertions, list):
+            raise ValidationError(f"check '{check_id}' assert_json must be a list")
+        for assertion_index, assertion in enumerate(assertions, start=1):
+            assertion_map = _mapping(assertion, f"check '{check_id}' assert_json[{assertion_index}]")
+            pointer = assertion_map.get("pointer")
+            if not isinstance(pointer, str) or not pointer.startswith("/") or re.search(r"~(?![01])", pointer):
+                raise ValidationError(f"check '{check_id}' JSON assertion pointer must be a valid non-root JSON Pointer")
+            operators = set(assertion_map) - {"pointer"}
+            if operators not in ({"equals"}, {"not_equals"}):
+                raise ValidationError(f"check '{check_id}' JSON assertion must specify exactly one of equals or not_equals")
+            expected = assertion_map[next(iter(operators))]
+            if not (expected is None or type(expected) in {str, int, bool} or type(expected) is float and math.isfinite(expected)):
+                raise ValidationError(f"check '{check_id}' JSON assertion values must be finite JSON scalars")
     return len(checks)
 
 

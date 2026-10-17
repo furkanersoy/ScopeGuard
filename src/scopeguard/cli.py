@@ -13,6 +13,7 @@ from .coverage import build_coverage, render_coverage_table
 from .console import colorize, run_console
 from .planner import build_plan
 from .runner import run_scenarios
+from .wizard import run_init_wizard
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -45,10 +46,24 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--sarif-output", type=Path, help="Optional local path for a SARIF 2.1.0 findings file; no upload is performed")
     run.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     run.add_argument("--allow-remote", action="store_true", help="Allow the HTTPS target only when its exact host and port are allowlisted in the config")
+
+    init = subparsers.add_parser("init", help="Interactively create and validate a starter scenario without network access.")
+    init.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
+    init.add_argument("--output", type=Path, default=Path("scopeguard.yaml"), help="Scenario file to create (default: scopeguard.yaml)")
+    init.add_argument("--force", action="store_true", help="Replace the output file if it already exists")
     return parser
 
 
 def _execute(args: argparse.Namespace) -> int:
+    if args.command == "init":
+        try:
+            run_init_wizard(args.spec, args.output, force=args.force)
+        except (ValidationError, OSError, EOFError) as exc:
+            message = str(exc) or "initialization cancelled"
+            print(f"Init failed: {message}", file=sys.stderr)
+            return 2
+        return 0
+
     if args.command == "validate":
         try:
             check_count = validate_inputs(args.spec, args.config)

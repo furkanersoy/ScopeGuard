@@ -34,7 +34,15 @@ python -m pip install .
 
 Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
 
-Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
+Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `init`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
+
+Create a starter scenario interactively from an OpenAPI document:
+
+```powershell
+scopeguard init --spec examples/api/openapi.yaml --output examples/scenarios/my-scenario.yaml
+```
+
+The wizard lists GET operations, asks you to choose which ones to include, and collects sample path values and expected status codes. It performs no API requests. Review the generated scenario before running it; the wizard cannot infer account ownership rules or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
 
 To start the included synthetic demo API, open a second terminal:
 

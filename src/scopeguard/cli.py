@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .config import ValidationError, validate_inputs
+from .coverage import build_coverage, render_coverage_table
 from .planner import build_plan
 from .runner import run_scenarios
 
@@ -22,6 +23,10 @@ def _parser() -> argparse.ArgumentParser:
     plan = subparsers.add_parser("plan", help="Preview the exact configured requests without using the network or reading tokens.")
     plan.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
     plan.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
+
+    coverage = subparsers.add_parser("coverage", help="Show configured identity-by-endpoint checks as an offline matrix.")
+    coverage.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
+    coverage.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
 
     run = subparsers.add_parser("run", help="Run configured read-only GET checks against the explicitly scoped target.")
     run.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
@@ -62,6 +67,15 @@ def main() -> None:
         if plan["remote"]:
             print("Remote target: run requires --allow-remote. Confirm you are authorized before execution.")
         print("Offline plan only. No network requests were sent; token values were not read or displayed.")
+        return
+
+    if args.command == "coverage":
+        try:
+            coverage = build_coverage(args.spec, args.config)
+        except (ValidationError, OSError) as exc:
+            print(f"Coverage failed: {exc}", file=sys.stderr)
+            raise SystemExit(2) from None
+        print(render_coverage_table(coverage))
         return
 
     if args.command == "run":

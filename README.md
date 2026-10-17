@@ -44,6 +44,14 @@ scopeguard plan --spec examples/api/openapi.yaml --config examples/scenarios/loc
 
 `plan` is offline: it does not read token environment variables or send requests. It shows the target, resolved paths, identities, expected status codes, and JSON assertion pointers/operators. For a remote scenario it also reminds you that execution requires `--allow-remote`.
 
+See which identity/endpoint combinations have checks configured:
+
+```powershell
+scopeguard coverage --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml
+```
+
+The coverage matrix lists configured checks and marks empty identity/endpoint pairs as `not configured`. An empty cell is only a coverage gap in the scenario file; it is not evidence of a vulnerability. This command is offline and does not read tokens.
+
 With the demo API still running, execute the checks in a second terminal:
 
 ```powershell

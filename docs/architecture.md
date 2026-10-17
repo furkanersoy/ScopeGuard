@@ -84,6 +84,7 @@ Bir uç noktanın giriş gerektirmesi, her kullanıcının yalnızca yetkili old
 ```text
 scopeguard validate --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
 scopeguard plan --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
+scopeguard coverage --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
 scopeguard run --spec examples/api/openapi.yaml --config examples/scopeguard.yaml --output report.json
 scopeguard report report.json
 ```
@@ -237,6 +238,8 @@ scopeguard/
 - [x] İstek göndermeden önce çevrimdışı dry-run planı (`scopeguard plan`)
 
 `scopeguard validate` dosyaları çevrimdışı doğrular. `scopeguard plan` ise bu girdilerden ağ kullanmadan güvenli bir istek önizlemesi üretir. Hedef host/port, kodlanmış GET yolları, kimlik adları, beklenen durum kodları ve JSON Pointer assertion operatörleri gösterilir. Token ortam değişkenleri okunmaz; DNS çözümlemesi veya ağ bağlantısı yapılmaz. Uzak hedeflerde gerçek çalıştırma için gereken `--allow-remote` seçeneği hatırlatılır.
+
+`scopeguard coverage`, OpenAPI belgesindeki GET operasyonlarını senaryo kimlikleriyle çaprazlayarak yapılandırılmış kontrol matrisini gösterir. Boş hücreler yalnızca senaryoda o kimlik/operasyon çifti için kontrol bulunmadığını belirtir; güvenlik açığı sonucu çıkarılmaz. Komut çevrimdışıdır ve token okumaz.
 
 ### Aşama 4 — Salt okunur test çalıştırıcısı (ilk sürüm hazır)
 

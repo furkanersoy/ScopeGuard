@@ -39,6 +39,12 @@ def show_banner(stream: TextIO | None = None, *, animate: bool | None = None) ->
     else:
         output.write(colorize(title, "cyan", output) + "\n")
     output.write(f"  API authorization testing  |  v{__version__}\n")
+    output.write("  Finds API access-control gaps such as BOLA/IDOR before release.\n")
+    output.write("  Define checks from an OpenAPI spec; validate and preview offline, then run read-only GET checks.\n")
+    output.write("  Loopback is the default. Remote testing needs an explicit allowlist and --allow-remote.\n")
+    output.write("  API yetkilendirme açıklarını (BOLA/IDOR) sürüm öncesi bulur.\n")
+    output.write("  OpenAPI tabanlı kontrolleri çevrimdışı doğrular; yalnızca tanımlı GET isteklerini çalıştırır.\n")
+    output.write("  Varsayılan hedef yerel makinedir; uzak test için izin listesi ve --allow-remote gerekir.\n")
     output.write("  Type 'help' for commands; 'exit' to close.\n\n")
     output.flush()
 

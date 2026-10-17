@@ -1,6 +1,6 @@
 # ScopeGuard — Mimari ve Geliştirme Yol Haritası
 
-> Durum: Tasarım, yerel demo API, çevrimdışı girdi doğrulama, salt okunur çalıştırıcı ve JSON yanıt kontrolü aşaması.
+> Durum: Yerel demo API, çevrimdışı doğrulama ve istek planı, salt okunur çalıştırıcı ve JSON yanıt kontrolü aşaması.
 
 ## 1. Proje özeti
 
@@ -83,6 +83,7 @@ Bir uç noktanın giriş gerektirmesi, her kullanıcının yalnızca yetkili old
 
 ```text
 scopeguard validate --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
+scopeguard plan --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
 scopeguard run --spec examples/api/openapi.yaml --config examples/scopeguard.yaml --output report.json
 scopeguard report report.json
 ```
@@ -228,14 +229,14 @@ scopeguard/
 - Yalnızca loopback'te başlatma
 - Demo seed/reset komutları
 
-### Aşama 3 — Dosya okuyucular ve doğrulama (başladı)
+### Aşama 3 — Dosya okuyucular ve doğrulama (çevrimdışı plan hazır)
 
 - OpenAPI yükleme/operation çözümleme
 - YAML senaryo şeması
 - Güvenli host ve method kapsamı doğrulama
-- İstek göndermeden önce dry-run planı
+- [x] İstek göndermeden önce çevrimdışı dry-run planı (`scopeguard plan`)
 
-İlk dilimde `scopeguard validate` komutu OpenAPI belgesini ve senaryo YAML'ını çevrimdışı doğrular. İstek planlama ve gönderme bu komuta dahil değildir.
+`scopeguard validate` dosyaları çevrimdışı doğrular. `scopeguard plan` ise bu girdilerden ağ kullanmadan güvenli bir istek önizlemesi üretir. Hedef host/port, kodlanmış GET yolları, kimlik adları, beklenen durum kodları ve JSON Pointer assertion operatörleri gösterilir. Token ortam değişkenleri okunmaz; DNS çözümlemesi veya ağ bağlantısı yapılmaz. Uzak hedeflerde gerçek çalıştırma için gereken `--allow-remote` seçeneği hatırlatılır.
 
 ### Aşama 4 — Salt okunur test çalıştırıcısı (ilk sürüm hazır)
 

@@ -36,6 +36,14 @@ $env:SG_USER_A_TOKEN = 'demo-user-a'
 $env:SG_USER_B_TOKEN = 'demo-user-b'
 ```
 
+Preview the exact requests before running them:
+
+```powershell
+scopeguard plan --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml
+```
+
+`plan` is offline: it does not read token environment variables or send requests. It shows the target, resolved paths, identities, expected status codes, and JSON assertion pointers/operators. For a remote scenario it also reminds you that execution requires `--allow-remote`.
+
 With the demo API still running, execute the checks in a second terminal:
 
 ```powershell

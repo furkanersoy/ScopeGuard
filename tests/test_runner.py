@@ -56,7 +56,13 @@ class RunnerIntegrationTests(unittest.TestCase):
         with patch.dict("os.environ", {"SG_USER_A_TOKEN": "demo-user-a", "SG_USER_B_TOKEN": "demo-user-b"}):
             report = run_scenarios(SPEC, scenario, report_path)
 
-        self.assertEqual(report["summary"], {"PASS": 3, "FAIL": 1, "SKIPPED": 0, "ERROR": 0})
+        self.assertEqual(report["summary"], {"PASS": 6, "FAIL": 1, "SKIPPED": 0, "ERROR": 0})
+        results_by_id = {item["id"]: item for item in report["results"]}
+        self.assertEqual(results_by_id["anonymous-cannot-read-record"]["actual_status"], 401)
+        self.assertEqual(results_by_id["user-a-reads-own-record"]["assertions"][0]["status"], "PASS")
+        self.assertEqual(results_by_id["user-a-cannot-read-user-b-record"]["actual_status"], 404)
+        self.assertEqual(results_by_id["user-b-reads-own-record"]["assertions"][0]["status"], "PASS")
+        self.assertEqual(results_by_id["user-b-cannot-read-user-a-record"]["actual_status"], 404)
         vulnerable = next(item for item in report["results"] if item["id"] == "vulnerable-route-should-deny-cross-user-read")
         self.assertEqual(vulnerable["status"], "FAIL")
         self.assertEqual(vulnerable["actual_status"], 200)
@@ -77,7 +83,7 @@ class RunnerIntegrationTests(unittest.TestCase):
         directory = Path(self.temp_dir.name)
         scenario = self._scenario_for_local_server(directory)
         config = yaml.safe_load(scenario.read_text(encoding="utf-8"))
-        config["checks"] = [config["checks"][1]]
+        config["checks"] = [next(check for check in config["checks"] if check["id"] == "user-a-reads-own-record")]
         scenario.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
         report_path = directory / "skipped.json"
 

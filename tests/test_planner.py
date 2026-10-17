@@ -24,7 +24,7 @@ class PlannerTests(unittest.TestCase):
     def test_plan_renders_encoded_path_and_never_reads_or_prints_token(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             scenario = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
-            scenario["checks"] = [scenario["checks"][1]]
+            scenario["checks"] = [next(check for check in scenario["checks"] if check["id"] == "user-a-reads-own-record")]
             scenario["checks"][0]["path"]["record_id"] = "record/a b"
             scenario_path = Path(temp_dir) / "scenario.yaml"
             scenario_path.write_text(yaml.safe_dump(scenario, sort_keys=False), encoding="utf-8")
@@ -61,7 +61,7 @@ class PlannerTests(unittest.TestCase):
 
         self.assertTrue(plan["remote"])
         self.assertEqual(plan["target"], "https://staging.example.test:443")
-        self.assertEqual(plan["check_count"], 4)
+        self.assertEqual(plan["check_count"], 7)
 
 
 if __name__ == "__main__":

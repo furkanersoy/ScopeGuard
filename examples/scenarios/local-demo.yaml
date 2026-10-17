@@ -24,6 +24,8 @@ coverage:
   required:
     - identity: anonymous
       operation: GET /health
+    - identity: anonymous
+      operation: GET /records/{record_id}
     - identity: user_a
       operation: GET /records/{record_id}
     - identity: user_b
@@ -38,12 +40,42 @@ checks:
     path: {}
     expected_status: [200]
 
+  - id: anonymous-cannot-read-record
+    operation: GET /records/{record_id}
+    identity: anonymous
+    path:
+      record_id: record-a
+    expected_status: [401]
+
   - id: user-a-reads-own-record
     operation: GET /records/{record_id}
     identity: user_a
     path:
       record_id: record-a
     expected_status: [200]
+    assert_json:
+      - pointer: /owner
+        equals: user-a
+
+  - id: user-a-cannot-read-user-b-record
+    operation: GET /records/{record_id}
+    identity: user_a
+    path:
+      record_id: record-b
+    expected_status: [404]
+    assert_json:
+      - pointer: /owner
+        not_equals: user-b
+
+  - id: user-b-reads-own-record
+    operation: GET /records/{record_id}
+    identity: user_b
+    path:
+      record_id: record-b
+    expected_status: [200]
+    assert_json:
+      - pointer: /owner
+        equals: user-b
 
   - id: user-b-cannot-read-user-a-record
     operation: GET /records/{record_id}

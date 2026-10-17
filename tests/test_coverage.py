@@ -24,7 +24,7 @@ class CoverageTests(unittest.TestCase):
         coverage = build_coverage(SPEC, SCENARIO)
         table = render_coverage_table(coverage)
 
-        self.assertEqual(coverage["configured_pairs"], 4)
+        self.assertEqual(coverage["configured_pairs"], 5)
         self.assertEqual(coverage["total_pairs"], len(coverage["operations"]) * len(coverage["identities"]))
         self.assertIn("anonymous-health-check [200]", table)
         self.assertIn("user-b-cannot-read-user-a-record [404]", table)
@@ -49,7 +49,7 @@ class CoverageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
             config["coverage"]["required"].append(
-                {"identity": "anonymous", "operation": "GET /records/{record_id}"}
+                {"identity": "user_a", "operation": "GET /vulnerable/records/{record_id}"}
             )
             scenario_path = Path(temp_dir) / "scenario.yaml"
             scenario_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
@@ -61,7 +61,7 @@ class CoverageTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.code, 1)
         self.assertIn("[MISSING REQUIRED]", output.getvalue())
-        self.assertIn("Required pairs satisfied: 4 / 5", output.getvalue())
+        self.assertIn("Required pairs satisfied: 5 / 6", output.getvalue())
 
 
 if __name__ == "__main__":

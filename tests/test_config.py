@@ -17,7 +17,7 @@ SCENARIO = ROOT / "examples" / "scenarios" / "local-demo.yaml"
 
 class ConfigValidationTests(unittest.TestCase):
     def test_repository_example_is_valid(self) -> None:
-        self.assertEqual(validate_inputs(SPEC, SCENARIO), 4)
+        self.assertEqual(validate_inputs(SPEC, SCENARIO), 7)
 
     def test_rejects_remote_target_without_config_opt_in(self) -> None:
         config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
@@ -78,7 +78,7 @@ class ConfigValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             scenario = Path(directory) / "scenario.yaml"
             scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
-            self.assertEqual(validate_inputs(SPEC, scenario), 4)
+            self.assertEqual(validate_inputs(SPEC, scenario), 7)
 
     def test_rejects_remote_target_without_opt_in(self) -> None:
         config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))

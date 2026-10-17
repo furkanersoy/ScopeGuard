@@ -31,3 +31,6 @@ jobs:
 
       - name: Validate included examples
         run: scopeguard validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml
+
+      - name: Enforce required scenario coverage
+        run: scopeguard coverage --strict --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml

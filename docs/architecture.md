@@ -239,7 +239,7 @@ scopeguard/
 
 `scopeguard validate` dosyaları çevrimdışı doğrular. `scopeguard plan` ise bu girdilerden ağ kullanmadan güvenli bir istek önizlemesi üretir. Hedef host/port, kodlanmış GET yolları, kimlik adları, beklenen durum kodları ve JSON Pointer assertion operatörleri gösterilir. Token ortam değişkenleri okunmaz; DNS çözümlemesi veya ağ bağlantısı yapılmaz. Uzak hedeflerde gerçek çalıştırma için gereken `--allow-remote` seçeneği hatırlatılır.
 
-`scopeguard coverage`, OpenAPI belgesindeki GET operasyonlarını senaryo kimlikleriyle çaprazlayarak yapılandırılmış kontrol matrisini gösterir. Boş hücreler yalnızca senaryoda o kimlik/operasyon çifti için kontrol bulunmadığını belirtir; güvenlik açığı sonucu çıkarılmaz. Komut çevrimdışıdır ve token okumaz.
+`scopeguard coverage`, OpenAPI belgesindeki GET operasyonlarını senaryo kimlikleriyle çaprazlayarak yapılandırılmış kontrol matrisini gösterir. `coverage.required` listesi kullanıcının zorunlu tuttuğu kimlik/operasyon çiftlerini açıkça belirtir. `--strict` bu çiftlerden birinde kontrol yoksa sıfır dışı çıkış kodu verir; bu denetim CI'da çalıştırılır. Boş hücreler veya eksik zorunlu çiftler tek başına güvenlik açığı sonucu değildir. Komut çevrimdışıdır ve token okumaz.
 
 ### Aşama 4 — Salt okunur test çalıştırıcısı (ilk sürüm hazır)
 

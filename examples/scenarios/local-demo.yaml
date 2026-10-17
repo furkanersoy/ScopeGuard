@@ -18,6 +18,19 @@ identities:
     auth: bearer
     token_env: SG_USER_B_TOKEN
 
+# These are the identity/endpoint pairs this demo expects to keep covered.
+# Add only pairs that are part of the API's intended access policy.
+coverage:
+  required:
+    - identity: anonymous
+      operation: GET /health
+    - identity: user_a
+      operation: GET /records/{record_id}
+    - identity: user_b
+      operation: GET /records/{record_id}
+    - identity: user_b
+      operation: GET /vulnerable/records/{record_id}
+
 checks:
   - id: anonymous-health-check
     operation: GET /health

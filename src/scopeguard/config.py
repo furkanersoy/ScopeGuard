@@ -184,6 +184,28 @@ def _validate_checks(config: dict[str, Any], spec: dict[str, Any]) -> int:
             expected = assertion_map[next(iter(operators))]
             if not (expected is None or type(expected) in {str, int, bool} or type(expected) is float and math.isfinite(expected)):
                 raise ValidationError(f"check '{check_id}' JSON assertion values must be finite JSON scalars")
+    coverage = _mapping(config.get("coverage", {}), "coverage")
+    required = coverage.get("required", [])
+    if not isinstance(required, list):
+        raise ValidationError("coverage.required must be a list")
+    seen_required: set[tuple[str, str]] = set()
+    for index, item in enumerate(required, start=1):
+        item_map = _mapping(item, f"coverage.required[{index}]")
+        if set(item_map) != {"identity", "operation"}:
+            raise ValidationError(f"coverage.required[{index}] must contain exactly identity and operation")
+        identity_name = item_map["identity"]
+        operation = item_map["operation"]
+        if not isinstance(identity_name, str) or identity_name not in identities:
+            raise ValidationError(f"coverage.required[{index}] references an unknown identity")
+        if not isinstance(operation, str) or not operation.startswith("GET /"):
+            raise ValidationError(f"coverage.required[{index}].operation must use GET")
+        path = operation[4:]
+        if path not in paths or not isinstance(paths[path], dict) or not isinstance(paths[path].get("get"), dict):
+            raise ValidationError(f"coverage.required[{index}] operation '{operation}' is missing from the OpenAPI document")
+        pair = (identity_name, operation)
+        if pair in seen_required:
+            raise ValidationError(f"duplicate required coverage pair: {identity_name} / {operation}")
+        seen_required.add(pair)
     return len(checks)
 
 

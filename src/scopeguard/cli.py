@@ -27,6 +27,7 @@ def _parser() -> argparse.ArgumentParser:
     coverage = subparsers.add_parser("coverage", help="Show configured identity-by-endpoint checks as an offline matrix.")
     coverage.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
     coverage.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
+    coverage.add_argument("--strict", action="store_true", help="Exit with status 1 when a required identity/operation pair is missing")
 
     run = subparsers.add_parser("run", help="Run configured read-only GET checks against the explicitly scoped target.")
     run.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
@@ -76,6 +77,8 @@ def main() -> None:
             print(f"Coverage failed: {exc}", file=sys.stderr)
             raise SystemExit(2) from None
         print(render_coverage_table(coverage))
+        if args.strict and coverage["missing_required"]:
+            raise SystemExit(1)
         return
 
     if args.command == "run":

@@ -24,12 +24,20 @@ def build_coverage(spec_path: Path, config_path: Path) -> dict[str, Any]:
         key = (check["operation"], check["identity"])
         cells[key].append({"id": check["id"], "expected_status": check["expected_status"]})
 
+    required = {(item["operation"], item["identity"]) for item in config.get("coverage", {}).get("required", [])}
+    missing_required = sorted(pair for pair in required if not cells.get(pair))
+    satisfied_required = len(required) - len(missing_required)
+
     configured_pairs = sum(bool(cell_checks) for cell_checks in cells.values())
     total_pairs = len(operations) * len(identities)
     return {
         "identities": identities,
         "operations": operations,
         "cells": cells,
+        "required": required,
+        "missing_required": missing_required,
+        "required_pairs": len(required),
+        "satisfied_required": satisfied_required,
         "configured_pairs": configured_pairs,
         "total_pairs": total_pairs,
     }
@@ -43,12 +51,15 @@ def render_coverage_table(coverage: dict[str, Any]) -> str:
     for operation in coverage["operations"]:
         row = [operation]
         for identity in identities:
-            checks = coverage["cells"][(operation, identity)]
-            row.append(
-                "; ".join(f"{item['id']} [{','.join(map(str, item['expected_status']))}]" for item in checks)
-                if checks
-                else "[not configured]"
-            )
+            pair = (operation, identity)
+            checks = coverage["cells"][pair]
+            if checks:
+                marker = "[required] " if pair in coverage["required"] else ""
+                row.append(marker + "; ".join(f"{item['id']} [{','.join(map(str, item['expected_status']))}]" for item in checks))
+            elif pair in coverage["required"]:
+                row.append("[MISSING REQUIRED]")
+            else:
+                row.append("[not configured]")
         rows.append(row)
 
     widths = [max(len(row[index]) for row in rows) for index in range(len(header))]
@@ -56,6 +67,9 @@ def render_coverage_table(coverage: dict[str, Any]) -> str:
     lines.insert(1, "| " + " | ".join("-" * width for width in widths) + " |")
     lines.append("")
     lines.append(f"Configured identity/operation pairs: {coverage['configured_pairs']} / {coverage['total_pairs']}")
+    lines.append(f"Required pairs satisfied: {coverage['satisfied_required']} / {coverage['required_pairs']}")
+    if coverage["missing_required"]:
+        lines.append("Missing required pairs: " + ", ".join(f"{identity} / {operation}" for operation, identity in coverage["missing_required"]))
     lines.append("An unconfigured cell means no scenario is defined; it does not indicate a vulnerability.")
     lines.append("Offline coverage view. No network requests were sent; token values were not read.")
     return "\n".join(lines)

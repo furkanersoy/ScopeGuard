@@ -52,9 +52,10 @@ class RunnerIntegrationTests(unittest.TestCase):
         directory = Path(self.temp_dir.name)
         scenario = self._scenario_for_local_server(directory)
         report_path = directory / "report.json"
+        markdown_path = directory / "report.md"
 
         with patch.dict("os.environ", {"SG_USER_A_TOKEN": "demo-user-a", "SG_USER_B_TOKEN": "demo-user-b"}):
-            report = run_scenarios(SPEC, scenario, report_path)
+            report = run_scenarios(SPEC, scenario, report_path, markdown_output_path=markdown_path)
 
         self.assertEqual(report["summary"], {"PASS": 6, "FAIL": 1, "SKIPPED": 0, "ERROR": 0})
         results_by_id = {item["id"]: item for item in report["results"]}
@@ -78,6 +79,12 @@ class RunnerIntegrationTests(unittest.TestCase):
         self.assertNotIn("demo-user-b", report_text)
         self.assertNotIn('"user-a"', report_text)
         self.assertNotIn("Synthetic record A", report_text)
+        markdown_text = markdown_path.read_text(encoding="utf-8")
+        self.assertIn("# ScopeGuard report", markdown_text)
+        self.assertIn("| 6 | 1 | 0 | 0 |", markdown_text)
+        self.assertNotIn("demo-user-a", markdown_text)
+        self.assertNotIn("Synthetic record A", markdown_text)
+        self.assertNotIn("user-a`", markdown_text)
 
     def test_missing_token_is_skipped_without_request(self) -> None:
         directory = Path(self.temp_dir.name)
@@ -96,6 +103,12 @@ class RunnerIntegrationTests(unittest.TestCase):
     def test_report_cannot_overwrite_input(self) -> None:
         with self.assertRaisesRegex(ValidationError, "must not overwrite"):
             run_scenarios(SPEC, SCENARIO, SCENARIO)
+
+    def test_report_outputs_must_be_distinct(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "same.md"
+            with self.assertRaisesRegex(ValidationError, "different paths"):
+                run_scenarios(SPEC, SCENARIO, output, markdown_output_path=output)
 
     def test_remote_target_requires_runtime_flag_before_any_request(self) -> None:
         directory = Path(self.temp_dir.name)

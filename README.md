@@ -1,6 +1,6 @@
 # ScopeGuard
 
-**Status: early prototype.** ScopeGuard is a local-first API authorization regression tool. It includes a synthetic demo API, an offline configuration validator, a read-only scenario runner, and JSON response assertions.
+**Status: beta.** ScopeGuard is a local-first API authorization regression tool. It includes a synthetic demo API, an offline configuration validator and request planner, a read-only scenario runner, authorization coverage checks, and redacted JSON/Markdown reports.
 
 ## Current milestone
 
@@ -17,7 +17,28 @@
 Requires Python 3.11 or newer.
 
 ```powershell
-py -m pip install -e .
+git clone https://github.com/furkanersoy/ScopeGuard.git
+cd ScopeGuard
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+py -m pip install .
+```
+
+On Linux or macOS:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install .
+```
+
+Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
+
+Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
+
+To start the included synthetic demo API, open a second terminal:
+
+```powershell
 py -m scopeguard_demo
 ```
 
@@ -56,6 +77,12 @@ With the demo API still running, execute the checks in a second terminal:
 
 ```powershell
 scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml --output report.json
+```
+
+Add a shareable, redacted Markdown summary with `--markdown-output report.md`:
+
+```powershell
+scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml --output report.json --markdown-output report.md
 ```
 
 The protected route checks cover anonymous denial (`401`), both users reading their own records (`200`), and each user being denied the other user's record (`404`). Those six checks should pass. The deliberately vulnerable route is expected to fail because it returns `200` where the scenario expects `404` and its JSON `/owner` value identifies another user. The local demo therefore reports six passes and one intentional failure; `scopeguard run` exits with status `1` to make the detected issue visible. JSON assertions are evaluated in memory; the report records only the pointer, operator, and pass/fail result. Exit codes are `0` when all checks pass, `1` when a check fails, and `2` when a check is skipped or encounters an error. Reports omit response bodies, assertion values, and token values.

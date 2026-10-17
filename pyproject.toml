@@ -4,10 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scopeguard"
-version = "0.1.0"
-description = "Local-first API authorization regression checks"
+version = "0.2.0"
+description = "Local-first API authorization regression testing"
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
+readme = "README.md"
+keywords = ["api-security", "authorization", "bola", "idor", "security-testing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/furkanersoy/ScopeGuard"
+Repository = "https://github.com/furkanersoy/ScopeGuard"
+Issues = "https://github.com/furkanersoy/ScopeGuard/issues"
 
 [project.scripts]
 scopeguard = "scopeguard.cli:main"

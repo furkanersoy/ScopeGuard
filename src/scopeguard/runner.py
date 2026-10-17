@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -15,6 +16,7 @@ from urllib.parse import quote, urlsplit
 
 from . import __version__
 from .config import ValidationError, is_loopback_host, load_validated_inputs
+from .report import render_markdown_report
 
 MAX_RESPONSE_BYTES = 64 * 1024
 MIN_REQUEST_INTERVAL_SECONDS = 0.1
@@ -113,9 +115,53 @@ def _evaluate_json_assertions(assertions: list[dict[str, Any]], body: bytes, tru
     return results, None
 
 
-def run_scenarios(spec_path: Path, config_path: Path, output_path: Path, *, allow_remote: bool = False) -> dict[str, Any]:
+def _prepare_report_paths(paths: list[Path]) -> None:
+    """Create report directories and verify they accept a temporary file before network I/O."""
+    for path in paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.exists() and not path.is_file():
+            raise ValidationError(f"report path is not a file: {path}")
+        try:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp"):
+                pass
+        except OSError:
+            raise ValidationError(f"cannot write report file '{path}'") from None
+
+
+def _write_text_atomic(path: Path, content: str) -> None:
+    """Replace a report only after its full contents have been written successfully."""
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", dir=path.parent,
+            prefix=f".{path.name}.", suffix=".tmp", delete=False,
+        ) as stream:
+            temporary_path = Path(stream.name)
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
+def run_scenarios(
+    spec_path: Path,
+    config_path: Path,
+    output_path: Path,
+    *,
+    allow_remote: bool = False,
+    markdown_output_path: Path | None = None,
+) -> dict[str, Any]:
     """Execute the configured GET checks and write a redacted JSON report."""
-    if output_path.resolve() in {spec_path.resolve(), config_path.resolve()}:
+    protected_paths = {spec_path.resolve(), config_path.resolve()}
+    report_paths = [output_path.resolve()]
+    if markdown_output_path is not None:
+        report_paths.append(markdown_output_path.resolve())
+    if len(set(report_paths)) != len(report_paths):
+        raise ValidationError("JSON and Markdown report outputs must use different paths")
+    if protected_paths.intersection(report_paths):
         raise ValidationError("report output must not overwrite the OpenAPI or scenario input")
 
     spec, config = load_validated_inputs(spec_path, config_path)
@@ -124,6 +170,10 @@ def run_scenarios(spec_path: Path, config_path: Path, output_path: Path, *, allo
     target_host = urlsplit(target["base_url"]).hostname or ""
     if not is_loopback_host(target_host) and not allow_remote:
         raise ValidationError("remote target execution requires the --allow-remote flag")
+    output_paths = [output_path]
+    if markdown_output_path is not None:
+        output_paths.append(markdown_output_path)
+    _prepare_report_paths(output_paths)
     identities = config["identities"]
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirectHandler())
     results: list[dict[str, Any]] = []
@@ -178,6 +228,7 @@ def run_scenarios(spec_path: Path, config_path: Path, output_path: Path, *, allo
         "summary": summary,
         "results": results,
     }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    _write_text_atomic(output_path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+    if markdown_output_path is not None:
+        _write_text_atomic(markdown_output_path, render_markdown_report(report))
     return report

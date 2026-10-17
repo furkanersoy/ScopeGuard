@@ -22,6 +22,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
     run.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
     run.add_argument("--output", required=True, type=Path, help="Path for the redacted JSON report")
+    run.add_argument("--allow-remote", action="store_true", help="Allow the HTTPS target only when its exact host and port are allowlisted in the config")
     return parser
 
 
@@ -41,7 +42,7 @@ def main() -> None:
 
     if args.command == "run":
         try:
-            report = run_scenarios(args.spec, args.config, args.output)
+            report = run_scenarios(args.spec, args.config, args.output, allow_remote=args.allow_remote)
         except (ValidationError, OSError) as exc:
             print(f"Run failed: {exc}", file=sys.stderr)
             raise SystemExit(2) from None

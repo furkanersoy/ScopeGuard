@@ -19,14 +19,14 @@ class ConfigValidationTests(unittest.TestCase):
     def test_repository_example_is_valid(self) -> None:
         self.assertEqual(validate_inputs(SPEC, SCENARIO), 4)
 
-    def test_rejects_non_loopback_target(self) -> None:
+    def test_rejects_remote_target_without_config_opt_in(self) -> None:
         config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
         config["target"]["base_url"] = "https://example.com"
         config["target"]["allowed_hosts"] = ["example.com"]
         with tempfile.TemporaryDirectory() as directory:
             scenario = Path(directory) / "scenario.yaml"
             scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
-            with self.assertRaisesRegex(ValidationError, "loopback"):
+            with self.assertRaisesRegex(ValidationError, "target.allow_remote: true"):
                 validate_inputs(SPEC, scenario)
 
     def test_rejects_unknown_operation(self) -> None:
@@ -63,6 +63,53 @@ class ConfigValidationTests(unittest.TestCase):
             scenario = Path(directory) / "scenario.yaml"
             scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
             with self.assertRaisesRegex(ValidationError, "valid non-root JSON Pointer"):
+                validate_inputs(SPEC, scenario)
+
+    def test_remote_target_requires_explicit_https_host_and_port_allowlist(self) -> None:
+        config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+        config["target"].update(
+            {
+                "base_url": "https://staging.example.test",
+                "allowed_hosts": ["staging.example.test"],
+                "allow_remote": True,
+                "allowed_ports": [443],
+            }
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.yaml"
+            scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
+            self.assertEqual(validate_inputs(SPEC, scenario), 4)
+
+    def test_rejects_remote_target_without_opt_in(self) -> None:
+        config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+        config["target"].update(
+            {"base_url": "https://staging.example.test", "allowed_hosts": ["staging.example.test"]}
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.yaml"
+            scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "target.allow_remote: true"):
+                validate_inputs(SPEC, scenario)
+
+    def test_rejects_remote_http_and_unlisted_port(self) -> None:
+        config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+        config["target"].update(
+            {
+                "base_url": "http://staging.example.test:8080",
+                "allowed_hosts": ["staging.example.test"],
+                "allow_remote": True,
+                "allowed_ports": [443],
+            }
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.yaml"
+            scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "must use HTTPS"):
+                validate_inputs(SPEC, scenario)
+
+            config["target"]["base_url"] = "https://staging.example.test:8443"
+            scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "port is not listed"):
                 validate_inputs(SPEC, scenario)
 
 

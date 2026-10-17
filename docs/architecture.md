@@ -58,7 +58,7 @@ Bir uç noktanın giriş gerektirmesi, her kullanıcının yalnızca yetkili old
 
 - İlk sürümde yalnızca konfigürasyonda açıkça belirtilen hosta istek gönderilmeli.
 - Güvenli başlangıç için demo hedefi `localhost`/loopback olmalı.
-- Uzak hedef kullanımı için ayrıca açık bir izin ayarı ve hedef onayı konfigürasyonda bulunmalı; kapsam dışı yönlendirmeler reddedilmeli.
+- Uzak hedef için config'te `allow_remote: true`, tam host ve port allowlist'i; komutta ayrıca `--allow-remote` gerekir. Uzak hedef HTTPS kullanmalı.
 - Redirect'ler varsayılan olarak izlenmemeli; izlenecekse her yönlendirme hedefi tekrar kapsam denetiminden geçmeli.
 - Araç hız sınırı ve istek sayısı sınırı uygulamalı; eşzamanlılık düşük ve yapılandırılabilir olmalı.
 - Kimlik bilgileri senaryo dosyasına yazılmamalı; ortam değişkeni veya işletim sistemi secret mekanizmasından alınmalı.
@@ -244,7 +244,7 @@ scopeguard/
 - Sonuç durumları ve hassas veri maskeleme
 - JSON ve terminal raporu
 
-İlk sürüm yalnızca açıkça tanımlanan GET kontrollerini sırayla çalıştırır. Redirect izlemez, istek hızını sınırlar, yanıt gövdesini rapora yazmaz ve hedefi loopback ile kısıtlar.
+İlk sürüm yalnızca açıkça tanımlanan GET kontrollerini sırayla çalıştırır. Redirect izlemez, istek hızını sınırlar ve yanıt gövdesini rapora yazmaz. Hedef varsayılan olarak loopback'tir; uzak hedef için HTTPS, tam host/port allowlist'i ve config ile komut satırında ayrı opt-in gerekir.
 
 Yanıt kontrolleri JSON gövdesini bellekte ayrıştırır; rapor yalnızca JSON Pointer, karşılaştırma operatörü ve PASS/FAIL sonucunu içerir. Beklenen ve gerçek alan değerleri rapora eklenmez.
 

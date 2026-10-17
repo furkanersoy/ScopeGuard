@@ -91,6 +91,22 @@ class RunnerIntegrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "must not overwrite"):
             run_scenarios(SPEC, SCENARIO, SCENARIO)
 
+    def test_remote_target_requires_runtime_flag_before_any_request(self) -> None:
+        directory = Path(self.temp_dir.name)
+        config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+        config["target"].update(
+            {
+                "base_url": "https://staging.example.test",
+                "allowed_hosts": ["staging.example.test"],
+                "allow_remote": True,
+                "allowed_ports": [443],
+            }
+        )
+        scenario = directory / "remote.yaml"
+        scenario.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+        with self.assertRaisesRegex(ValidationError, "requires the --allow-remote flag"):
+            run_scenarios(SPEC, scenario, directory / "report.json")
+
 
 if __name__ == "__main__":
     unittest.main()

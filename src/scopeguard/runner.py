@@ -14,7 +14,7 @@ from typing import Any
 from urllib.parse import quote, urlsplit
 
 from . import __version__
-from .config import ValidationError, load_validated_inputs
+from .config import ValidationError, is_loopback_host, load_validated_inputs
 
 MAX_RESPONSE_BYTES = 64 * 1024
 MIN_REQUEST_INTERVAL_SECONDS = 0.1
@@ -113,7 +113,7 @@ def _evaluate_json_assertions(assertions: list[dict[str, Any]], body: bytes, tru
     return results, None
 
 
-def run_scenarios(spec_path: Path, config_path: Path, output_path: Path) -> dict[str, Any]:
+def run_scenarios(spec_path: Path, config_path: Path, output_path: Path, *, allow_remote: bool = False) -> dict[str, Any]:
     """Execute the configured GET checks and write a redacted JSON report."""
     if output_path.resolve() in {spec_path.resolve(), config_path.resolve()}:
         raise ValidationError("report output must not overwrite the OpenAPI or scenario input")
@@ -121,6 +121,9 @@ def run_scenarios(spec_path: Path, config_path: Path, output_path: Path) -> dict
     spec, config = load_validated_inputs(spec_path, config_path)
     del spec  # Validation already confirmed every operation exists in the OpenAPI document.
     target = config["target"]
+    target_host = urlsplit(target["base_url"]).hostname or ""
+    if not is_loopback_host(target_host) and not allow_remote:
+        raise ValidationError("remote target execution requires the --allow-remote flag")
     identities = config["identities"]
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirectHandler())
     results: list[dict[str, Any]] = []

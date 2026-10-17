@@ -3,6 +3,7 @@ target:
   base_url: http://127.0.0.1:8000
   allowed_hosts:
     - 127.0.0.1
+  allow_remote: false
   max_requests: 10
   timeout_seconds: 5
   follow_redirects: false

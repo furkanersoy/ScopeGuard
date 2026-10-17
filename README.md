@@ -1,15 +1,16 @@
 # ScopeGuard
 
-**Status: early prototype.** ScopeGuard is a local-first API authorization regression tool. It currently includes a synthetic demo API and a configuration validator. The validator reads the OpenAPI and scenario files without sending network requests.
+**Status: early prototype.** ScopeGuard is a local-first API authorization regression tool. It includes a synthetic demo API, an offline configuration validator, a read-only scenario runner, and JSON response assertions.
 
 ## Current milestone
 
-- Local demo API only; it binds to `127.0.0.1`.
+- Local demo API binds to `127.0.0.1`; the runner defaults to loopback targets.
 - All records and bearer tokens are synthetic.
 - `GET /records/{id}` enforces record ownership.
 - `GET /vulnerable/records/{id}` intentionally demonstrates a broken object-level authorization check.
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
 - `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
+- Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
 
 ## Install and run
 
@@ -75,9 +76,33 @@ Invoke-RestMethod -Headers @{ Authorization = 'Bearer demo-user-b' } -Uri 'http:
 
 User B receives `404` for User A's record from the protected route and `200` from the intentionally vulnerable route.
 
+## Authorized staging targets
+
+Loopback remains the default. To validate a staging scenario, set an exact hostname and port, opt in in the config, and keep HTTPS certificate verification enabled:
+
+```yaml
+target:
+  base_url: https://staging.example.test
+  allowed_hosts:
+    - staging.example.test
+  allowed_ports: [443]
+  allow_remote: true
+  max_requests: 10
+  timeout_seconds: 5
+  follow_redirects: false
+```
+
+`staging.example.test` is a reserved example name. Replace it only with a system you own or are explicitly authorized to test. A remote run also requires the explicit command-line flag:
+
+```powershell
+scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/staging.yaml --output report.json --allow-remote
+```
+
+Remote targets must use HTTPS, the exact base hostname must be the only allowlisted hostname, and the configured port must be listed. Wildcards are rejected. `validate` remains offline; without `--allow-remote`, `run` refuses the remote target before sending a request.
+
 ## Safety
 
-This is a deliberately vulnerable teaching fixture. Keep it bound to loopback and use only the synthetic data included here. Do not expose it to a network or use real credentials or data. The runner restricts targets to loopback, sends only explicitly configured `GET` requests, does not follow redirects, limits request count and rate, and does not save response bodies.
+This is a deliberately vulnerable teaching fixture. Keep it bound to loopback and use only the synthetic data included here. Do not expose it to a network or use real credentials or data. The runner uses loopback by default; a remote target needs config and command-line opt-in, an exact hostname and port allowlist, HTTPS, and an authorized test scope. It sends only explicitly configured `GET` requests, does not follow redirects, limits request count and rate, and does not save response bodies.
 
 ## Project plan
 

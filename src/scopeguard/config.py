@@ -34,7 +34,7 @@ def _mapping(value: Any, label: str) -> dict[str, Any]:
     return value
 
 
-def _loopback_host(host: str) -> bool:
+def is_loopback_host(host: str) -> bool:
     if host.lower() == "localhost":
         return True
     try:
@@ -67,8 +67,29 @@ def _validate_target(target: Any) -> None:
     hostname = parsed.hostname.lower()
     if hostname not in {host.lower() for host in allowed_hosts}:
         raise ValidationError("target.base_url hostname is not listed in target.allowed_hosts")
-    if not _loopback_host(hostname) or any(not _loopback_host(host.lower()) for host in allowed_hosts):
-        raise ValidationError("this prototype permits loopback hosts only (localhost or 127.0.0.0/8 / ::1)")
+    remote_opt_in = target_map.get("allow_remote", False)
+    if not isinstance(remote_opt_in, bool):
+        raise ValidationError("target.allow_remote must be true or false")
+    remote_target = not is_loopback_host(hostname)
+    if remote_target:
+        if not remote_opt_in:
+            raise ValidationError("remote targets require target.allow_remote: true")
+        if parsed.scheme != "https":
+            raise ValidationError("remote targets must use HTTPS")
+        if any(host.strip() != host or "*" in host or "/" in host for host in allowed_hosts):
+            raise ValidationError("remote target allowlist entries must be exact hostnames; wildcards are not allowed")
+        if {host.lower() for host in allowed_hosts} != {hostname}:
+            raise ValidationError("remote target allowlist must contain only the exact base_url hostname")
+        allowed_ports = target_map.get("allowed_ports")
+        if not isinstance(allowed_ports, list) or not allowed_ports or any(
+            isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535 for port in allowed_ports
+        ):
+            raise ValidationError("remote targets require target.allowed_ports with explicit port numbers")
+        actual_port = parsed.port or 443
+        if actual_port not in allowed_ports:
+            raise ValidationError("target.base_url port is not listed in target.allowed_ports")
+    elif any(not is_loopback_host(host.lower()) for host in allowed_hosts):
+        raise ValidationError("loopback targets may list only localhost or loopback IP addresses")
 
     max_requests = target_map.get("max_requests")
     if isinstance(max_requests, bool) or not isinstance(max_requests, int) or not 1 <= max_requests <= 100:

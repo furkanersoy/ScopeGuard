@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 SUPPORTED_LANGUAGES = ("en", "tr")
@@ -73,12 +74,14 @@ def build_findings(results: list[dict[str, Any]], language: str = "en") -> list[
         )
         if is_bola:
             finding = {
+                "rule_id": "scopeguard.bola",
                 "severity": text["high"], "title": text["bola_title"],
                 "description": text["bola_description"].format(identity=identity, operation=operation, actual=actual),
                 "impact": text["bola_impact"], "remediation": text["bola_remediation"],
             }
         else:
             finding = {
+                "rule_id": "scopeguard.authorization-check-failed",
                 "severity": text["high"], "title": text["generic_title"],
                 "description": text["generic_description"], "impact": text["generic_impact"],
                 "remediation": text["generic_remediation"],
@@ -94,6 +97,67 @@ def build_findings(results: list[dict[str, Any]], language: str = "en") -> list[
         })
         findings.append(finding)
     return findings
+
+
+def render_sarif_report(report: dict[str, Any]) -> str:
+    """Serialize localized findings as SARIF 2.1.0 without transmitting them."""
+    findings = report.get("findings", [])
+    rules: dict[str, dict[str, Any]] = {}
+    results: list[dict[str, Any]] = []
+    for finding in findings:
+        rule_id = finding["rule_id"]
+        rules.setdefault(
+            rule_id,
+            {
+                "id": rule_id,
+                "name": rule_id.rsplit(".", 1)[-1].replace("-", " ").title(),
+                "shortDescription": {"text": finding["title"]},
+                "fullDescription": {"text": finding["description"]},
+                "defaultConfiguration": {"level": "error"},
+                "help": {
+                    "text": finding["remediation"],
+                    "markdown": f"**{finding['impact']}**\n\n{finding['remediation']}",
+                },
+                "properties": {"tags": ["security", "authorization", "access-control"]},
+            },
+        )
+        results.append(
+            {
+                "ruleId": rule_id,
+                "level": "error",
+                "message": {
+                    "text": f"{finding['title']}: {finding['description']} Evidence: {finding['evidence']}",
+                    "markdown": f"### {finding['title']}\n\n{finding['description']}\n\n**{finding['evidence']}**",
+                },
+                "properties": {
+                    "severity": finding["severity"],
+                    "checkId": finding["check_id"],
+                    "identity": finding["identity"],
+                    "operation": finding["operation"],
+                    "impact": finding["impact"],
+                    "remediation": finding["remediation"],
+                },
+            }
+        )
+    sarif = {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "ScopeGuard",
+                        "semanticVersion": report["version"],
+                        "informationUri": "https://github.com/furkanersoy/ScopeGuard",
+                        "rules": list(rules.values()),
+                    }
+                },
+                "language": "tr-TR" if report.get("language") == "tr" else "en-US",
+                "results": results,
+            }
+        ],
+    }
+    return json.dumps(sarif, indent=2, ensure_ascii=False) + "\n"
 
 
 def render_markdown_report(report: dict[str, Any]) -> str:

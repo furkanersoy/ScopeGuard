@@ -16,7 +16,7 @@ from urllib.parse import quote, urlsplit
 
 from . import __version__
 from .config import ValidationError, is_loopback_host, load_validated_inputs
-from .report import SUPPORTED_LANGUAGES, build_findings, render_markdown_report
+from .report import SUPPORTED_LANGUAGES, build_findings, render_markdown_report, render_sarif_report
 
 MAX_RESPONSE_BYTES = 64 * 1024
 MIN_REQUEST_INTERVAL_SECONDS = 0.1
@@ -153,6 +153,7 @@ def run_scenarios(
     *,
     allow_remote: bool = False,
     markdown_output_path: Path | None = None,
+    sarif_output_path: Path | None = None,
     language: str = "en",
 ) -> dict[str, Any]:
     """Execute the configured GET checks and write localized redacted reports."""
@@ -162,8 +163,10 @@ def run_scenarios(
     report_paths = [output_path.resolve()]
     if markdown_output_path is not None:
         report_paths.append(markdown_output_path.resolve())
+    if sarif_output_path is not None:
+        report_paths.append(sarif_output_path.resolve())
     if len(set(report_paths)) != len(report_paths):
-        raise ValidationError("JSON and Markdown report outputs must use different paths")
+        raise ValidationError("JSON, Markdown, and SARIF report outputs must use different paths")
     if protected_paths.intersection(report_paths):
         raise ValidationError("report output must not overwrite the OpenAPI or scenario input")
 
@@ -176,6 +179,8 @@ def run_scenarios(
     output_paths = [output_path]
     if markdown_output_path is not None:
         output_paths.append(markdown_output_path)
+    if sarif_output_path is not None:
+        output_paths.append(sarif_output_path)
     _prepare_report_paths(output_paths)
     identities = config["identities"]
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirectHandler())
@@ -236,4 +241,6 @@ def run_scenarios(
     _write_text_atomic(output_path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     if markdown_output_path is not None:
         _write_text_atomic(markdown_output_path, render_markdown_report(report))
+    if sarif_output_path is not None:
+        _write_text_atomic(sarif_output_path, render_sarif_report(report))
     return report

@@ -42,6 +42,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
     run.add_argument("--output", required=True, type=Path, help="Path for the redacted JSON report")
     run.add_argument("--markdown-output", type=Path, help="Optional path for a redacted Markdown summary")
+    run.add_argument("--sarif-output", type=Path, help="Optional local path for a SARIF 2.1.0 findings file; no upload is performed")
     run.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     run.add_argument("--allow-remote", action="store_true", help="Allow the HTTPS target only when its exact host and port are allowlisted in the config")
     return parser
@@ -98,6 +99,7 @@ def _execute(args: argparse.Namespace) -> int:
                 args.output,
                 allow_remote=args.allow_remote,
                 markdown_output_path=args.markdown_output,
+                sarif_output_path=args.sarif_output,
                 language=args.language,
             )
         except (ValidationError, OSError) as exc:
@@ -112,6 +114,8 @@ def _execute(args: argparse.Namespace) -> int:
         print(f"Report written to {args.output}")
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
+        if args.sarif_output:
+            print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
         summary = report["summary"]
         if summary["ERROR"] or summary["SKIPPED"]:
             return 2

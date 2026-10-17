@@ -77,7 +77,7 @@ def main() -> None:
             print(f"Coverage failed: {exc}", file=sys.stderr)
             raise SystemExit(2) from None
         print(render_coverage_table(coverage))
-        if args.strict and coverage["missing_required"]:
+        if args.strict and (coverage["missing_required"] or coverage["missing_required_check_ids"]):
             raise SystemExit(1)
         return
 

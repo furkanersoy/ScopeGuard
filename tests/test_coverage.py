@@ -63,6 +63,25 @@ class CoverageTests(unittest.TestCase):
         self.assertIn("[MISSING REQUIRED]", output.getvalue())
         self.assertIn("Required pairs satisfied: 5 / 6", output.getvalue())
 
+    def test_strict_fails_when_a_required_check_id_is_removed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+            config["checks"] = [
+                check for check in config["checks"] if check["id"] != "user-a-cannot-read-user-b-record"
+            ]
+            scenario_path = Path(temp_dir) / "scenario.yaml"
+            scenario_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+
+            output = io.StringIO()
+            with patch("sys.argv", ["scopeguard", "coverage", "--strict", "--spec", str(SPEC), "--config", str(scenario_path)]), \
+                    contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as raised:
+                main()
+
+        self.assertEqual(raised.exception.code, 1)
+        self.assertIn("Required pairs satisfied: 5 / 5", output.getvalue())
+        self.assertIn("Required check IDs satisfied: 6 / 7", output.getvalue())
+        self.assertIn("Missing required check IDs: user-a-cannot-read-user-b-record", output.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

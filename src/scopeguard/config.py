@@ -206,6 +206,17 @@ def _validate_checks(config: dict[str, Any], spec: dict[str, Any]) -> int:
         if pair in seen_required:
             raise ValidationError(f"duplicate required coverage pair: {identity_name} / {operation}")
         seen_required.add(pair)
+
+    required_check_ids = coverage.get("required_checks", [])
+    if not isinstance(required_check_ids, list):
+        raise ValidationError("coverage.required_checks must be a list")
+    seen_required_check_ids: set[str] = set()
+    for index, check_id in enumerate(required_check_ids, start=1):
+        if not isinstance(check_id, str) or not check_id.strip():
+            raise ValidationError(f"coverage.required_checks[{index}] must be a non-empty check id")
+        if check_id in seen_required_check_ids:
+            raise ValidationError(f"duplicate required check id: {check_id}")
+        seen_required_check_ids.add(check_id)
     return len(checks)
 
 

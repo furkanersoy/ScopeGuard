@@ -50,7 +50,7 @@ See which identity/endpoint combinations have checks configured:
 scopeguard coverage --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml
 ```
 
-The coverage matrix lists configured checks and marks empty identity/endpoint pairs as `not configured`. An empty cell is only a coverage gap in the scenario file; it is not evidence of a vulnerability. Declare the pairs that matter to your API under `coverage.required` in the scenario YAML. `scopeguard coverage --strict` exits with status `1` if one of those required pairs has no check, so CI can enforce the list. This command is offline and does not read tokens.
+The coverage matrix lists configured checks and marks empty identity/endpoint pairs as `not configured`. An empty cell is only a coverage gap in the scenario file; it is not evidence of a vulnerability. Declare required identity/endpoint pairs under `coverage.required` and exact check IDs under `coverage.required_checks` in the scenario YAML. `scopeguard coverage --strict` exits with status `1` if a required pair or check ID is missing, so CI can enforce both broad endpoint coverage and specific scenarios. This command is offline and does not read tokens.
 
 With the demo API still running, execute the checks in a second terminal:
 

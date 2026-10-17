@@ -95,6 +95,8 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
                 "  plan --spec <openapi.yaml> --config <scenario.yaml>\n"
                 "  coverage [--strict] --spec <openapi.yaml> --config <scenario.yaml>\n"
                 "  run --spec <openapi.yaml> --config <scenario.yaml> --output <report.json>\n"
+                "      [--markdown-output <report.md>] [--language tr|en]\n"
+                "      Report language defaults to English; use --language tr for Turkish.\n"
                 "  version | help | exit\n"
                 "Quote paths that contain spaces. Commands are handled locally; no shell commands are executed.\n"
             )

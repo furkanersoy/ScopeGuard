@@ -42,7 +42,7 @@ Create a starter scenario interactively from an OpenAPI document:
 scopeguard init --spec examples/api/openapi.yaml --output examples/scenarios/my-scenario.yaml
 ```
 
-The wizard lists GET operations, asks you to choose which ones to include, and collects sample path values and expected status codes. It performs no API requests. Review the generated scenario before running it; the wizard cannot infer account ownership rules or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
+The wizard lets you select anonymous-access checks, BOLA/IDOR horizontal access checks, BFLA role checks, or custom GET status checks. It asks you to select GET operations and collect sample path values, test identities, and expected status codes. It performs no API requests. Review the generated scenario before running it; the wizard cannot infer your authorization policy or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
 
 To start the included synthetic demo API, open a second terminal:
 

@@ -92,8 +92,8 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             output.write(
                 "Commands / Komutlar:\n"
                 "  init --spec <openapi.yaml> [--output scenario.yaml] [--force]\n"
-                "      EN: Interactively create a starter scenario; no API requests are sent.\n"
-                "      TR: Başlangıç senaryosunu adım adım oluşturur; API'ye istek göndermez.\n"
+                "      EN: Select anonymous, BOLA/IDOR, BFLA, or custom GET checks; offline setup only.\n"
+                "      TR: Anonim, BOLA/IDOR, BFLA veya özel GET kontrollerini seçer; kurulum çevrimdışıdır.\n"
                 "  validate --spec <openapi.yaml> --config <scenario.yaml>\n"
                 "      EN: Check the API spec and scenario without network access.\n"
                 "      TR: API tanımını ve senaryoyu ağ erişimi olmadan doğrular.\n"

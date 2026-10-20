@@ -23,6 +23,14 @@ _TEXT = {
         "bola_description": "A request made as {identity} to {operation} returned a resource that the scenario expected to deny. The cross-user request should have been rejected, but the endpoint returned HTTP {actual}. This points to missing or incorrect object-level authorization.",
         "bola_impact": "A user may be able to read another user's record by changing its identifier. Depending on the data and available operations, this can expose private records across accounts.",
         "bola_remediation": "Enforce ownership on the server for every object access: derive the principal from the authenticated session, query by both object ID and owner ID, and return the same denial behavior for missing and unauthorized objects. Add regression checks for both users reading their own and each other's records.",
+        "bfla_title": "Broken Function Level Authorization (BFLA)",
+        "bfla_description": "A low-privilege identity ({identity}) received HTTP {actual} from privileged operation {operation}, although the scenario expected access to be denied. This suggests the server may not enforce role or permission checks for this function.",
+        "bfla_impact": "A regular account may invoke administrative or otherwise restricted functionality, potentially changing or exposing data beyond its role.",
+        "bfla_remediation": "Enforce authorization on the server for every privileged operation. Check permissions for the authenticated principal on each request, deny by default, and add role-based regression checks for both permitted and denied roles.",
+        "authn_title": "Missing or Ineffective Authentication Control",
+        "authn_description": "An unauthenticated request to {operation} received HTTP {actual}, although the scenario expected a denial. The endpoint may be accessible without the required login.",
+        "authn_impact": "Unauthenticated users may access information or functionality intended only for signed-in users.",
+        "authn_remediation": "Require authentication on this route and verify authorization on the server. Add anonymous and authenticated regression checks using the intended response policy.",
         "assertion_evidence": "JSON assertion {pointer} {operator} failed",
         "status_evidence": "Expected HTTP {expected}; received HTTP {actual}",
         "redaction_note": "Response bodies, assertion values, and credential values are not included in this report.",
@@ -42,6 +50,14 @@ _TEXT = {
         "bola_description": "{identity} kimliğiyle {operation} adresine yapılan istek, senaryonun erişimi reddetmesini beklediği hâlde kaynağı döndürdü. Başka kullanıcıya ait kayda yönelik isteğin reddedilmesi gerekiyordu; ancak uç nokta HTTP {actual} yanıtı verdi. Bu durum, nesne düzeyindeki yetkilendirmenin eksik veya hatalı olabileceğini gösterir.",
         "bola_impact": "Bir kullanıcı kayıt kimliğini değiştirerek başka bir kullanıcının verisini okuyabilir. Verinin ve uç noktaların kapsamına bağlı olarak hesaplar arası özel bilgiler açığa çıkabilir.",
         "bola_remediation": "Her nesne erişiminde sahipliği sunucu tarafında doğrulayın: kullanıcı kimliğini doğrulanmış oturumdan alın, veritabanı sorgusunda hem nesne kimliğini hem sahip kimliğini kullanın ve bulunamayan nesneyle yetkisiz nesne için aynı ret davranışını uygulayın. Her iki kullanıcının kendi ve diğer kullanıcı kayıtlarına erişimini kapsayan regresyon kontrolleri ekleyin.",
+        "bfla_title": "Fonksiyon Düzeyinde Yetkilendirme Hatası (BFLA)",
+        "bfla_description": "Düşük yetkili ({identity}) kimliği, senaryonun erişimi reddetmesini beklediği ayrıcalıklı {operation} işleminden HTTP {actual} yanıtı aldı. Bu, sunucunun bu işlev için rol veya izin kontrolü yapmadığını gösterebilir.",
+        "bfla_impact": "Standart bir hesap, rolünün dışındaki yönetim işlevlerini çağırabilir; bu da yetkisiz veri erişimine veya değişikliğine yol açabilir.",
+        "bfla_remediation": "Her ayrıcalıklı işlemde yetkiyi sunucu tarafında doğrulayın. Her istekte doğrulanmış kullanıcının izinlerini kontrol edin, varsayılan olarak erişimi reddedin ve izinli/izinsiz roller için regresyon kontrolleri ekleyin.",
+        "authn_title": "Eksik veya Etkisiz Kimlik Doğrulama Kontrolü",
+        "authn_description": "Kimlik doğrulaması olmadan {operation} adresine yapılan istek HTTP {actual} yanıtı aldı; senaryo erişimin reddedilmesini bekliyordu. Uç nokta oturum açmadan erişilebilir olabilir.",
+        "authn_impact": "Oturum açmamış kullanıcılar yalnızca giriş yapmış kişilere açık olması gereken bilgi veya işlevlere erişebilir.",
+        "authn_remediation": "Bu uç noktada kimlik doğrulamasını zorunlu tutun ve yetkiyi sunucuda doğrulayın. Tanımlanan yanıt politikasına göre anonim ve oturum açmış kullanıcılar için regresyon kontrolleri ekleyin.",
         "assertion_evidence": "JSON doğrulaması başarısız: {pointer} {operator}",
         "status_evidence": "Beklenen HTTP {expected}; alınan HTTP {actual}",
         "redaction_note": "Yanıt gövdeleri, doğrulama değerleri ve kimlik bilgileri bu rapora eklenmez.",
@@ -68,8 +84,9 @@ def build_findings(results: list[dict[str, Any]], language: str = "en") -> list[
         operation = str(result.get("operation", "the configured operation"))
         identity = str(result.get("identity", "the configured identity"))
         failed_assertions = [item for item in result.get("assertions", []) if item.get("status") == "FAIL"]
-        is_bola = (
-            ("vulnerable" in result.get("id", "").lower() or "record" in operation.lower())
+        check_id = str(result.get("id", "")).lower()
+        is_bola = check_id.startswith("bola-") or (
+            ("vulnerable" in check_id or "record" in operation.lower())
             and any(item.get("pointer") == "/owner" and item.get("operator") == "not_equals" for item in failed_assertions)
         )
         if is_bola:
@@ -78,6 +95,20 @@ def build_findings(results: list[dict[str, Any]], language: str = "en") -> list[
                 "severity": text["high"], "title": text["bola_title"],
                 "description": text["bola_description"].format(identity=identity, operation=operation, actual=actual),
                 "impact": text["bola_impact"], "remediation": text["bola_remediation"],
+            }
+        elif check_id.startswith("bfla-"):
+            finding = {
+                "rule_id": "scopeguard.bfla",
+                "severity": text["high"], "title": text["bfla_title"],
+                "description": text["bfla_description"].format(identity=identity, operation=operation, actual=actual),
+                "impact": text["bfla_impact"], "remediation": text["bfla_remediation"],
+            }
+        elif check_id.startswith("anonymous-denied-"):
+            finding = {
+                "rule_id": "scopeguard.missing-authentication",
+                "severity": text["high"], "title": text["authn_title"],
+                "description": text["authn_description"].format(operation=operation, actual=actual),
+                "impact": text["authn_impact"], "remediation": text["authn_remediation"],
             }
         else:
             finding = {

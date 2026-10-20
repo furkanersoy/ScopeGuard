@@ -63,7 +63,16 @@ python -m pip install .
 
 Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
 
-Run `scopeguard` with no arguments to open the bilingual startup menu. The API Security section offers scenario creation, validation, request planning, coverage, and running checks. The source/configuration and secret-detection sections ask what local path to scan, then write JSON and Markdown reports. The advanced command console supports `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, `run`, and `menu`; enter `menu` to return to the sections or `exit` to close. Use quoted paths containing spaces. The `--version` and `--help` options are available from the normal command line.
+### Startup menu
+
+Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows) to open the bilingual menu:
+
+1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run the configured checks. Scenario creation asks for an OpenAPI file, selected GET operations, sample path values, identities, and expected status codes. Running checks asks for the input files, local report path, and report language; JSON, Markdown, and SARIF reports are saved locally. To run checks against the included demo, start it in a second terminal first.
+2. **Source Code & Configuration** — scans a selected local file or folder for supported Python and configuration risk patterns. It asks for the scan path, JSON and Markdown report paths, and report language. It reads files without executing them or contacting a service.
+3. **Secret Detection** — scans a selected local file or folder for supported hard-coded secret patterns and saves local JSON and Markdown reports. It does not print matched secret values.
+4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.
+
+The local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
 
 ### Quick start on Windows
 
@@ -240,3 +249,4 @@ See [the architecture and roadmap](docs/architecture.md).
 ## License
 
 No license has been selected yet. Until one is added, the source is not granted an open-source reuse license.
+

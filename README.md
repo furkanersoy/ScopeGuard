@@ -36,6 +36,27 @@ Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) fo
 
 Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
 
+### Quick start on Windows
+
+After cloning or downloading the project, double-click `ScopeGuard.bat`. On its first launch it creates a private `.venv` folder and installs ScopeGuard and its dependencies. Later launches reuse that setup. You do not need to activate the environment or type setup commands yourself. Python 3.11 or newer and an internet connection are needed for the first setup. You can pass normal ScopeGuard arguments to the launcher from PowerShell, too:
+
+```powershell
+.\ScopeGuard.bat inspect --path . --checks secrets python config --language tr
+```
+
+On Linux or macOS, make the launcher executable once with `chmod +x scopeguard.sh`, then run `./scopeguard.sh`. It performs the same first-run setup and opens the interactive console. Arguments can be passed after the script name.
+
+### Run without a virtual environment
+
+On Windows, you can install ScopeGuard into your Python user account and start it as a module:
+
+```powershell
+py -3 -m pip install --user .
+py -3 -m scopeguard
+```
+
+This avoids a project `.venv` and a manual activation step. It installs dependencies into that Python account, so the automatic launcher above is preferred when you want ScopeGuard's dependencies isolated from other Python tools. Python 3.11 or newer is required.
+
 ## Offline local source inspection
 
 ScopeGuard can inspect local source and configuration files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS. These heuristic findings need human review; this is not a complete vulnerability scanner.

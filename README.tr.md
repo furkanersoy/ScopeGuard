@@ -73,7 +73,16 @@ Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez ç
 
 Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
 
-`scopeguard` komutunu argümansız çalıştırmak iki dilli başlangıç menüsünü açar. API Güvenliği bölümünde senaryo oluşturma, doğrulama, istek planlama, kapsam görüntüleme ve kontrolleri çalıştırma seçenekleri bulunur. Kaynak kodu/yapılandırma ve gizli bilgi taraması bölümleri taranacak yolu sorar, ardından JSON ve Markdown raporu oluşturur. Gelişmiş komut konsolunda `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, `run` ve `menu` komutları bulunur. `menu` ana menüye döndürür; `exit` uygulamayı kapatır. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri kullanılabilir.
+## Başlangıç menüsünü kullanma
+
+`scopeguard` komutunu argümansız çalıştır veya Windows'ta `ScopeGuard.bat` dosyasına çift tıklayarak iki dilli başlangıç menüsünü aç:
+
+1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve tanımlı kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı OpenAPI dosyasını, GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen durum kodlarını sorar. Kontrolleri çalıştırırken giriş dosyaları, yerel rapor yolu ve rapor dili seçilir; JSON, Markdown ve SARIF raporları bilgisayara yazılır. Dahil edilen demo üzerinde çalıştırmak için önce ikinci bir terminalde demo API'yi başlat.
+2. **Kaynak Kodu ve Yapılandırma** — seçilen yerel dosya veya klasörde desteklenen Python ve yapılandırma risk kalıplarını tarar. Tarama yolunu, JSON ve Markdown rapor yollarını ve rapor dilini sorar. Dosyaları çalıştırmaz ve herhangi bir servise bağlanmaz.
+3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit kodlanmış gizli bilgi kalıplarını arar ve JSON ile Markdown raporlarını yerel olarak kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
+4. **Gelişmiş komut konsolu** — standart CLI komutlarını (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage` ve `run`) kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz. Menüde geri dönmek veya çıkmak için `0` seçeneğini kullan.
+
+Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
 
 ## Yerel kaynak kodu ve yapılandırma taraması
 
@@ -231,3 +240,4 @@ Mimari ve yol haritası için [docs/architecture.md](docs/architecture.md) dosya
 ## Lisans
 
 Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yeniden kullanım izni vermez.
+

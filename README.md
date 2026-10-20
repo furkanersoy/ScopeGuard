@@ -34,7 +34,19 @@ python -m pip install .
 
 Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
 
-Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `init`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
+Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
+
+## Offline local source inspection
+
+ScopeGuard can inspect local source and configuration files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS. These heuristic findings need human review; this is not a complete vulnerability scanner.
+
+Run all local inspection checks and save reports on your computer:
+
+```powershell
+scopeguard inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr
+```
+
+Use `--checks` with one or more of `secrets`, `python`, and `config` to choose categories. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The report contains file names and line numbers but omits source snippets and matched secret values. The command returns exit status `1` when it finds findings; inspect the report and verify each result.
 
 Create a starter scenario interactively from an OpenAPI document:
 

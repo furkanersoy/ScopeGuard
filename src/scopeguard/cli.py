@@ -11,6 +11,7 @@ from . import __version__
 from .config import ValidationError, validate_inputs
 from .coverage import build_coverage, render_coverage_table
 from .console import colorize, run_console
+from .local_scan import inspect_path, write_local_reports
 from .planner import build_plan
 from .runner import run_scenarios
 from .wizard import run_init_wizard
@@ -51,10 +52,34 @@ def _parser() -> argparse.ArgumentParser:
     init.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
     init.add_argument("--output", type=Path, default=Path("scopeguard.yaml"), help="Scenario file to create (default: scopeguard.yaml)")
     init.add_argument("--force", action="store_true", help="Replace the output file if it already exists")
+
+    inspect = subparsers.add_parser("inspect", help="Scan local source/configuration files offline; never executes scanned code.")
+    inspect.add_argument("--path", required=True, type=Path, help="File or directory to inspect")
+    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config"), default=["secrets", "python", "config"], help="Checks to run (default: all)")
+    inspect.add_argument("--output", type=Path, default=Path("scopeguard-inspect.json"), help="Local JSON report path")
+    inspect.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
+    inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     return parser
 
 
 def _execute(args: argparse.Namespace) -> int:
+    if args.command == "inspect":
+        outputs = [args.output]
+        if args.markdown_output:
+            outputs.append(args.markdown_output)
+        try:
+            report = inspect_path(args.path, args.checks, args.language, output_paths=outputs)
+            write_local_reports(report, args.output, args.markdown_output)
+        except (ValidationError, OSError) as exc:
+            print(f"Inspection failed: {exc}", file=sys.stderr)
+            return 2
+        print(f"Scanned {report['scanned_files']} local file(s); findings: {len(report['findings'])}.")
+        print("No code was executed and no network requests were sent. Matched secret values were omitted.")
+        print(f"JSON report written to {args.output}")
+        if args.markdown_output:
+            print(f"Markdown report written to {args.markdown_output}")
+        return 1 if report["findings"] else 0
+
     if args.command == "init":
         try:
             run_init_wizard(args.spec, args.output, force=args.force)

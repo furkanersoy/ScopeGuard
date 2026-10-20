@@ -38,9 +38,9 @@ def show_banner(stream: TextIO | None = None, *, animate: bool | None = None) ->
         output.write("\n")
     else:
         output.write(colorize(title, "cyan", output) + "\n")
-    output.write(f"  API authorization testing  |  v{__version__}\n")
-    output.write("  Finds API access-control gaps such as BOLA/IDOR before release.\n")
-    output.write("  Define checks from an OpenAPI spec; validate and preview offline, then run read-only GET checks.\n")
+    output.write(f"  Security checks  |  v{__version__}\n")
+    output.write("  Checks API access control and local source/configuration patterns.\n")
+    output.write("  API runs use configured GET checks; local inspect is offline and never executes code.\n")
     output.write("  Loopback is the default. Remote testing needs an explicit allowlist and --allow-remote.\n")
     output.write("  API yetkilendirme açıklarını (BOLA/IDOR) sürüm öncesi bulur.\n")
     output.write("  OpenAPI tabanlı kontrolleri çevrimdışı doğrular; yalnızca tanımlı GET isteklerini çalıştırır.\n")
@@ -111,6 +111,12 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
                 "      TR: --sarif-output yerel SARIF dosyası yazar; hiçbir yere yüklemez.\n"
                 "      EN: Report language defaults to English; use --language tr for Turkish.\n"
                 "      TR: Rapor dili varsayılan olarak İngilizcedir; Türkçe için --language tr kullanın.\n"
+                "  inspect --path <file-or-folder> [--checks secrets python config] [--output report.json]\n"
+                "      [--markdown-output report.md] [--language tr|en]\n"
+                "      EN: Offline source/config scan; code is not run, secret values are redacted.\n"
+                "      TR: Kaynak/yapilandirma dosyalarini cevrimdisi tarar; kod calismaz, sirlar gizlenir.\n"
+                "      EN: Checks secrets, Python risky patterns, and configuration; review findings.\n"
+                "      TR: Sabit sir, Python riskli kalip ve yapilandirma kontrolleri; bulgulari inceleyin.\n"
                 "  version | help | exit\n"
                 "      EN: Show version | show this help | close the console.\n"
                 "      TR: Sürümü göster | bu yardımı göster | konsolu kapat.\n"

@@ -20,7 +20,7 @@
 
 1. Install Python 3.11 or newer and download or clone the ScopeGuard repository.
 2. Double-click `ScopeGuard.bat`. On its first launch it creates a project-local `.venv` and installs ScopeGuard and its dependencies. Later launches reuse that setup.
-3. At the `sg>` prompt, enter commands without the `scopeguard` prefix, for example `help` or `inspect --path . --checks secrets python config --language tr`.
+3. Choose a section from the startup menu: `1` opens API Security, `2` scans source code/configuration, `3` scans for hard-coded secrets, and `4` opens the advanced command console.
 4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
 5. Run `exit` in the first window to leave the interactive console. To run a command directly from PowerShell, prefix it with `ScopeGuard.bat`, for example `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
@@ -63,7 +63,7 @@ python -m pip install .
 
 Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
 
-Run `scopeguard` with no arguments to open the interactive console. It supports `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, and `run`; enter `exit` to close it. Use quoted paths when a path contains spaces. The `--version` and `--help` options are available from the normal command line.
+Run `scopeguard` with no arguments to open the bilingual startup menu. The API Security section offers scenario creation, validation, request planning, coverage, and running checks. The source/configuration and secret-detection sections ask what local path to scan, then write JSON and Markdown reports. The advanced command console supports `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, `run`, and `menu`; enter `menu` to return to the sections or `exit` to close. Use quoted paths containing spaces. The `--version` and `--help` options are available from the normal command line.
 
 ### Quick start on Windows
 

@@ -19,7 +19,7 @@
 
 1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir veya klonla.
 2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta proje klasöründe `.venv` oluşturup ScopeGuard ve bağımlılıklarını kurar. Sonraki açılışlarda bu kurulumu tekrar kullanır.
-3. `sg>` isteminde komutları `scopeguard` öneki olmadan yaz. Örneğin `help` veya `inspect --path . --checks secrets python config --language tr`.
+3. Başlangıç menüsünden bir bölüm seç: `1` API Güvenliği, `2` kaynak kodu/yapılandırma taraması, `3` sabit sır taraması, `4` gelişmiş komut konsoludur.
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
 5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
@@ -73,7 +73,7 @@ Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez ç
 
 Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
 
-`scopeguard` komutunu argümansız çalıştırmak etkileşimli konsolu açar. Konsolda `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage` ve `run` komutları bulunur. Kapatmak için `exit` yaz. Konsol içinde komutların başına `scopeguard` ekleme. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri kullanılabilir.
+`scopeguard` komutunu argümansız çalıştırmak iki dilli başlangıç menüsünü açar. API Güvenliği bölümünde senaryo oluşturma, doğrulama, istek planlama, kapsam görüntüleme ve kontrolleri çalıştırma seçenekleri bulunur. Kaynak kodu/yapılandırma ve gizli bilgi taraması bölümleri taranacak yolu sorar, ardından JSON ve Markdown raporu oluşturur. Gelişmiş komut konsolunda `help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, `run` ve `menu` komutları bulunur. `menu` ana menüye döndürür; `exit` uygulamayı kapatır. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri kullanılabilir.
 
 ## Yerel kaynak kodu ve yapılandırma taraması
 

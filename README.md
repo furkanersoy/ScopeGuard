@@ -1,5 +1,7 @@
 # ScopeGuard
 
+[English](README.md) | [Turkish version](README.tr.md)
+
 **Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source/configuration patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, bilingual findings, and local JSON, Markdown, and SARIF reports.
 
 ## Current milestone
@@ -14,17 +16,17 @@
 - API finding reports support Turkish and English; JSON and Markdown reports stay on the paths selected by the user. SARIF output is available for API runs.
 - Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
 
-## Hızlı başlangıç (Windows)
+## Quick start (Windows)
 
-1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir.
-2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta gerekli kurulumu otomatik yapar; sonraki açılışlarda aynı kurulumu kullanır.
-3. `sg>` konsolunda komutları `scopeguard` öneki olmadan gir; örneğin `help` veya `inspect --path . --checks secrets python config --language tr`.
-4. API örneğini çalıştırmak için ikinci PowerShell penceresinde `.\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. Sunucu `127.0.0.1:8000` adresinde açılır.
-5. İlk pencerede `exit` ile konsoldan çık. PowerShell'den komut çalıştırırken `ScopeGuard.bat` önekini kullan; örneğin `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
+1. Install Python 3.11 or newer and download or clone the ScopeGuard repository.
+2. Double-click `ScopeGuard.bat`. On its first launch it creates a project-local `.venv` and installs ScopeGuard and its dependencies. Later launches reuse that setup.
+3. At the `sg>` prompt, enter commands without the `scopeguard` prefix, for example `help` or `inspect --path . --checks secrets python config --language tr`.
+4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
+5. Run `exit` in the first window to leave the interactive console. To run a command directly from PowerShell, prefix it with `ScopeGuard.bat`, for example `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
-Klasör açılmadan doğrudan komut çalıştırmak için PowerShell'de `.\ScopeGuard.bat inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr` kullan. API kontrolleri için aşağıdaki adımları takip et. Gerçek servisleri yalnızca açıkça yetkilendirilmiş test kapsamlarında çalıştır.
+To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
 
-ScopeGuard'u proje `.venv` klasörü oluşturmadan kullanmak için Windows'ta proje klasöründe `py -3 -m pip install --user .` ardından `py -3 -m scopeguard` komutlarını çalıştırabilirsin. Bu yöntem bağımlılıkları kullanıcı Python kurulumuna yükler; araçların bağımlılıklarını birbirinden ayrı tutmak için `ScopeGuard.bat` önerilir.
+To install without creating a project `.venv`, run `py -3 -m pip install --user .` from the repository folder, then start ScopeGuard with `py -3 -m scopeguard`. This installs dependencies into your user Python account. The launcher is recommended when you want to keep ScopeGuard dependencies isolated from other Python tools.
 
 ## Security checks and commands
 

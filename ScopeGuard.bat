@@ -25,7 +25,7 @@ if not exist ".venv\Scripts\python.exe" (
 
 if not exist ".venv\.scopeguard-installed" (
     echo Installing ScopeGuard and its dependencies...
-    ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -e "%~dp0"
+    ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -e .
     if errorlevel 1 goto setup_failed
     type nul > ".venv\.scopeguard-installed"
 )

@@ -1,6 +1,6 @@
 # ScopeGuard
 
-**Status: beta.** ScopeGuard is a local-first API authorization regression tool. It includes a synthetic demo API, an offline configuration validator and request planner, a read-only scenario runner, authorization coverage checks, and redacted JSON/Markdown reports.
+**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source/configuration patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, bilingual findings, and local JSON, Markdown, and SARIF reports.
 
 ## Current milestone
 
@@ -10,7 +10,34 @@
 - `GET /vulnerable/records/{id}` intentionally demonstrates a broken object-level authorization check.
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
 - `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
+- `scopeguard inspect` scans selected local source/configuration patterns without executing code or using the network.
+- API finding reports support Turkish and English; JSON and Markdown reports stay on the paths selected by the user. SARIF output is available for API runs.
 - Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
+
+## Hızlı başlangıç (Windows)
+
+1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir.
+2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta gerekli kurulumu otomatik yapar; sonraki açılışlarda aynı kurulumu kullanır.
+3. `sg>` konsolunda komutları `scopeguard` öneki olmadan gir; örneğin `help` veya `inspect --path . --checks secrets python config --language tr`.
+4. API örneğini çalıştırmak için ikinci PowerShell penceresinde `.\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. Sunucu `127.0.0.1:8000` adresinde açılır.
+5. İlk pencerede `exit` ile konsoldan çık. PowerShell'den komut çalıştırırken `ScopeGuard.bat` önekini kullan; örneğin `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
+
+Klasör açılmadan doğrudan komut çalıştırmak için PowerShell'de `.\ScopeGuard.bat inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr` kullan. API kontrolleri için aşağıdaki adımları takip et. Gerçek servisleri yalnızca açıkça yetkilendirilmiş test kapsamlarında çalıştır.
+
+ScopeGuard'u proje `.venv` klasörü oluşturmadan kullanmak için Windows'ta proje klasöründe `py -3 -m pip install --user .` ardından `py -3 -m scopeguard` komutlarını çalıştırabilirsin. Bu yöntem bağımlılıkları kullanıcı Python kurulumuna yükler; araçların bağımlılıklarını birbirinden ayrı tutmak için `ScopeGuard.bat` önerilir.
+
+## Security checks and commands
+
+| Command | What it checks or does | Network use |
+| --- | --- | --- |
+| `init` | Creates scenarios for anonymous access, BOLA/IDOR, BFLA, or custom GET status checks. | None |
+| `inspect` | Selects local checks for hard-coded secrets, risky Python patterns, and configuration. | None; source code is not run |
+| `validate` | Validates the OpenAPI document and scenario configuration. | None |
+| `plan` | Shows the exact requests and identities in a scenario. | None; tokens are not read |
+| `coverage` | Shows configured identity/endpoint pairs; `--strict` enforces required coverage. | None; tokens are not read |
+| `run` | Sends configured read-only GET checks to the scoped target and writes local reports. | Yes, to the configured target only |
+
+The `inspect` checks are static heuristics, not a complete scanner. They do not test a live web service. API scenarios test only explicitly configured GET operations and expected outcomes; they do not fuzz endpoints or infer the application's authorization policy.
 
 ## Install and run
 

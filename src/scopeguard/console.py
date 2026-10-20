@@ -38,7 +38,7 @@ def show_banner(stream: TextIO | None = None, *, animate: bool | None = None) ->
         output.write("\n")
     else:
         output.write(colorize(title, "cyan", output) + "\n")
-    output.write(f"  Security checks  |  v{__version__}\n")
+    output.write(f"  API authorization testing and local security checks  |  v{__version__}\n")
     output.write("  Checks API access control and local source/configuration patterns.\n")
     output.write("  API runs use configured GET checks; local inspect is offline and never executes code.\n")
     output.write("  Loopback is the default. Remote testing needs an explicit allowlist and --allow-remote.\n")
@@ -114,9 +114,9 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
                 "  inspect --path <file-or-folder> [--checks secrets python config] [--output report.json]\n"
                 "      [--markdown-output report.md] [--language tr|en]\n"
                 "      EN: Offline source/config scan; code is not run, secret values are redacted.\n"
-                "      TR: Kaynak/yapilandirma dosyalarini cevrimdisi tarar; kod calismaz, sirlar gizlenir.\n"
+                "      TR: Kaynak/yapÄ±landÄ±rma dosyalarÄ±nÄ± Ã§evrimdÄ±ÅŸÄ± tarar; kod Ã§alÄ±ÅŸmaz, sÄ±rlar gizlenir.\n"
                 "      EN: Checks secrets, Python risky patterns, and configuration; review findings.\n"
-                "      TR: Sabit sir, Python riskli kalip ve yapilandirma kontrolleri; bulgulari inceleyin.\n"
+                "      TR: Sabit sÄ±r, Python riskli kalÄ±p ve yapÄ±landÄ±rma kontrolleri; bulgularÄ± inceleyin.\n"
                 "  version | help | exit\n"
                 "      EN: Show version | show this help | close the console.\n"
                 "      TR: Sürümü göster | bu yardımı göster | konsolu kapat.\n"

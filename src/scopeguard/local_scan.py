@@ -7,6 +7,8 @@ import json
 import os
 import re
 import tempfile
+
+import yaml
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -333,58 +335,113 @@ def _docker_findings(source: str, relative: str, findings: list[dict[str, Any]],
 
 
 def _kubernetes_findings(source: str, relative: str, findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
-    """Scan Kubernetes-like YAML text for selected high-risk manifest settings."""
-    lines = [(number, raw.split("#", 1)[0].rstrip()) for number, raw in enumerate(source.splitlines(), 1)]
-    if not any(re.match(r"^\s*apiVersion\s*:\s*\S+", line) for _, line in lines):
-        return
-    if not any(re.match(r"^\s*kind\s*:\s*\S+", line) for _, line in lines):
-        return
+    """Inspect Kubernetes workload security fields using safe YAML node parsing."""
+    def entries(node: yaml.Node | None) -> dict[str, yaml.Node]:
+        if not isinstance(node, yaml.MappingNode):
+            return {}
+        return {
+            key.value: value
+            for key, value in node.value
+            if isinstance(key, yaml.ScalarNode)
+        }
 
-    capabilities_indent: int | None = None
-    add_indent: int | None = None
-    for number, line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
-        indent = len(line) - len(line.lstrip())
+    def value(node: yaml.Node | None) -> str | None:
+        return node.value if isinstance(node, yaml.ScalarNode) else None
 
-        capabilities_match = re.search(r"(?i)\bcapabilities\s*:\s*(.*)$", stripped)
-        if capabilities_match:
-            capabilities_indent = indent
-            add_indent = None
-            inline = capabilities_match.group(1)
-            add_match = re.search(r"(?i)\badd\s*:\s*(.*)", inline)
-            if add_match and re.search(r"(?i)\bALL\b", add_match.group(1)):
-                _add_finding(findings, seen, "kubernetes.capabilities-all", relative, number)
-            continue
+    def is_true(node: yaml.Node | None) -> bool:
+        return isinstance(node, yaml.ScalarNode) and node.tag == "tag:yaml.org,2002:bool" and node.value.lower() in {"true", "yes", "on"}
 
-        if capabilities_indent is not None:
-            if indent <= capabilities_indent:
-                capabilities_indent = None
-                add_indent = None
-            elif re.match(r"(?i)^add\s*:", stripped):
-                add_indent = indent
-                inline = re.sub(r"(?i)^add\s*:\s*", "", stripped)
-                if re.search(r"(?i)\bALL\b", inline):
-                    _add_finding(findings, seen, "kubernetes.capabilities-all", relative, number)
+    def is_false(node: yaml.Node | None) -> bool:
+        return isinstance(node, yaml.ScalarNode) and node.tag == "tag:yaml.org,2002:bool" and node.value.lower() in {"false", "no", "off"}
+
+    def report(rule_id: str, node: yaml.Node | None) -> None:
+        if node is not None:
+            _add_finding(findings, seen, rule_id, relative, node.start_mark.line + 1)
+
+    def inspect_pod_spec(pod_spec: yaml.Node) -> None:
+        pod_fields = entries(pod_spec)
+        for field in ("hostNetwork", "hostPID", "hostIPC"):
+            if is_true(pod_fields.get(field)):
+                report("kubernetes.host-namespace", pod_fields[field])
+
+        volumes = pod_fields.get("volumes")
+        if isinstance(volumes, yaml.SequenceNode):
+            for volume in volumes.value:
+                host_path = entries(volume).get("hostPath")
+                if host_path is not None:
+                    report("kubernetes.host-path", host_path)
+
+        contexts: list[yaml.Node] = []
+        pod_context = pod_fields.get("securityContext")
+        if pod_context is not None:
+            contexts.append(pod_context)
+        for field in ("containers", "initContainers", "ephemeralContainers"):
+            containers = pod_fields.get(field)
+            if isinstance(containers, yaml.SequenceNode):
+                for container in containers.value:
+                    context = entries(container).get("securityContext")
+                    if context is not None:
+                        contexts.append(context)
+
+        for context in contexts:
+            fields = entries(context)
+            if is_true(fields.get("privileged")):
+                report("kubernetes.privileged", fields["privileged"])
+            if is_true(fields.get("allowPrivilegeEscalation")):
+                report("kubernetes.privilege-escalation", fields["allowPrivilegeEscalation"])
+            user_id = value(fields.get("runAsUser"))
+            if user_id is not None and user_id.strip("'\"") == "0":
+                report("kubernetes.run-as-root", fields["runAsUser"])
+            elif is_false(fields.get("runAsNonRoot")):
+                report("kubernetes.run-as-root", fields["runAsNonRoot"])
+
+            capabilities = entries(fields.get("capabilities"))
+            added = capabilities.get("add")
+            if isinstance(added, yaml.SequenceNode):
+                for capability in added.value:
+                    if (value(capability) or "").upper() == "ALL":
+                        report("kubernetes.capabilities-all", capability)
+            elif (value(added) or "").strip("[]'\" ").upper() == "ALL":
+                report("kubernetes.capabilities-all", added)
+
+    def inspect_resource(resource: yaml.Node) -> None:
+        fields = entries(resource)
+        kind = value(fields.get("kind"))
+        if kind == "List":
+            items = fields.get("items")
+            if isinstance(items, yaml.SequenceNode):
+                for item in items.value:
+                    inspect_resource(item)
+            return
+
+        spec = fields.get("spec")
+        if kind == "Pod":
+            if spec is not None:
+                inspect_pod_spec(spec)
+            return
+
+        if kind == "CronJob":
+            job_template = entries(spec).get("jobTemplate")
+            job_spec = entries(job_template).get("spec")
+            template = entries(job_spec).get("template")
+        elif kind in {"Deployment", "DaemonSet", "StatefulSet", "ReplicaSet", "Job"}:
+            template = entries(spec).get("template")
+        else:
+            return
+        pod_spec = entries(template).get("spec")
+        if pod_spec is not None:
+            inspect_pod_spec(pod_spec)
+
+    try:
+        documents = yaml.compose_all(source)
+        for document in documents:
+            if document is None:
                 continue
-            elif add_indent is not None:
-                if indent <= add_indent and not stripped.startswith("-"):
-                    add_indent = None
-                elif indent > add_indent and re.match(r"(?i)^-\s*['\"]?ALL['\"]?(?:\s|,|]|$)", stripped):
-                    _add_finding(findings, seen, "kubernetes.capabilities-all", relative, number)
-
-        if re.match(r"(?i)^\s*privileged\s*:\s*true\s*$", line):
-            _add_finding(findings, seen, "kubernetes.privileged", relative, number)
-        elif re.match(r"(?i)^\s*allowPrivilegeEscalation\s*:\s*true\s*$", line):
-            _add_finding(findings, seen, "kubernetes.privilege-escalation", relative, number)
-        elif re.match(r"(?i)^\s*runAsUser\s*:\s*['\"]?0['\"]?\s*$", line) or re.match(r"(?i)^\s*runAsNonRoot\s*:\s*false\s*$", line):
-            _add_finding(findings, seen, "kubernetes.run-as-root", relative, number)
-        elif re.match(r"(?i)^\s*(?:hostNetwork|hostPID|hostIPC)\s*:\s*true\s*$", line):
-            _add_finding(findings, seen, "kubernetes.host-namespace", relative, number)
-        elif re.match(r"(?i)^\s*hostPath\s*:", line):
-            _add_finding(findings, seen, "kubernetes.host-path", relative, number)
-
+            fields = entries(document)
+            if value(fields.get("apiVersion")) and value(fields.get("kind")):
+                inspect_resource(document)
+    except yaml.YAMLError:
+        return
 
 def _scan_line_rules(line: str, relative: str, number: int, checks: set[str], findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
     if "secrets" in checks:

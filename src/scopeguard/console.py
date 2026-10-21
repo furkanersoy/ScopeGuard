@@ -171,7 +171,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
 
 
 def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, secrets_only: bool) -> bool:
-    section = "Secret Detection / Gizli Bilgi Taraması" if secrets_only else "Source Code & Configuration / Kaynak Kod ve Yapılandırma"
+    section = "Secret Detection / Gizli Bilgi Taraması" if secrets_only else "Source, Configuration & Dockerfile / Kaynak Kod, Yapılandırma ve Dockerfile"
     output.write(f"\n{section}\n")
     output.write("This scan is local and offline. It does not execute source code or build containers.\n")
     output.write("Bu tarama yerel ve çevrimdışıdır. Kaynak kodu çalıştırmaz veya konteyner imajı oluşturmaz.\n")

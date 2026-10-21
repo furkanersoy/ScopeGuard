@@ -27,7 +27,7 @@ def _load(path: Path) -> dict[str, Any]:
 def _key(finding: dict[str, Any]) -> str:
     identity = {
         name: finding.get(name)
-        for name in ("rule_id", "file", "line", "package", "version", "vulnerability_id")
+        for name in ("rule_id", "file", "line", "package", "version", "vulnerability_id", "check_id", "identity", "operation")
     }
     return json.dumps(identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 

@@ -1,6 +1,6 @@
 # ScopeGuard — Mimari ve Geliştirme Yol Haritası
 
- > Durum: API senaryo denetimi, çevrimdışı kaynak/IaC taraması, isteğe bağlı OSV sorgusu ve yerel çok biçimli raporlama uygulanmıştır.
+> Durum: API senaryo denetimi, çevrimdışı kaynak/IaC taraması, isteğe bağlı OSV sorgusu ve yerel çok biçimli raporlama uygulanmıştır.
 
 ## 1. Proje özeti
 
@@ -90,7 +90,7 @@ scopeguard validate --spec examples/api/openapi.yaml --config examples/scopeguar
 scopeguard plan --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
 scopeguard coverage --spec examples/api/openapi.yaml --config examples/scopeguard.yaml
 scopeguard run --spec examples/api/openapi.yaml --config examples/scopeguard.yaml --output report.json
-scopeguard report report.json
+scopeguard inspect --path . --checks secrets python config docker kubernetes terraform --output local.json --html-output local.html
 ```
 
 İlk demo, repodaki örnek API'yi yerelde başlatır. API ve yerel tarama örnekleri dış ağa erişmeden çalışır. Bağımlılık denetimi, kullanıcı açıkça izin verdiğinde paket kimliği/sürüm bilgilerini OSV'ye HTTPS ile gönderir.

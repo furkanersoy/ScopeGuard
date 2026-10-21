@@ -10,6 +10,8 @@ scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets
 
 On Windows before installing the console command, use `.\ScopeGuard.bat inspect ...` with the same arguments. In the interactive menu, choose **Select Local Security Checks**, enter the fixture directory, and keep or enter `secrets,python,config,docker,kubernetes`.
 
+To compare with safe patterns, scan `examples/local-scan/secure-patterns` using the same command flags and change the output filenames. That scan is expected to report zero findings and exit with status `0`.
+
 ## Expected findings
 
 The scanner should report the following rule IDs. The exact line number is shown in the generated report.

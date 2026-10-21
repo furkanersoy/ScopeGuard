@@ -2,7 +2,7 @@
 
 [English version](README.md) | Türkçe
 
-**Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını ve yerel kaynak kodu/yapılandırma dosyalarındaki seçili riskli kalıpları denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, Türkçe/İngilizce bulgu açıklamaları ve yerel JSON, Markdown ve SARIF raporları sunar.
+**Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını ve yerel kaynak kodu, yapılandırma ve Dockerfile dosyalarındaki seçili risk kalıplarını denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, Türkçe/İngilizce bulgu açıklamaları ve yerel JSON, Markdown ve SARIF raporları sunar.
 
 ## Güncel özellikler
 
@@ -12,7 +12,7 @@
 - `GET /vulnerable/records/{id}` nesne düzeyinde yetkilendirme hatasını göstermek için bilerek savunmasız bırakılmıştır.
 - `scopeguard validate` OpenAPI belgesini ve YAML senaryosunu ağ erişimi olmadan doğrular.
 - `scopeguard run` yalnızca senaryoda açıkça tanımlanan salt okunur `GET` isteklerini gönderir ve yerel rapor oluşturur.
-- `scopeguard inspect` seçilen kaynak kodu/yapılandırma kalıplarını kodu çalıştırmadan ve ağa bağlanmadan tarar.
+- `scopeguard inspect` seçilen kaynak kodu, yapılandırma ve Dockerfile kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar.
 - Uzak hedef için yapılandırmada tam HTTPS sunucu/port izin listesi ve çalıştırırken ayrıca `--allow-remote` gerekir.
 
 ## Hızlı başlangıç (Windows)
@@ -23,7 +23,7 @@
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
 5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
-Yerel kaynak kodunu doğrudan taramak için ` .\ScopeGuard.bat inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr` komutunu kullan. Gerçek servisleri yalnızca açıkça yetkilendirildiğin test kapsamlarında çalıştır.
+Yerel kaynak kodunu doğrudan taramak için ` .\ScopeGuard.bat inspect --path . --checks secrets python config docker --output inspect.json --markdown-output inspect.md --language tr` komutunu kullan. Gerçek servisleri yalnızca açıkça yetkilendirildiğin test kapsamlarında çalıştır.
 
 ### Sanal ortam oluşturmadan çalıştırma
 
@@ -41,7 +41,7 @@ Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı 
 | Komut | Ne yapar? | Ağ kullanımı |
 | --- | --- | --- |
 | `init` | Anonim erişim, BOLA/IDOR, BFLA veya özel GET durum kodu kontrolleri için senaryo oluşturur. | Yok |
-| `inspect` | Sabit sır, riskli Python kalıpları ve yapılandırma kontrollerinden seçilenleri yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
+| `inspect` | Sabit sır, riskli Python kalıpları, yapılandırma ve Dockerfile güvenlik kontrollerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
 | `validate` | OpenAPI belgesini ve senaryo yapılandırmasını doğrular. | Yok |
 | `plan` | Senaryodaki istekleri ve kimlikleri önizler. | Yok; token okunmaz |
 | `coverage` | Kimlik/uç nokta kontrollerini matriste gösterir; `--strict` zorunlu kapsamı uygular. | Yok; token okunmaz |
@@ -69,7 +69,7 @@ python3 -m venv .venv
 python -m pip install .
 ```
 
-Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez çalıştırıp `./scopeguard.sh` ile başlatabilirsin. Betik ilk açılışta sanal ortamı kurar, sonraki çalıştırmalarda tekrar kullanır. Komutları doğrudan da betiğe iletebilirsin: `./scopeguard.sh inspect --path . --checks secrets python config`.
+Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez çalıştırıp `./scopeguard.sh` ile başlatabilirsin. Betik ilk açılışta sanal ortamı kurar, sonraki çalıştırmalarda tekrar kullanır. Komutları doğrudan da betiğe iletebilirsin: `./scopeguard.sh inspect --path . --checks secrets python config docker`.
 
 Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
 
@@ -78,7 +78,7 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 `scopeguard` komutunu argümansız çalıştır veya Windows'ta `ScopeGuard.bat` dosyasına çift tıklayarak iki dilli başlangıç menüsünü aç:
 
 1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve tanımlı kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı OpenAPI dosyasını, GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen durum kodlarını sorar. Kontrolleri çalıştırırken giriş dosyaları, yerel rapor yolu ve rapor dili seçilir; JSON, Markdown ve SARIF raporları bilgisayara yazılır. Dahil edilen demo üzerinde çalıştırmak için önce ikinci bir terminalde demo API'yi başlat.
-2. **Kaynak Kodu ve Yapılandırma** — seçilen yerel dosya veya klasörde desteklenen Python ve yapılandırma risk kalıplarını tarar. Tarama yolunu, JSON ve Markdown rapor yollarını ve rapor dilini sorar. Dosyaları çalıştırmaz ve herhangi bir servise bağlanmaz.
+2. **Kaynak Kodu ve Yapılandırma** — seçilen yerel dosya veya klasörde desteklenen Python, yapılandırma ve Dockerfile risk kalıplarını tarar. Tarama yolunu, JSON ve Markdown rapor yollarını ve rapor dilini sorar. Dosyaları çalıştırmaz ve herhangi bir servise bağlanmaz.
 3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit kodlanmış gizli bilgi kalıplarını arar ve JSON ile Markdown raporlarını yerel olarak kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
 4. **Gelişmiş komut konsolu** — standart CLI komutlarını (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage` ve `run`) kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz. Menüde geri dönmek veya çıkmak için `0` seçeneğini kullan.
 
@@ -86,15 +86,15 @@ Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk i�
 
 ## Yerel kaynak kodu ve yapılandırma taraması
 
-ScopeGuard, API denetimlerinden bağımsız olarak yerel kaynak kodu ve yapılandırma dosyalarını inceleyebilir. Desteklenen metin dosyalarını okur; kodu çalıştırmaz ve ağa bağlanmaz. Kontroller sabit atanmış olabilecek kimlik bilgilerini, `eval`/`exec`, güvensiz nesne veya YAML açma, `shell=True`, TLS doğrulamasını kapatma ve bazı güvensiz yapılandırma kalıplarını arar. Bulgu raporunda kaynak kod parçaları ve bulunan sır değerleri yer almaz.
+ScopeGuard, API denetimlerinden bağımsız olarak yerel kaynak kodu ve yapılandırma dosyalarını inceleyebilir. Desteklenen metin dosyalarını okur; kodu çalıştırmaz ve ağa bağlanmaz. Kontroller sabit atanmış olabilecek kimlik bilgilerini, `eval`/`exec`, güvensiz nesne veya YAML açma, `shell=True`, TLS doğrulamasını kapatma ve bazı güvensiz yapılandırma kalıplarını arar. Dockerfile kontrolleri son imaj aşamasında root kullanıcı kullanımını, digest ile sabitlenmemiş taban imajlarını ve kimlik bilgisine benzeyen ARG/ENV atamalarını inceler. Bulgu raporunda kaynak kod parçaları ve bulunan sır değerleri yer almaz.
 
 Tüm kontrolleri çalıştırıp JSON ve Türkçe Markdown raporu oluştur:
 
 ```powershell
-scopeguard inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr
+scopeguard inspect --path . --checks secrets python config docker --output inspect.json --markdown-output inspect.md --language tr
 ```
 
-`--checks` için `secrets`, `python` ve `config` seçeneklerinden bir veya birkaçını belirt. Örneğin yalnızca Python kalıpları için `--checks python` kullan. Yaygın sanal ortam, bağımlılık ve derleme klasörleri atlanır; 1 MB üzerindeki dosyalar incelenmez. Bulgu bulunduğunda komut `1` çıkış kodu verir. Raporu açıp her bulguyu doğrula; sezgisel kontroller yanlış pozitif üretebilir.
+`--checks` için `secrets`, `python`, `config` ve `docker` seçeneklerinden bir veya birkaçını belirt. `docker` Dockerfile dosyalarını çevrimdışı inceler; imaj oluşturmaz ve kayıt sunucularına bağlanmaz. Örneğin yalnızca Python kalıpları için `--checks python` kullan. Yaygın sanal ortam, bağımlılık ve derleme klasörleri atlanır; 1 MB üzerindeki dosyalar incelenmez. Bulgu bulunduğunda komut `1` çıkış kodu verir. Raporu açıp her bulguyu doğrula; sezgisel kontroller yanlış pozitif üretebilir.
 
 ## API senaryosu oluşturma
 

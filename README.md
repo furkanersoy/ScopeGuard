@@ -2,7 +2,7 @@
 
 [English](README.md) | [Turkish version](README.tr.md)
 
-**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source, configuration, Dockerfile, and Kubernetes manifest patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, bilingual findings, and local JSON, Markdown, and SARIF reports.
+**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source, configuration, Dockerfile, and Kubernetes manifest and Terraform configuration patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, bilingual findings, and local JSON, Markdown, and SARIF reports.
 
 ## Current milestone
 
@@ -12,7 +12,7 @@
 - `GET /vulnerable/records/{id}` intentionally demonstrates a broken object-level authorization check.
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
 - `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
-- `scopeguard inspect` scans selected local source, configuration, Dockerfile, and Kubernetes manifest patterns without executing code, building containers, or using the network.
+- `scopeguard inspect` scans selected local source, configuration, Dockerfile, and Kubernetes manifest and Terraform configuration patterns without executing code, building containers, or using the network.
 - API and local inspection reports can be saved as JSON, Markdown, and SARIF 2.1.0 files at user-selected local paths. ScopeGuard does not upload reports.
 - Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
 
@@ -24,7 +24,7 @@
 4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
 5. Run `exit` in the first window to leave the interactive console. To run a command directly from PowerShell, prefix it with `ScopeGuard.bat`, for example `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
-To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
+To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
 
 To install without creating a project `.venv`, run `py -3 -m pip install --user .` from the repository folder, then start ScopeGuard with `py -3 -m scopeguard`. This installs dependencies into your user Python account. The launcher is recommended when you want to keep ScopeGuard dependencies isolated from other Python tools.
 
@@ -33,7 +33,7 @@ To install without creating a project `.venv`, run `py -3 -m pip install --user 
 | Command | What it checks or does | Network use |
 | --- | --- | --- |
 | `init` | Creates scenarios for anonymous access, BOLA/IDOR, BFLA, or custom GET status checks. | None |
-| `inspect` | Selects local checks for hard-coded secrets, risky Python patterns, configuration, Dockerfile hardening, and Kubernetes manifest risks. | None; source code is not run |
+| `inspect` | Selects local checks for hard-coded secrets, risky Python patterns, configuration, Dockerfile hardening, and Kubernetes manifest and Terraform risks. | None; source code is not run |
 | `validate` | Validates the OpenAPI document and scenario configuration. | None |
 | `plan` | Shows the exact requests and identities in a scenario. | None; tokens are not read |
 | `coverage` | Shows configured identity/endpoint pairs; `--strict` enforces required coverage. | None; tokens are not read |
@@ -68,7 +68,7 @@ Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) fo
 Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows) to open the bilingual menu:
 
 1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run the configured checks. Scenario creation asks for an OpenAPI file, selected GET operations, sample path values, identities, and expected status codes. Running checks asks for the input files, local report path, and report language; JSON, Markdown, and SARIF reports are saved locally. To run checks against the included demo, start it in a second terminal first.
-2. **Select Local Security Checks** — choose one or more categories separated by commas: `secrets`, `python`, `config`, `docker`, and `kubernetes`. The default is `python,config,docker,kubernetes`; secret scanning remains a separate main-menu shortcut. The selected local file or folder is scanned offline, without executing code, building images, or connecting to a Kubernetes cluster. The menu asks for JSON, Markdown, and SARIF report paths.
+2. **Select Local Security Checks** — choose one or more categories separated by commas: `secrets`, `python`, `config`, `docker`, `kubernetes`, `terraform`, and `terraform`. The default is `python,config,docker,kubernetes,terraform,terraform`; secret scanning remains a separate main-menu shortcut. The selected local file or folder is scanned offline, without executing code, building images, or connecting to a Kubernetes cluster. The menu asks for JSON, Markdown, and SARIF report paths.
 3. **Secret Detection** — scans a selected local file or folder for supported hard-coded secret patterns and saves local JSON, Markdown, and SARIF reports. It does not print matched secret values.
 4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.
 
@@ -79,7 +79,7 @@ The local inspection checks are heuristic and need human review. Use quoted path
 After cloning or downloading the project, double-click `ScopeGuard.bat`. On its first launch it creates a private `.venv` folder and installs ScopeGuard and its dependencies. Later launches reuse that setup. You do not need to activate the environment or type setup commands yourself. Python 3.11 or newer and an internet connection are needed for the first setup. You can pass normal ScopeGuard arguments to the launcher from PowerShell, too:
 
 ```powershell
-.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes --language tr
+.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --language tr
 ```
 
 On Linux or macOS, make the launcher executable once with `chmod +x scopeguard.sh`, then run `./scopeguard.sh`. It performs the same first-run setup and opens the interactive console. Arguments can be passed after the script name.
@@ -102,15 +102,15 @@ ScopeGuard can inspect local source, configuration, Dockerfile, and Kubernetes m
 Run all local inspection checks and save JSON, Markdown, and SARIF reports on your computer:
 
 ```powershell
-scopeguard inspect --path . --checks secrets python config docker kubernetes --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language en
+scopeguard inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language en
 ```
 
-Use `--checks` with one or more of `secrets`, `python`, `config`, `docker`, and `kubernetes` to choose categories. The `docker` check examines Dockerfiles offline for selected container hardening issues; it does not build images or contact registries. The `kubernetes` check applies static heuristics to YAML manifests for selected pod and container security settings; it does not connect to a cluster. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The reports contain file names and line numbers but omit source snippets and matched secret values. The optional SARIF 2.1.0 file maps high/medium/low findings to error/warning/note and includes localized descriptions and remediation guidance. It is written locally; ScopeGuard does not upload it. The command returns exit status `1` when it finds findings; inspect the report and verify each result.
+Use `--checks` with one or more of `secrets`, `python`, `config`, `docker`, `kubernetes`, `terraform`, and `terraform` to choose categories. The `docker` check examines Dockerfiles offline for selected container hardening issues; it does not build images or contact registries. The `kubernetes` check applies static heuristics to YAML manifests for selected pod and container security settings; it does not connect to a cluster. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The reports contain file names and line numbers but omit source snippets and matched secret values. The optional SARIF 2.1.0 file maps high/medium/low findings to error/warning/note and includes localized descriptions and remediation guidance. It is written locally; ScopeGuard does not upload it. The command returns exit status `1` when it finds findings; inspect the report and verify each result.
 
-Try the safe, synthetic fixtures in [examples/local-scan](examples/local-scan/README.md). They demonstrate expected findings across all five categories and list the rule IDs and severities. The fixture README explains the report evidence fields and remediation guidance. Findings are expected, so this sample command exits with status `1`:
+Try the safe, synthetic fixtures in [examples/local-scan](examples/local-scan/README.md). They demonstrate expected findings across all six categories and list the rule IDs and severities. The fixture README explains the report evidence fields and remediation guidance. Findings are expected, so this sample command exits with status `1`:
 
 ```powershell
-scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language en
+scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes terraform --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language en
 ```
 
 For the safe comparison set, scan `examples/local-scan/secure-patterns` with the same options and different output filenames. It is expected to produce zero findings and exit with status `0`.

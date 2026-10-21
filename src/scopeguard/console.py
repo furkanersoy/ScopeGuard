@@ -173,8 +173,8 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
 def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, secrets_only: bool) -> bool:
     section = "Secret Detection / Gizli Bilgi Taraması" if secrets_only else "Local Security Checks / Yerel Güvenlik Kontrolleri"
     output.write(f"\n{section}\n")
-    output.write("This scan is local and offline. It does not execute source code or build containers.\n")
-    output.write("Bu tarama yerel ve çevrimdışıdır. Kaynak kodu çalıştırmaz veya konteyner imajı oluşturmaz.\n")
+    output.write("This scan is local and offline. It does not execute code, build images, or connect to a Kubernetes cluster.\n")
+    output.write("Bu tarama yerel ve çevrimdışıdır. Kod çalıştırmaz, imaj oluşturmaz veya Kubernetes kümesine bağlanmaz.\n")
     path = _answer(source, output, "File or folder to inspect / İncelenecek dosya veya klasör", ".")
     if path is None:
         return False
@@ -253,7 +253,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
         output.write(
             "Main menu / Ana menü:\n"
             "  1. API Security / API Güvenliği\n"
-            "  2. Source Code & Configuration / Kaynak Kod ve Yapılandırma\n"
+            "  2. Select Local Security Checks / Yerel Güvenlik Kontrollerini Seç\n"
             "  3. Secret Detection / Gizli Bilgi Taraması\n"
             "  4. Advanced command console / Gelişmiş komut konsolu\n"
             "  0. Exit / Çıkış\n"

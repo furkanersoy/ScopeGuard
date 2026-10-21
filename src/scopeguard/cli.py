@@ -55,7 +55,7 @@ def _parser() -> argparse.ArgumentParser:
 
     inspect = subparsers.add_parser("inspect", help="Scan local source, configuration, Dockerfile, and Kubernetes patterns offline; never executes scanned code.")
     inspect.add_argument("--path", required=True, type=Path, help="File or directory to inspect")
-    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config", "docker", "kubernetes"), default=["secrets", "python", "config", "docker", "kubernetes"], help="Checks: secrets, python, config, docker (default: all)")
+    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config", "docker", "kubernetes"), default=["secrets", "python", "config", "docker", "kubernetes"], help="Checks: secrets, python, config, docker, kubernetes (default: all)")
     inspect.add_argument("--output", type=Path, default=Path("scopeguard-inspect.json"), help="Local JSON report path")
     inspect.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")

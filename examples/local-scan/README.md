@@ -5,16 +5,16 @@ These files are inert examples for checking ScopeGuard's local static scanner. T
 From the repository root, scan the fixture directory with all local checks:
 
 ```powershell
-scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language en
+scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes terraform --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language en
 ```
 
-On Windows before installing the console command, use `.\ScopeGuard.bat inspect ...` with the same arguments. In the interactive menu, choose **Select Local Security Checks**, enter the fixture directory, and keep or enter `secrets,python,config,docker,kubernetes`.
+On Windows before installing the console command, use `.\ScopeGuard.bat inspect ...` with the same arguments. In the interactive menu, choose **Select Local Security Checks**, enter the fixture directory, and keep or enter `secrets,python,config,docker,kubernetes,terraform`.
 
 To compare with safe patterns, scan `examples/local-scan/secure-patterns` using the same command flags, including `--sarif-output`, and change the output filenames. That scan is expected to report zero findings and exit with status `0`.
 
 ## Expected findings
 
-The scanner should report the following rule IDs. The exact line number is shown in the generated report.
+The scanner should report the following rule IDs. The exact line number is shown in the generated report. Terraform checks are textual heuristics for the named AWS resource blocks; the scanner does not evaluate Terraform expressions, provider plans, or cloud state.
 
 | Fixture | Expected rule IDs | Severity |
 | --- | --- | --- |
@@ -22,6 +22,7 @@ The scanner should report the following rule IDs. The exact line number is shown
 | `settings.yaml` | `config.debug-enabled`, `config.tls-verify-disabled`, `config.cors-wildcard` | Medium |
 | `.env.example` | `secret.hardcoded` | High; the synthetic value is omitted from reports |
 | `Dockerfile` | `docker.mutable-base-image`, `docker.build-arg-secret`, `docker.root-user` | Low, High, Medium respectively |
+| `insecure.tf` | `terraform.public-ingress`, `terraform.public-s3-acl`, `terraform.s3-public-access-disabled`, `terraform.database-publicly-accessible`, `terraform.storage-unencrypted` | High except `terraform.storage-unencrypted` (Medium) |
 | `kubernetes-deployment.yaml` | `kubernetes.privileged`, `kubernetes.privilege-escalation`, `kubernetes.run-as-root`, `kubernetes.host-namespace`, `kubernetes.capabilities-all`, `kubernetes.host-path` | High except `kubernetes.privilege-escalation` (Medium) |
 
 ## Reading the report

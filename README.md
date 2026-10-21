@@ -13,7 +13,7 @@
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
 - `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
 - `scopeguard inspect` scans selected local source, configuration, Dockerfile, and Kubernetes manifest patterns without executing code, building containers, or using the network.
-- API finding reports support Turkish and English; JSON and Markdown reports stay on the paths selected by the user. SARIF output is available for API runs.
+- API and local inspection reports can be saved as JSON, Markdown, and SARIF 2.1.0 files at user-selected local paths. ScopeGuard does not upload reports.
 - Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
 
 ## Quick start (Windows)

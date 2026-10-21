@@ -85,6 +85,12 @@ def _show_help(output: TextIO) -> None:
         "          [--suppressions scopeguard-ignore.yaml]\n"
         "      EN: Select local check categories and save JSON, Markdown, and optional SARIF reports; scans are offline and never execute code.\n"
         "      TR: Yerel kontrol kategorilerini seçip JSON, Markdown ve isteğe bağlı SARIF raporu kaydeder; tarama çevrimdışıdır, kod çalıştırmaz.\n"
+        "  dependencies --path <folder> --allow-network [--output report.json] [--sarif-output report.sarif]\n"
+        "      EN: Query pinned lockfile package versions against OSV; package names and versions are sent over HTTPS.\n"
+        "      TR: Sabitlenmiş kilit dosyası sürümlerini OSV'ye sorar; paket adı ve sürümleri HTTPS ile gönderilir.\n"
+        "  compare --previous <report.json> --current <report.json> [--output diff.json]\n"
+        "      EN: Compare local findings; exit 1 if new active findings appear.\n"
+        "      TR: Yerel raporları karşılaştırır; yeni etkin bulgu varsa 1 ile çıkar.\n"
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"
@@ -218,6 +224,46 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     return True
 
 
+def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    output.write("\nDependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n")
+    output.write("This check sends exact package names and versions from supported lockfiles to OSV over HTTPS. No files or source code are uploaded.\n")
+    output.write("Bu kontrol desteklenen kilit dosyalarındaki paket adı ve sürümlerini HTTPS ile OSV'ye gönderir. Dosyalar veya kaynak kod yüklenmez.\n")
+    path = _answer(source, output, "Lockfile or folder / Kilit dosyası veya klasör", ".")
+    if path is None:
+        return False
+    consent = _answer(source, output, "Send package names and versions to OSV? [y/N] / Paket adı ve sürümleri OSV'ye gönderilsin mi? [e/H]", "n")
+    if consent is None:
+        return False
+    if consent.lower() not in {"y", "yes", "e", "evet"}:
+        output.write("Online dependency check skipped / Çevrimiçi bağımlılık kontrolü atlandı.\n")
+        return True
+    report = _answer(source, output, "JSON report path / JSON rapor yolu", "scopeguard-dependencies.json")
+    if report is None:
+        return False
+    markdown = _answer(source, output, "Markdown report path / Markdown rapor yolu", _report_sidecar(report, ".md"))
+    if markdown is None:
+        return False
+    sarif = _answer(source, output, "SARIF report path / SARIF rapor yolu", _report_sidecar(report, ".sarif"))
+    if sarif is None:
+        return False
+    html_report = _answer(source, output, "HTML report path / HTML rapor yolu", _report_sidecar(report, ".html"))
+    if html_report is None:
+        return False
+    suppressions = _answer(source, output, "Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter)", "")
+    if suppressions is None:
+        return False
+    language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
+    if language is None:
+        return False
+    args = ["dependencies", "--path", path, "--allow-network", "--output", report,
+            "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report,
+            "--language", language]
+    if suppressions:
+        args.extend(["--suppressions", suppressions])
+    _dispatch(command_handler, args, output)
+    return True
+
+
 def _command_console(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, initial_line: str | None = None) -> bool:
     output.write("\nAdvanced command console / Gelişmiş komut konsolu. Type 'menu' to return.\n")
     while True:
@@ -270,6 +316,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             "  2. Select Local Security Checks / Yerel Güvenlik Kontrollerini Seç\n"
             "  3. Secret Detection / Gizli Bilgi Taraması\n"
             "  4. Advanced command console / Gelişmiş komut konsolu\n"
+            "  5. Dependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n"
             "  0. Exit / Çıkış\n"
         )
         choice = _answer(source, output, "Choose a section / Bölüm seçin", "0")
@@ -291,12 +338,16 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
         elif choice == "4":
             if not _command_console(command_handler, source, output):
                 return
+        elif choice == "5":
+            if not _dependencies_menu(command_handler, source, output):
+                output.write("ScopeGuard closed.\\n")
+                return
         elif choice.lower() in {"help", "?"}:
             _show_help(output)
         elif choice.lower() == "version":
             output.write(f"ScopeGuard {__version__}\n")
         elif choice.strip().isdigit():
-            output.write("Choose 1, 2, 3, 4, or 0 / 1, 2, 3, 4 veya 0 seçin.\n")
+            output.write("Choose 1, 2, 3, 4, 5, or 0 / 1, 2, 3, 4, 5 veya 0 seçin.\n")
         else:
             if not _command_console(command_handler, source, output, initial_line=choice):
                 return

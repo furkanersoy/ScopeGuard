@@ -95,6 +95,8 @@ def _execute(args: argparse.Namespace) -> int:
         if args.html_output:
             outputs.append(args.html_output)
         try:
+            if args.suppressions and args.suppressions.resolve() in {item.resolve() for item in outputs}:
+                raise ValidationError("report outputs must not overwrite the suppressions file")
             report = inspect_path(args.path, args.checks, args.language, output_paths=outputs)
             apply_suppressions(report, args.suppressions)
             write_local_reports(report, args.output, args.markdown_output, args.sarif_output, args.html_output)
@@ -118,6 +120,8 @@ def _execute(args: argparse.Namespace) -> int:
             if candidate is not None:
                 outputs.append(candidate)
         try:
+            if args.suppressions and args.suppressions.resolve() in {item.resolve() for item in outputs}:
+                raise ValidationError("report outputs must not overwrite the suppressions file")
             validate_dependency_outputs(args.path, outputs)
             report = scan_dependencies(args.path, args.language)
             apply_suppressions(report, args.suppressions)

@@ -144,7 +144,11 @@ CLI
  ├─ Scenario Planner
  ├─ HTTP Client (rate/time/body limits)
  ├─ Check Runner
- ├─ Offline Local Scanner (source, config, Docker, Kubernetes, selected Terraform rules)\n ├─ Dependency Auditor (lockfile parsers + explicit OSV HTTPS client)\n ├─ Suppression Filter (rule/path + reason + expiry)\n ├─ Report Comparator (active findings)\n └─ Report Builder (terminal + JSON/Markdown/SARIF/HTML)
+ ├─ Offline Local Scanner (source, config, Docker, Kubernetes, selected Terraform rules)
+ ├─ Dependency Auditor (lockfile parsers + explicit OSV HTTPS client)
+ ├─ Suppression Filter (rule/path + reason + expiry)
+ ├─ Report Comparator (active findings)
+ └─ Report Builder (terminal + JSON/Markdown/SARIF/HTML)
 
 Local Demo API ── Seeded synthetic users, tenants, and records
 ```
@@ -173,7 +177,9 @@ Local Demo API ── Seeded synthetic users, tenants, and records
 4. Scope Policy her planlanan isteği gönderimden hemen önce denetler.
 5. HTTP Client istekleri sınırlar dahilinde gönderir.
 6. Runner yalnızca test için gereken yanıt metaverisini değerlendirir.
-7. Report Builder PASS/FAIL/SKIPPED/ERROR sonuçlarını ve genel özeti üretir.\n8. Yerel tarama ve bağımlılık komutları bulgulara gerekçeli istisnaları uygular, istenen rapor biçimlerini yazar.\n9. `compare` önceki ve güncel JSON raporlarını çevrimdışı karşılaştırır.
+7. Report Builder PASS/FAIL/SKIPPED/ERROR sonuçlarını ve genel özeti üretir.
+8. Yerel tarama ve bağımlılık komutları bulgulara gerekçeli istisnaları uygular, istenen rapor biçimlerini yazar.
+9. `compare` önceki ve güncel JSON raporlarını çevrimdışı karşılaştırır.
 
 ## 6. Sonuçların anlamı
 
@@ -269,12 +275,20 @@ Yanıt kontrolleri JSON gövdesini bellekte ayrıştırır; rapor yalnızca JSON
 
 İlk otomatik testler, girdi doğrulamasını ve sentetik API üzerindeki BOLA senaryosunu kapsar. GitHub Actions Python 3.11 ve 3.13 matrisinde birim/entegrasyon testlerini ve örnek yapılandırma doğrulamasını çalıştırır.
 
-### Aşama 6 — İleri özellikler (MVP sonrasına bırakıldı)
+### Aşama 6 — Yerel güvenlik ve raporlama geliştirmeleri (uygulandı)
 
-- Kontrollü özellik düzeyi yazma testleri ve disposable fixture'lar
-- Tenant/rol matrisini otomatik üretme
-- Markdown/HTML raporu
-- Ek kimlik sağlayıcıları ve CI entegrasyonları
+- [x] Yerel Python, sır, yapılandırma, Docker, Kubernetes ve seçili Terraform kontrolleri
+- [x] Gerekçeli ve bitiş tarihli bulgu istisnaları
+- [x] İsteğe bağlı OSV bağımlılık sorgusu
+- [x] JSON/Markdown/SARIF/HTML raporları ve rapor karşılaştırma komutu
+- [x] GitHub Actions taraması; elle başlatılan, varsayılan kapalı SARIF yükleme
+
+### Gelecek geliştirmeler
+
+- Kontrollü özellik düzeyi yazma testleri ve geçici test verileri
+- Tenant/rol matrisi üretimi ve ek kimlik sağlayıcıları
+- Terraform için tam HCL ayrıştırma ve daha geniş sağlayıcı kapsamı
+- Kullanıcı tarafından tanımlı özel statik kural paketi
 
 ## 9. MVP kabul ölçütleri
 

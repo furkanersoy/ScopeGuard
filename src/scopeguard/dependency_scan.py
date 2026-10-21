@@ -10,7 +10,6 @@ import tomllib
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote
 from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
 
 from .config import ValidationError
@@ -128,11 +127,12 @@ def _collect(path: Path) -> tuple[dict[tuple[str, str, str], list[dict[str, Any]
         raise ValidationError("dependency scan root must not be a symbolic link")
     if not path.exists():
         raise ValidationError(f"dependency scan path does not exist: {path}")
-    if path.is_file():
-        files = [path] if _eligible(path) else []
-    elif path.is_dir():
+    root = path.absolute()
+    if root.is_file():
+        files = [root] if _eligible(root) else []
+    elif root.is_dir():
         files = []
-        for current, dirs, names in os.walk(path, followlinks=False):
+        for current, dirs, names in os.walk(root, followlinks=False):
             dirs[:] = [item for item in dirs if item not in _SKIP_DIRS and not (Path(current) / item).is_symlink()]
             for name in names:
                 candidate = Path(current) / name
@@ -146,7 +146,6 @@ def _collect(path: Path) -> tuple[dict[tuple[str, str, str], list[dict[str, Any]
 
     found: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     scanned_files = 0
-    root = path.absolute()
     for candidate in files:
         try:
             if candidate.stat().st_size > MAX_LOCKFILE_BYTES:
@@ -218,7 +217,8 @@ def _query_osv(queries: list[dict[str, str]]) -> list[dict[str, Any]]:
 
 
 def _severity(vulnerability: dict[str, Any]) -> str:
-    value = vulnerability.get("database_specific", {}).get("severity", "")
+    metadata = vulnerability.get("database_specific", {})
+    value = metadata.get("severity", "") if isinstance(metadata, dict) else ""
     normalized = str(value).strip().lower()
     return normalized if normalized in {"critical", "high", "medium", "moderate", "low"} else "unknown"
 

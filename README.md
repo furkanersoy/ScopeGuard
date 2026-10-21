@@ -41,7 +41,9 @@ To install without creating a project `.venv`, run `py -3 -m pip install --user 
 | `validate` | Validates the OpenAPI document and scenario configuration. | None |
 | `plan` | Shows the exact requests and identities in a scenario. | None; tokens are not read |
 | `coverage` | Shows configured identity/endpoint pairs; `--strict` enforces required coverage. | None; tokens are not read |
-| `run` | Sends configured read-only GET checks to the scoped target and writes local reports. | Yes, to the configured target only |\n| `dependencies` | Checks pinned versions in supported lockfiles against OSV; requires `--allow-network`. | Yes; package names, ecosystems, and versions only |\n| `compare` | Compares two ScopeGuard JSON reports. | None |
+| `run` | Sends configured read-only GET checks to the scoped target and writes local reports. | Yes, to the configured target only |
+| `dependencies` | Checks pinned versions in supported lockfiles against OSV; requires `--allow-network`. | Yes; package names, ecosystems, and versions only |
+| `compare` | Compares two ScopeGuard JSON reports. | None |
 
 The `inspect` checks are static heuristics, not a complete scanner. They do not test a live web service. API scenarios test only explicitly configured GET operations and expected outcomes; they do not fuzz endpoints or infer the application's authorization policy.
 
@@ -74,7 +76,8 @@ Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows)
 1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run configured checks. Scenario creation asks for an OpenAPI file, selected GET operations, sample path values, identities, and expected status codes. API runs save JSON, Markdown, SARIF, and HTML reports locally. Start the included demo in a second terminal before running its checks.
 2. **Select Local Security Checks** — choose one or more categories separated by commas: `secrets`, `python`, `config`, `docker`, `kubernetes`, and `terraform`. The default is `python,config,docker,kubernetes,terraform`; secret scanning remains a separate main-menu shortcut. The selected local file or folder is scanned offline, without executing code, building images, or connecting to a Kubernetes cluster. The menu asks for JSON, Markdown, SARIF, and HTML report paths and can load an optional suppression YAML.
 3. **Secret Detection** — scans a selected local file or folder for supported hard-coded secret patterns and saves local JSON, Markdown, SARIF, and HTML reports. It does not print matched secret values.
-4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `init`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.\n5. **Dependency Vulnerability Check** — selects a lockfile or folder and asks before sending exact package names and versions to OSV over HTTPS. It saves local JSON, Markdown, SARIF, and HTML reports.
+4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `init`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.
+5. **Dependency Vulnerability Check** — selects a lockfile or folder and asks before sending exact package names and versions to OSV over HTTPS. It saves local JSON, Markdown, SARIF, and HTML reports.
 
 The local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
 
@@ -103,10 +106,10 @@ This avoids a project `.venv` and a manual activation step. It installs dependen
 
 ScopeGuard can inspect local source, configuration, Dockerfile, and Kubernetes manifest files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS, plus Dockerfile checks for root execution, mutable base image references, and credential-like ARG/ENV assignments, Kubernetes checks for selected Pod/Workload security fields including privileged containers, privilege escalation, root execution, host namespaces, hostPath mounts, and added ALL capabilities. Terraform checks use textual heuristics for selected AWS security-group, S3, database, and storage settings; they do not evaluate modules, expressions, provider plans, or cloud state. Kubernetes inspection is a static text-based heuristic; it does not contact a cluster or validate complete Kubernetes semantics. These heuristic findings need human review; this is not a complete vulnerability scanner.
 
-Run all local inspection checks and save JSON, Markdown, and SARIF reports on your computer:
+Run all local inspection checks and save JSON, Markdown, SARIF, and HTML reports on your computer:
 
 ```powershell
-scopeguard inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language en
+scopeguard inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --html-output inspect.html --language en
 ```
 
 Use `--checks` with one or more of `secrets`, `python`, `config`, `docker`, `kubernetes`, and `terraform` to choose categories. The `docker` check examines Dockerfiles offline for selected container hardening issues; it does not build images or contact registries. The `kubernetes` check applies static heuristics to YAML manifests for selected pod and container security settings; it does not connect to a cluster. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The reports contain file names and line numbers but omit source snippets and matched secret values. The optional SARIF 2.1.0 file maps finding severities to SARIF levels and includes descriptions and remediation. HTML output is self-contained and can be opened locally. All report formats stay on the selected local paths unless you opt into the workflow upload. The command returns exit status `1` when it finds findings; inspect the report and verify each result.

@@ -122,6 +122,30 @@ def _parse_go_sum(source: str, relative: str, found: dict[tuple[str, str, str], 
             _add(found, "Go", parts[0], parts[1], relative)
 
 
+def validate_dependency_outputs(path: Path, outputs: list[Path]) -> None:
+    """Reject duplicate report paths or paths that would overwrite a scanned lockfile."""
+    resolved_outputs = [item.resolve() for item in outputs]
+    if len(set(resolved_outputs)) != len(resolved_outputs):
+        raise ValidationError("dependency report output paths must be different")
+    if path.is_symlink():
+        raise ValidationError("dependency scan root must not be a symbolic link")
+    root = path.absolute()
+    if root.is_file():
+        lockfiles = [root] if _eligible(root) else []
+    elif root.is_dir():
+        lockfiles = []
+        for current, dirs, names in os.walk(root, followlinks=False):
+            dirs[:] = [name for name in dirs if name not in _SKIP_DIRS and not (Path(current) / name).is_symlink()]
+            for name in names:
+                candidate = Path(current) / name
+                if not candidate.is_symlink() and _eligible(candidate):
+                    lockfiles.append(candidate.absolute())
+    else:
+        lockfiles = []
+    if set(resolved_outputs) & {item.resolve() for item in lockfiles}:
+        raise ValidationError("dependency report output must not overwrite a supported lockfile")
+
+
 def _collect(path: Path) -> tuple[dict[tuple[str, str, str], list[dict[str, Any]]], int]:
     if path.is_symlink():
         raise ValidationError("dependency scan root must not be a symbolic link")

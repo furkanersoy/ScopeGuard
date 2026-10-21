@@ -1,0 +1,47 @@
+name: ScopeGuard local security scan
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      upload_sarif:
+        description: Upload the local SARIF result to GitHub Code Scanning
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ScopeGuard
+        run: python -m pip install .
+
+      - name: Scan project source and save local reports
+        run: >-
+          scopeguard inspect
+          --path src
+          --checks secrets python config docker kubernetes terraform
+          --output scopeguard-report.json
+          --sarif-output scopeguard.sarif
+          --language en
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.upload_sarif }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: scopeguard.sarif
+          category: scopeguard-local-scan

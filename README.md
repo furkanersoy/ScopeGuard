@@ -99,7 +99,7 @@ This avoids a project `.venv` and a manual activation step. It installs dependen
 
 ScopeGuard can inspect local source, configuration, Dockerfile, and Kubernetes manifest files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS, plus Dockerfile checks for root execution, mutable base image references, and credential-like ARG/ENV assignments, and Kubernetes manifest checks for privileged containers, privilege escalation, root execution, host namespaces, hostPath mounts, and added ALL capabilities. Kubernetes inspection is a static text-based heuristic; it does not contact a cluster or validate complete Kubernetes semantics. These heuristic findings need human review; this is not a complete vulnerability scanner.
 
-Run all local inspection checks and save reports on your computer:
+Run all local inspection checks and save JSON, Markdown, and SARIF reports on your computer:
 
 ```powershell
 scopeguard inspect --path . --checks secrets python config docker kubernetes --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language en
@@ -112,6 +112,8 @@ Try the safe, synthetic fixtures in [examples/local-scan](examples/local-scan/RE
 ```powershell
 scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language en
 ```
+
+For the safe comparison set, scan `examples/local-scan/secure-patterns` with the same options and different output filenames. It is expected to produce zero findings and exit with status `0`.
 
 Create a starter scenario interactively from an OpenAPI document:
 

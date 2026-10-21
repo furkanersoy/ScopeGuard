@@ -1,6 +1,6 @@
 # ScopeGuard — Mimari ve Geliştirme Yol Haritası
 
-> Durum: Yerel demo API, çevrimdışı doğrulama ve istek planı, salt okunur çalıştırıcı ve JSON yanıt kontrolü aşaması.
+ > Durum: API senaryo denetimi, çevrimdışı kaynak/IaC taraması, isteğe bağlı OSV sorgusu ve yerel çok biçimli raporlama uygulanmıştır.
 
 ## 1. Proje özeti
 
@@ -29,13 +29,17 @@ Bir uç noktanın giriş gerektirmesi, her kullanıcının yalnızca yetkili old
 5. Anonim, düşük yetkili ve başka kullanıcı/tenant kimliğiyle karşılaştırmalı istekler.
 6. Beklenen HTTP durum kodları ile gerçek sonuçları karşılaştırma.
 7. İsteğe bağlı JSON Pointer kontrolleriyle belirli yanıt alanlarının beklenen değere eşit/ayrı olduğunu doğrulama.
-8. İnsan tarafından okunabilir terminal özeti ve makinece okunabilir JSON raporu.
+8. Terminal, JSON, Markdown, SARIF 2.1.0 ve kendine yeter HTML raporları.
+9. Yerel/bağımlılık bulguları için gerekçe ve bitiş tarihi olan görünür istisnalar.
+10. API, yerel tarama ve bağımlılık JSON raporlarının karşılaştırılması.
+11. Sınırlı Terraform güvenlik kontrolleri ve açık izinli OSV bağımlılık sorgusu.
 9. Güvenli, sentetik ve yerelde çalışan örnek API ile uçtan uca demo.
-10. Hata, kapsam dışı hedef ve eksik test verisi durumlarını açıkça raporlama.
+12. Hata, kapsam dışı hedef ve eksik test verisi durumlarını açıkça raporlama.
 
 ### MVP dışında
 
-- İnternet üzerinde hedef keşfi, port tarama veya genel web taraması
+- İnternet üzerinde API hedefi keşfi, port tarama veya genel web taraması
+- Varsayılan ağ erişimi; OSV bağımlılık kontrolü yalnızca açık `--allow-network` seçeneğiyle sorgu gönderir
 - Brute force, parola denemesi, fuzzing veya açık istismarı
 - Varsayılan olarak veri değiştiren `POST`, `PUT`, `PATCH`, `DELETE` istekleri
 - Üretim sistemlerinde otomatik çalışma
@@ -89,7 +93,7 @@ scopeguard run --spec examples/api/openapi.yaml --config examples/scopeguard.yam
 scopeguard report report.json
 ```
 
-İlk demo, repodaki örnek API'yi yerelde başlatır. README'deki komutlar dış ağa erişmeden çalıştırılabilir olmalıdır.
+İlk demo, repodaki örnek API'yi yerelde başlatır. API ve yerel tarama örnekleri dış ağa erişmeden çalışır. Bağımlılık denetimi, kullanıcı açıkça izin verdiğinde paket kimliği/sürüm bilgilerini OSV'ye HTTPS ile gönderir.
 
 Örnek senaryo biçimi (taslak):
 
@@ -140,7 +144,7 @@ CLI
  ├─ Scenario Planner
  ├─ HTTP Client (rate/time/body limits)
  ├─ Check Runner
- └─ Report Builder (terminal + JSON)
+ ├─ Offline Local Scanner (source, config, Docker, Kubernetes, selected Terraform rules)\n ├─ Dependency Auditor (lockfile parsers + explicit OSV HTTPS client)\n ├─ Suppression Filter (rule/path + reason + expiry)\n ├─ Report Comparator (active findings)\n └─ Report Builder (terminal + JSON/Markdown/SARIF/HTML)
 
 Local Demo API ── Seeded synthetic users, tenants, and records
 ```
@@ -154,7 +158,11 @@ Local Demo API ── Seeded synthetic users, tenants, and records
 - **Scenario Planner:** Senaryo girdilerini açık ve sınırlı HTTP kontrollerine dönüştürür. Otomatik keşif yapmaz.
 - **HTTP Client:** Zaman aşımı, TLS, redirect, istek sayısı ve yanıt boyutu kontrollerini uygular.
 - **Check Runner:** İstekleri çalıştırır, yanıt kodunu beklenen aralıklarla kıyaslar ve hassas veriyi bellekte minimum süre tutar.
-- **Report Builder:** Sonuçları terminal ve JSON biçiminde üretir; credential veya tam yanıt gövdesi yazmaz.
+- **Report Builder:** API, yerel tarama ve bağımlılık sonuçlarını terminal, JSON, Markdown, SARIF veya HTML olarak üretir; credential, kaynak kod parçaları ve tam yanıt gövdelerini yazmaz.
+- **Offline Local Scanner:** Kaynak kodu, yapılandırma, Dockerfile, Kubernetes manifesti ve seçili Terraform kalıplarını kod çalıştırmadan tarar.
+- **Dependency Auditor:** Desteklenen kilit dosyalarından sabit sürümleri çıkarır; yalnızca açık `--allow-network` ile OSV sorgular.
+- **Suppression Filter:** Eşleşen bulguları yalnızca gerekçe ve UTC bitiş tarihi geçerliyse bastırır; bastırılanları raporda tutar.
+- **Report Comparator:** JSON raporlarındaki yeni, giderilmiş ve değişmeyen bulguları karşılaştırır; API bulgularını kontrol ve kimlikle ayırt eder.
 - **Local Demo API:** İyi ve kasıtlı olarak hatalı erişim kontrolü örnekleri sunar. Yalnızca localhost'ta çalışır ve sentetik veriler kullanır.
 
 ### Veri akışı
@@ -165,7 +173,7 @@ Local Demo API ── Seeded synthetic users, tenants, and records
 4. Scope Policy her planlanan isteği gönderimden hemen önce denetler.
 5. HTTP Client istekleri sınırlar dahilinde gönderir.
 6. Runner yalnızca test için gereken yanıt metaverisini değerlendirir.
-7. Report Builder PASS/FAIL/SKIPPED/ERROR sonuçlarını ve genel özeti üretir.
+7. Report Builder PASS/FAIL/SKIPPED/ERROR sonuçlarını ve genel özeti üretir.\n8. Yerel tarama ve bağımlılık komutları bulgulara gerekçeli istisnaları uygular, istenen rapor biçimlerini yazar.\n9. `compare` önceki ve güncel JSON raporlarını çevrimdışı karşılaştırır.
 
 ## 6. Sonuçların anlamı
 

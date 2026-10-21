@@ -60,6 +60,24 @@ _TEXT = {
         "docker_secret.title": "Possible secret in Docker build instruction",
         "docker_secret.description": "An ARG or ENV instruction assigns a credential-like value. Docker build arguments or environment values may be retained in image metadata or layers; the value is omitted from this report.",
         "docker_secret.fix": "Do not pass secrets through ARG or ENV. Use a build-secret mechanism and a secret manager, and rotate any value that was exposed.",
+        "k8s_privileged.title": "Privileged Kubernetes container",
+        "k8s_privileged.description": "A Kubernetes container explicitly enables privileged mode, which grants broad host-level capabilities.",
+        "k8s_privileged.fix": "Remove privileged mode. Grant only the Linux capabilities the workload requires.",
+        "k8s_escalation.title": "Privilege escalation is enabled",
+        "k8s_escalation.description": "The container allows processes to gain additional privileges at runtime.",
+        "k8s_escalation.fix": "Set allowPrivilegeEscalation to false unless a documented workload requirement needs it.",
+        "k8s_root.title": "Container can run as root",
+        "k8s_root.description": "The manifest sets the container user to UID 0 or explicitly permits running as root.",
+        "k8s_root.fix": "Run as a dedicated non-root UID and set runAsNonRoot to true.",
+        "k8s_host_namespace.title": "Pod shares a host namespace",
+        "k8s_host_namespace.description": "The pod enables hostNetwork, hostPID, or hostIPC, reducing isolation from the node.",
+        "k8s_host_namespace.fix": "Disable host namespace sharing unless the workload has a reviewed operational need.",
+        "k8s_host_path.title": "Host filesystem path is mounted",
+        "k8s_host_path.description": "A hostPath volume exposes a node filesystem path to the pod and can increase node compromise impact.",
+        "k8s_host_path.fix": "Use a scoped PersistentVolume or another managed volume. If hostPath is required, restrict the path and mount it read-only.",
+        "k8s_capabilities.title": "Container requests ALL Linux capabilities",
+        "k8s_capabilities.description": "The container requests every Linux capability, granting far more privilege than most workloads need.",
+        "k8s_capabilities.fix": "Drop all capabilities by default and add back only the specific capabilities required.",
         "summary": "ScopeGuard local inspection",
         "findings": "Findings",
         "file": "File",
@@ -106,6 +124,24 @@ _TEXT = {
         "docker_secret.title": "Docker derleme komutunda olası sabit sır",
         "docker_secret.description": "Bir ARG veya ENV komutuna kimlik bilgisine benzeyen bir değer atanmış. Derleme argümanları veya ortam değerleri imaj metaverisinde ya da katmanlarında kalabilir; değer rapora eklenmez.",
         "docker_secret.fix": "Sırları ARG veya ENV ile aktarmayın. Derleme sırrı mekanizması ve sır yöneticisi kullanın; açığa çıkan değerleri yenileyin.",
+        "k8s_privileged.title": "Kubernetes konteyneri ayrıcalıklı çalışıyor",
+        "k8s_privileged.description": "Kubernetes konteynerinde privileged modu açık. Bu ayar ana makine düzeyinde geniş yetkiler sağlayabilir.",
+        "k8s_privileged.fix": "Privileged modunu kaldırın. Yalnızca iş yükünün gerektirdiği Linux yeteneklerini verin.",
+        "k8s_escalation.title": "Yetki yükseltmeye izin veriliyor",
+        "k8s_escalation.description": "Konteyner içindeki süreçlerin çalışma sırasında ek yetki kazanmasına izin veriliyor.",
+        "k8s_escalation.fix": "Belgelenmiş bir gereksinim yoksa allowPrivilegeEscalation değerini false yapın.",
+        "k8s_root.title": "Konteyner root kullanıcısıyla çalışabilir",
+        "k8s_root.description": "Manifest, konteyner kullanıcısını UID 0 olarak ayarlıyor veya root ile çalışmaya açıkça izin veriyor.",
+        "k8s_root.fix": "Ayrıcalıksız, özel bir UID kullanın ve runAsNonRoot değerini true yapın.",
+        "k8s_host_namespace.title": "Pod ana makine ağ ad alanını paylaşıyor",
+        "k8s_host_namespace.description": "Pod hostNetwork, hostPID veya hostIPC ayarını etkinleştiriyor; bu durum düğümden yalıtımı azaltır.",
+        "k8s_host_namespace.fix": "İş yükü için incelenmiş bir operasyonel gereksinim yoksa ana makine ad alanı paylaşımını kapatın.",
+        "k8s_host_path.title": "Ana makine dosya sistemi bağlanmış",
+        "k8s_host_path.description": "hostPath birimi, düğümdeki bir dosya sistemi yolunu pod'a açar ve düğümün etkilenme riskini artırabilir.",
+        "k8s_host_path.fix": "Kapsamı sınırlandırılmış PersistentVolume veya yönetilen başka bir birim kullanın. hostPath gerekiyorsa yolu kısıtlayın ve salt okunur bağlayın.",
+        "k8s_capabilities.title": "Konteyner tüm Linux yeteneklerini istiyor",
+        "k8s_capabilities.description": "Konteyner tüm Linux yeteneklerini istiyor. Çoğu iş yükünün ihtiyaç duyduğundan çok daha fazla yetki verir.",
+        "k8s_capabilities.fix": "Varsayılan olarak tüm yetenekleri kaldırın ve yalnızca gerekenleri tek tek ekleyin.",
         "summary": "ScopeGuard yerel inceleme",
         "findings": "Bulgular",
         "file": "Dosya",
@@ -131,6 +167,12 @@ _RULES = {
     "docker.root-user": ("docker_root", "medium"),
     "docker.mutable-base-image": ("docker_base", "low"),
     "docker.build-arg-secret": ("docker_secret", "high"),
+    "kubernetes.privileged": ("k8s_privileged", "high"),
+    "kubernetes.privilege-escalation": ("k8s_escalation", "medium"),
+    "kubernetes.run-as-root": ("k8s_root", "high"),
+    "kubernetes.host-namespace": ("k8s_host_namespace", "high"),
+    "kubernetes.host-path": ("k8s_host_path", "high"),
+    "kubernetes.capabilities-all": ("k8s_capabilities", "high"),
 }
 
 _SECRET_ASSIGNMENT = re.compile(
@@ -289,6 +331,60 @@ def _docker_findings(source: str, relative: str, findings: list[dict[str, Any]],
             _add_finding(findings, seen, "docker.root-user", relative, final_user_line or final_from_line)
 
 
+def _kubernetes_findings(source: str, relative: str, findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
+    """Scan Kubernetes-like YAML text for selected high-risk manifest settings."""
+    lines = [(number, raw.split("#", 1)[0].rstrip()) for number, raw in enumerate(source.splitlines(), 1)]
+    if not any(re.match(r"^\s*apiVersion\s*:\s*\S+", line) for _, line in lines):
+        return
+    if not any(re.match(r"^\s*kind\s*:\s*\S+", line) for _, line in lines):
+        return
+
+    capabilities_indent: int | None = None
+    add_indent: int | None = None
+    for number, line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        indent = len(line) - len(line.lstrip())
+
+        capabilities_match = re.search(r"(?i)\bcapabilities\s*:\s*(.*)$", stripped)
+        if capabilities_match:
+            capabilities_indent = indent
+            add_indent = None
+            inline = capabilities_match.group(1)
+            add_match = re.search(r"(?i)\badd\s*:\s*(.*)", inline)
+            if add_match and re.search(r"(?i)\bALL\b", add_match.group(1)):
+                _add_finding(findings, seen, "kubernetes.capabilities-all", relative, number)
+            continue
+
+        if capabilities_indent is not None:
+            if indent <= capabilities_indent:
+                capabilities_indent = None
+                add_indent = None
+            elif re.match(r"(?i)^add\s*:", stripped):
+                add_indent = indent
+                inline = re.sub(r"(?i)^add\s*:\s*", "", stripped)
+                if re.search(r"(?i)\bALL\b", inline):
+                    _add_finding(findings, seen, "kubernetes.capabilities-all", relative, number)
+                continue
+            elif add_indent is not None:
+                if indent <= add_indent and not stripped.startswith("-"):
+                    add_indent = None
+                elif indent > add_indent and re.match(r"(?i)^-\s*['\"]?ALL['\"]?(?:\s|,|]|$)", stripped):
+                    _add_finding(findings, seen, "kubernetes.capabilities-all", relative, number)
+
+        if re.match(r"(?i)^\s*privileged\s*:\s*true\s*$", line):
+            _add_finding(findings, seen, "kubernetes.privileged", relative, number)
+        elif re.match(r"(?i)^\s*allowPrivilegeEscalation\s*:\s*true\s*$", line):
+            _add_finding(findings, seen, "kubernetes.privilege-escalation", relative, number)
+        elif re.match(r"(?i)^\s*runAsUser\s*:\s*['\"]?0['\"]?\s*$", line) or re.match(r"(?i)^\s*runAsNonRoot\s*:\s*false\s*$", line):
+            _add_finding(findings, seen, "kubernetes.run-as-root", relative, number)
+        elif re.match(r"(?i)^\s*(?:hostNetwork|hostPID|hostIPC)\s*:\s*true\s*$", line):
+            _add_finding(findings, seen, "kubernetes.host-namespace", relative, number)
+        elif re.match(r"(?i)^\s*hostPath\s*:", line):
+            _add_finding(findings, seen, "kubernetes.host-path", relative, number)
+
+
 def _scan_line_rules(line: str, relative: str, number: int, checks: set[str], findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
     if "secrets" in checks:
         secret_match = _SECRET_ASSIGNMENT.search(line)
@@ -339,9 +435,9 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
     """Scan local text files statically; no code execution and no network access."""
     if language not in _TEXT:
         raise ValidationError("language must be 'tr' or 'en'")
-    allowed = {"secrets", "python", "config", "docker"}
+    allowed = {"secrets", "python", "config", "docker", "kubernetes"}
     if not checks or len(set(checks)) != len(checks) or any(check not in allowed for check in checks):
-        raise ValidationError("select one or more distinct checks: secrets, python, config, docker")
+        raise ValidationError("select one or more distinct checks: secrets, python, config, docker, kubernetes")
     if not path.exists():
         raise ValidationError(f"scan path does not exist: {path}")
     root = path.absolute()
@@ -365,6 +461,8 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
             _python_findings(source, relative, findings, seen)
         if "docker" in checks and _is_dockerfile(file_path):
             _docker_findings(source, relative, findings, seen)
+        if "kubernetes" in checks and file_path.suffix.lower() in {".yaml", ".yml"}:
+            _kubernetes_findings(source, relative, findings, seen)
         if "secrets" in checks or "config" in checks:
             for number, line in enumerate(source.splitlines(), 1):
                 _scan_line_rules(line, relative, number, set(checks), findings, seen)

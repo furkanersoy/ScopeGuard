@@ -2,7 +2,7 @@
 
 [English version](README.md) | Türkçe
 
-**Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını ve yerel kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifestlerindeki seçili risk kalıplarını denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, Türkçe/İngilizce bulgu açıklamaları ve yerel JSON, Markdown ve SARIF raporları sunar.
+**Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını ve yerel kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifestlerindeki seçili risk kalıplarını denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, yerel kaynak ve Terraform kontrolleri, isteğe bağlı OSV bağımlılık sorgusu, gerekçeli ve süreli istisnalar, Türkçe/İngilizce bulgular ve yerel JSON, Markdown, SARIF ve HTML raporları sunar.
 
 ## Güncel özellikler
 
@@ -13,13 +13,17 @@
 - `scopeguard validate` OpenAPI belgesini ve YAML senaryosunu ağ erişimi olmadan doğrular.
 - `scopeguard run` yalnızca senaryoda açıkça tanımlanan salt okunur `GET` isteklerini gönderir ve yerel rapor oluşturur.
 - `scopeguard inspect` seçilen kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifest ve Terraform yapılandırma kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar; bulguları JSON, Markdown ve SARIF 2.1.0 olarak kaydedebilir.
-- Uzak hedef için yapılandırmada tam HTTPS sunucu/port izin listesi ve çalıştırırken ayrıca `--allow-remote` gerekir.
+- API, yerel tarama ve bağımlılık bulguları JSON, Markdown, SARIF 2.1.0 ve tek dosyalı HTML olarak kaydedilebilir.
+- Bağımlılık kontrolü yalnızca açıkça `--allow-network` verildiğinde OSV'ye bağlanır; yalnızca paket adı, ekosistem ve sabitlenmiş sürüm gönderilir.
+- İstisna tanımları kural, göreli dosya yolu, gerekçe ve bitiş tarihi ister; bastırılan bulgular raporda görünür kalır.
+- `scopeguard compare` kaydedilmiş JSON raporlarındaki yeni, giderilmiş ve değişmeden kalan bulguları karşılaştırır.
+- İsteğe bağlı GitHub Actions iş akışı kaynağı tarar; SARIF yüklemesi yalnızca elle başlatılan çalıştırmada açılabilir.
 
 ## Hızlı başlangıç (Windows)
 
 1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir veya klonla.
 2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta proje klasöründe `.venv` oluşturup ScopeGuard ve bağımlılıklarını kurar. Sonraki açılışlarda bu kurulumu tekrar kullanır.
-3. Başlangıç menüsünden bir bölüm seç: `1` API Güvenliği, `2` kaynak kodu/yapılandırma taraması, `3` sabit sır taraması, `4` gelişmiş komut konsoludur.
+3. Başlangıç menüsünden bir bölüm seç: `1` API Güvenliği, `2` kaynak/IaC/yapılandırma taraması, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolüdür.
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
 5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
@@ -41,11 +45,11 @@ Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı 
 | Komut | Ne yapar? | Ağ kullanımı |
 | --- | --- | --- |
 | `init` | Anonim erişim, BOLA/IDOR, BFLA veya özel GET durum kodu kontrolleri için senaryo oluşturur. | Yok |
-| `inspect` | Sabit sır, riskli Python kalıpları, yapılandırma, Dockerfile Kubernetes manifest ve Terraform güvenlik kontrollerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
+| `inspect` | Sabit sır, Python, yapılandırma, Dockerfile, Kubernetes ve seçili Terraform risklerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
 | `validate` | OpenAPI belgesini ve senaryo yapılandırmasını doğrular. | Yok |
 | `plan` | Senaryodaki istekleri ve kimlikleri önizler. | Yok; token okunmaz |
 | `coverage` | Kimlik/uç nokta kontrollerini matriste gösterir; `--strict` zorunlu kapsamı uygular. | Yok; token okunmaz |
-| `run` | Tanımlı salt okunur GET kontrollerini kapsam içindeki hedefte çalıştırır ve yerel rapor yazar. | Evet, yalnızca yapılandırılmış hedefe |
+| `run` | Tanımlı salt okunur GET kontrollerini kapsam içindeki hedefte çalıştırır ve yerel rapor yazar. | Evet, yalnızca yapılandırılmış hedefe |\n| `dependencies` | Sabitlenmiş paket sürümlerini OSV ile karşılaştırır; `--allow-network` gerekir. | Evet; yalnızca paket adı, ekosistem ve sürümler |\n| `compare` | İki ScopeGuard JSON raporunu karşılaştırır. | Yok |
 
 `inspect` sezgisel statik kontroller kullanır; kapsamlı bir güvenlik tarayıcısı değildir ve çalışan web servisini test etmez. API senaryoları yalnızca açıkça tanımlanmış GET uç noktalarını ve beklenen sonuçları denetler; uç noktalara fuzzing uygulamaz ve uygulamanın yetkilendirme politikasını kendiliğinden çıkarmaz.
 
@@ -77,16 +81,16 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 
 `scopeguard` komutunu argümansız çalıştır veya Windows'ta `ScopeGuard.bat` dosyasına çift tıklayarak iki dilli başlangıç menüsünü aç:
 
-1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve tanımlı kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı OpenAPI dosyasını, GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen durum kodlarını sorar. Kontrolleri çalıştırırken giriş dosyaları, yerel rapor yolu ve rapor dili seçilir; JSON, Markdown ve SARIF raporları bilgisayara yazılır. Dahil edilen demo üzerinde çalıştırmak için önce ikinci bir terminalde demo API'yi başlat.
-2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker` ve `kubernetes` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes,terraform,terraform` olur; sır taraması ana menüde ayrıca kısayol olarak bulunur. Seçilen yerel dosya veya klasör çevrimdışı taranır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. Menü JSON, Markdown ve SARIF rapor yollarını sorar.
-3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit kodlanmış gizli bilgi kalıplarını arar ve JSON, Markdown ve SARIF raporlarını yerel olarak kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
-4. **Gelişmiş komut konsolu** — standart CLI komutlarını (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage` ve `run`) kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz. Menüde geri dönmek veya çıkmak için `0` seçeneğini kullan.
+1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen kodları sorar. API çalıştırması yerel JSON, Markdown, SARIF ve HTML raporları oluşturur. Dahil edilen demo üzerinde çalıştırmak için önce başka bir terminalde demo API'yi başlat.
+2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker`, `kubernetes` ve `terraform` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes,terraform` olur; sır taraması ana menüde ayrıca kısayoldur. Tarama çevrimdışıdır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. JSON, Markdown, SARIF ve HTML rapor yollarını ve isteğe bağlı istisna YAML dosyasını belirleyebilirsin.
+3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit sır kalıplarını arar ve JSON, Markdown, SARIF ve HTML raporları kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
+4. **Gelişmiş komut konsolu** — `help`, `version`, `init`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage` ve `run` komutlarını kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz.\n5. **Bağımlılık Zafiyeti Taraması** — kilit dosyası veya klasör seçer; paket adı ve sürümlerini HTTPS ile OSV'ye göndermeden önce onay ister. JSON, Markdown, SARIF ve HTML raporları yerel kaydeder.
 
 Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
 
 ## Yerel kaynak kodu ve yapılandırma taraması
 
-ScopeGuard, API denetimlerinden bağımsız olarak yerel kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifestlerini inceleyebilir. Desteklenen metin dosyalarını okur; kodu çalıştırmaz ve ağa bağlanmaz. Kontroller sabit atanmış olabilecek kimlik bilgilerini, `eval`/`exec`, güvensiz nesne veya YAML açma, `shell=True`, TLS doğrulamasını kapatma ve bazı güvensiz yapılandırma kalıplarını arar. Dockerfile kontrolleri son imaj aşamasında root kullanıcı kullanımını, digest ile sabitlenmemiş taban imajlarını ve kimlik bilgisine benzeyen ARG/ENV atamalarını inceler. Kubernetes manifest kontrolleri ayrıcalıklı konteyner, yetki yükseltme, root kullanıcı, host namespace, hostPath bağlama ve ALL capability kalıplarını statik olarak arar; kümeye bağlanmaz ve Kubernetes şemasının tamamını doğrulamaz. Bulgu raporunda kaynak kod parçaları ve bulunan sır değerleri yer almaz.
+ScopeGuard, API denetimlerinden bağımsız olarak yerel kaynak kodu, yapılandırma, Dockerfile, Kubernetes manifestleri ve Terraform dosyalarını inceleyebilir. Desteklenen metin dosyalarını okur; kodu çalıştırmaz ve ağa bağlanmaz. Kontroller sabit atanmış olabilecek kimlik bilgilerini, `eval`/`exec`, güvensiz nesne veya YAML açma, `shell=True`, TLS doğrulamasını kapatma ve bazı güvensiz yapılandırma kalıplarını arar. Dockerfile kontrolleri son imaj aşamasında root kullanıcı kullanımını, digest ile sabitlenmemiş taban imajlarını ve kimlik bilgisine benzeyen ARG/ENV atamalarını inceler. Kubernetes kontrolleri Pod ve Workload güvenlik alanlarında ayrıcalıklı konteyner, yetki yükseltme, root kullanıcı, host namespace, hostPath ve ALL capability arar. Terraform kontrolleri seçili AWS güvenlik grubu, S3, veritabanı ve depolama ayarlarını metinsel sezgilerle tarar; HCL ifadelerini, modülleri, provider planlarını veya bulut durumunu değerlendirmez. Bulgu raporunda kaynak kod parçaları ve bulunan sır değerleri yer almaz.
 
 Tüm kontrolleri çalıştırıp JSON, Türkçe Markdown ve SARIF raporları oluştur:
 
@@ -94,7 +98,7 @@ Tüm kontrolleri çalıştırıp JSON, Türkçe Markdown ve SARIF raporları olu
 scopeguard inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language tr
 ```
 
-`--checks` için `secrets`, `python`, `config`, `docker` ve `kubernetes` seçeneklerinden bir veya birkaçını belirt. `docker` Dockerfile dosyalarını çevrimdışı inceler; imaj oluşturmaz ve kayıt sunucularına bağlanmaz. `kubernetes` YAML manifestlerinde seçili güvenlik ayarlarını statik olarak tarar; kümeye bağlanmaz. Örneğin yalnızca Python kalıpları için `--checks python` kullan. Yaygın sanal ortam, bağımlılık ve derleme klasörleri atlanır; 1 MB üzerindeki dosyalar incelenmez. Raporlar dosya ve satır konumunu gösterir; kaynak kod parçalarını ve eşleşen sır değerlerini içermez. İsteğe bağlı SARIF 2.1.0 çıktısı yüksek/orta/düşük önem derecelerini error/warning/note seviyelerine eşler; açıklama ve düzeltme önerisi ekler. Dosya yerel yazılır, ScopeGuard yükleme yapmaz. Bulgu bulunduğunda komut `1` çıkış kodu verir. Raporu açıp her bulguyu doğrula; sezgisel kontroller yanlış pozitif üretebilir.
+`--checks` için `secrets`, `python`, `config`, `docker`, `kubernetes` ve `terraform` seçeneklerinden bir veya birkaçını belirt. `docker` Dockerfile dosyalarını çevrimdışı inceler; imaj oluşturmaz ve kayıt sunucularına bağlanmaz. `kubernetes` YAML manifestlerinde seçili güvenlik ayarlarını statik olarak tarar; kümeye bağlanmaz. Örneğin yalnızca Python kalıpları için `--checks python` kullan. Yaygın sanal ortam, bağımlılık ve derleme klasörleri atlanır; 1 MB üzerindeki dosyalar incelenmez. Raporlar dosya ve satır konumunu gösterir; kaynak kod parçalarını ve eşleşen sır değerlerini içermez. İsteğe bağlı SARIF 2.1.0 çıktısı önem derecelerini SARIF seviyelerine eşler; açıklama ve düzeltme önerisi ekler. Tek dosyalı HTML raporu yerel tarayıcıda açılabilir. Raporlar seçilen konumlara kaydedilir; açıkça izin verilmedikçe yüklenmez. Bulgu bulunduğunda komut `1` çıkış kodu verir. Raporu açıp her bulguyu doğrula; sezgisel kontroller yanlış pozitif üretebilir.
 
 Beş kategoride örnek bulguları görmek için [examples/local-scan](examples/local-scan/README.md) içindeki sentetik dosyaları kullan. Bu dosyalar beklenen kural kimliklerini ve önem derecelerini açıklar; rapordaki kanıt konumu ve düzeltme önerisini gösterir. Bulgular beklendiği için örnek komut `1` çıkış kodu verir:
 
@@ -103,6 +107,43 @@ scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets
 ```
 
 Güvenli karşılaştırma örnekleri için aynı seçeneklerle `examples/local-scan/secure-patterns` klasörünü ve farklı rapor dosya adlarını tara. Bu taramanın sıfır bulgu üretmesi ve `0` çıkış koduyla tamamlanması beklenir.
+
+## Gerekçeli ve süreli istisnalar
+
+İncelenmiş bulguya geçici istisna vermek için YAML dosyası oluştur. Her kayıt kural kimliği (glob kabul edilir), göreli dosya yolu kalıbı, boş olmayan gerekçe ve ISO biçiminde bitiş tarihi gerektirir. Süresi geçmiş istisna dosyası reddedilir. Bastırılan bulgular JSON, Markdown, HTML ve SARIF raporlarında gerekçesi ve tarihiyle görünmeye devam eder.
+
+```yaml
+version: 1
+suppressions:
+  - rule_id: "terraform.public-ingress"
+    path: "infra/network.tf"
+    reason: "Onaylı geçici istisna; staging güvenlik duvarı erişimi sınırlandırıyor."
+    expires: "2026-12-31"
+```
+
+Yerel veya bağımlılık taramasına `--suppressions scopeguard-ignore.yaml` ekle.
+
+## Bağımlılık zafiyeti taraması
+
+Bu çevrimiçi komut yalnızca `--allow-network` açıkça verildiğinde OSV'ye sorgu gönderir. Desteklenen kilit dosyaları: `requirements*.txt`, `poetry.lock`, `Pipfile.lock`, `package-lock.json`, `npm-shrinkwrap.json`, `Cargo.lock` ve `go.sum`. Kilit dosyaları veya kaynak kod yüklenmez; OSV'ye paket ekosistemi, adı ve sürümü gider. Özel depolar için kurumunun veri paylaşım kurallarını kontrol et.
+
+```powershell
+scopeguard dependencies --path . --allow-network --output dependencies.json --markdown-output dependencies.md --sarif-output dependencies.sarif --html-output dependencies.html --language tr
+```
+
+## HTML raporları ve rapor karşılaştırma
+
+`run`, `inspect` ve `dependencies` komutlarında `--html-output report.html` kullan. HTML tek dosyadır ve uzaktaki betik/stil yüklemez. Önceki ve güncel JSON raporlarını karşılaştır:
+
+```powershell
+scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html
+```
+
+Karşılaştırma yeni, giderilmiş ve aynı kalan bulguları listeler. Yeni etkin bulgu varsa çıkış kodu `1` olur; karşılaştırma ağ kullanmaz.
+
+## GitHub Actions ve isteğe bağlı SARIF yükleme
+
+`.github/workflows/scopeguard-sarif.yml` iş akışı push ve pull request sırasında tarama yapar. GitHub Code Scanning'e SARIF göndermek için Actions sekmesinde iş akışını elle başlatıp `upload_sarif` seçeneğini `true` yap. Varsayılan kapalıdır; normal CLI taraması yükleme yapmaz. Depoda Code Scanning desteğinin etkin olması gerekir.
 
 ## API senaryosu oluşturma
 

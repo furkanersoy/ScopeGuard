@@ -199,7 +199,7 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             checks = list(dict.fromkeys(item.strip().lower() for item in selected.split(",") if item.strip()))
             if checks and all(item in allowed for item in checks):
                 break
-            output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\\n")
+            output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\n")
     _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--language", language], output)
     return True
 

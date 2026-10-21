@@ -77,7 +77,7 @@ def _show_help(output: TextIO) -> None:
         "      EN: Show configured identity/endpoint checks; --strict enforces required coverage.\n"
         "      TR: Kimlik/uç nokta kontrollerini gösterir; --strict zorunlu kapsamı uygular.\n"
         "  run --spec <openapi.yaml> --config <scenario.yaml> --output <report.json>\n"
-        "      [--markdown-output report.md] [--sarif-output report.sarif] [--language tr|en]\n"
+        "      [--markdown-output report.md] [--sarif-output report.sarif] [--html-output report.html] [--language tr|en]\n"
         "      EN: Run configured read-only GET checks and save local reports.\n"
         "      TR: Tanımlı salt okunur GET kontrollerini çalıştırıp yerel rapor yazar.\n"
         "  inspect --path <file-or-folder> --checks secrets python config docker kubernetes terraform\n"
@@ -174,7 +174,8 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
                 return False
             markdown = _report_sidecar(report, ".md")
             sarif = _report_sidecar(report, ".sarif")
-            args.extend(["--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--language", language])
+            html_report = _report_sidecar(report, ".html")
+            args.extend(["--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language])
         _dispatch(command_handler, args, output)
 
 

@@ -762,8 +762,12 @@ def render_local_sarif(report: dict[str, Any]) -> str:
     selected_checks = set(report["checks"])
     rules: list[dict[str, Any]] = []
     rule_indexes: dict[str, int] = {}
+    reported_rule_ids = {
+        finding["rule_id"]
+        for finding in [*report["findings"], *report.get("suppressed_findings", [])]
+    }
     for rule_id, (category, severity) in sorted(_RULES.items()):
-        if _CHECK_FOR_CATEGORY[category] not in selected_checks:
+        if _CHECK_FOR_CATEGORY[category] not in selected_checks and rule_id not in reported_rule_ids:
             continue
         level = {"high": "error", "medium": "warning", "low": "note", "unknown": "warning"}[severity]
         rule_indexes[rule_id] = len(rules)

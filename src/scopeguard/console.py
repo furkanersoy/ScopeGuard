@@ -81,8 +81,9 @@ def _show_help(output: TextIO) -> None:
         "      EN: Run configured read-only GET checks and save local reports.\n"
         "      TR: Tanımlı salt okunur GET kontrollerini çalıştırıp yerel rapor yazar.\n"
         "  inspect --path <file-or-folder> --checks secrets python config docker kubernetes\n"
-        "      EN: Select secrets, Python, config, Dockerfile, and Kubernetes manifest checks; scans are offline and never execute code.\n"
-        "      TR: Sır, Python, yapılandırma, Dockerfile ve Kubernetes manifest kontrollerini seçer; tarama çevrimdışıdır ve kod çalıştırmaz.\n"
+        "          [--output report.json] [--markdown-output report.md] [--sarif-output report.sarif]\n"
+        "      EN: Select local check categories and save JSON, Markdown, and optional SARIF reports; scans are offline and never execute code.\n"
+        "      TR: Yerel kontrol kategorilerini seçip JSON, Markdown ve isteğe bağlı SARIF raporu kaydeder; tarama çevrimdışıdır, kod çalıştırmaz.\n"
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"
@@ -185,6 +186,9 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     markdown = _answer(source, output, "Markdown report path / Markdown rapor yolu", _report_sidecar(report, ".md"))
     if markdown is None:
         return False
+    sarif = _answer(source, output, "SARIF report path / SARIF rapor yolu", _report_sidecar(report, ".sarif"))
+    if sarif is None:
+        return False
     language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
@@ -200,7 +204,7 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             if checks and all(item in allowed for item in checks):
                 break
             output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\n")
-    _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--language", language], output)
+    _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--language", language], output)
     return True
 
 

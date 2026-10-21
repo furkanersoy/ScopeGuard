@@ -586,21 +586,30 @@ def _atomic_write(path: Path, contents: str) -> None:
 
 def render_local_markdown(report: dict[str, Any]) -> str:
     text = _TEXT[report["language"]]
+    active = report["findings"]
+    suppressed = report.get("suppressed_findings", [])
     lines = [
         f"# {text['summary']}", "",
         f"- {text['file']}: {report['scanned_path']}",
         f"- Scanned files: {report['scanned_files']}",
-        f"- {text['findings']}: {len(report['findings'])}", "",
+        f"- {text['findings']}: {len(active)}",
+        f"- {text['suppressed']}: {len(suppressed)}", "",
         f"| {text['severity']} | {text['rule']} | {text['file']} | {text['line']} |", "| --- | --- | --- | ---: |",
     ]
-    for finding in report["findings"]:
+    for finding in active:
         category = _RULES[finding["rule_id"]][0]
         lines.append(f"| {finding['severity'].title()} | {text[f'{category}.title']} | {finding['file']} | {finding['line']} |")
         lines.extend(["", f"**{text[f'{category}.description']}**", "", f"**{text[f'{category}.fix']}**", ""])
-    if not report["findings"]:
+    if not active:
         lines.extend(["", text["no_findings"], ""])
+    if suppressed:
+        lines.extend(["", f"## {text['suppressed']}", "", f"| {text['rule']} | {text['file']} | {text['line']} | {text['expires']} | {text['suppression_reason']} |", "| --- | --- | ---: | --- | --- |"])
+        for finding in suppressed:
+            lines.append(f"| {finding['rule_id']} | {finding['file']} | {finding['line']} | {finding['suppression_expires']} | {finding['suppression_reason']} |")
     lines.extend(["", text["redaction"], ""])
     return "\n".join(lines)
+
+
 
 
 _CHECK_FOR_CATEGORY = {
@@ -663,7 +672,8 @@ def render_local_sarif(report: dict[str, Any]) -> str:
         path_prefix = Path(".")
 
     results: list[dict[str, Any]] = []
-    for finding in report["findings"]:
+    all_findings = [*report["findings"], *report.get("suppressed_findings", [])]
+    for finding in all_findings:
         rule_id = finding["rule_id"]
         severity = finding["severity"]
         level = {"high": "error", "medium": "warning", "low": "note"}[severity]
@@ -687,6 +697,11 @@ def render_local_sarif(report: dict[str, Any]) -> str:
                 "remediation": finding["remediation"],
             },
         })
+        if "suppression_reason" in finding:
+            results[-1]["suppressions"] = [{
+                "kind": "external",
+                "justification": finding["suppression_reason"],
+            }]
 
     sarif = {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
@@ -766,7 +781,64 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
         "scanned_files": scanned,
         "checks": checks,
         "findings": findings,
+        "suppressed_findings": [],
     }
+
+
+def apply_suppressions(report: dict[str, Any], suppressions_path: Path | None) -> None:
+    """Move active findings covered by dated, reasoned suppressions into a visible list."""
+    report["suppressed_findings"] = []
+    if suppressions_path is None:
+        return
+    try:
+        data = yaml.safe_load(suppressions_path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValidationError(f"cannot read suppressions file: {exc}") from exc
+    except yaml.YAMLError as exc:
+        raise ValidationError("suppressions file is not valid YAML") from exc
+    if not isinstance(data, dict) or data.get("version") != 1 or not isinstance(data.get("suppressions"), list):
+        raise ValidationError("suppressions file must contain version: 1 and a suppressions list")
+
+    entries: list[dict[str, str]] = []
+    today = datetime.now(timezone.utc).date()
+    for index, item in enumerate(data["suppressions"], 1):
+        if not isinstance(item, dict) or not {"rule_id", "path", "reason", "expires"} <= set(item):
+            raise ValidationError(f"suppression {index} must set rule_id, path, reason, and expires")
+        rule_pattern = str(item["rule_id"]).strip()
+        path_pattern = str(item["path"]).replace("\\", "/").strip()
+        reason = str(item["reason"]).strip()
+        expires_text = str(item["expires"]).strip()
+        if not any(fnmatch.fnmatchcase(rule_id, rule_pattern) for rule_id in _RULES):
+            raise ValidationError(f"suppression {index} rule_id matches no known rule")
+        if not path_pattern or path_pattern.startswith("/") or ".." in Path(path_pattern).parts:
+            raise ValidationError(f"suppression {index} path must be a relative path pattern without '..'")
+        if not reason:
+            raise ValidationError(f"suppression {index} requires a non-empty reason")
+        try:
+            expires = date.fromisoformat(expires_text)
+        except ValueError as exc:
+            raise ValidationError(f"suppression {index} expires must use YYYY-MM-DD") from exc
+        if expires.isoformat() != expires_text or expires < today:
+            raise ValidationError(f"suppression {index} is expired or has an invalid date")
+        entries.append({"rule_id": rule_pattern, "path": path_pattern, "reason": reason, "expires": expires_text})
+
+    active: list[dict[str, Any]] = []
+    for finding in report["findings"]:
+        relative = finding["file"].replace("\\", "/")
+        match = next((
+            entry for entry in entries
+            if fnmatch.fnmatchcase(finding["rule_id"], entry["rule_id"])
+            and fnmatch.fnmatchcase(relative, entry["path"])
+        ), None)
+        if match is None:
+            active.append(finding)
+        else:
+            suppressed = dict(finding)
+            suppressed["suppression_reason"] = match["reason"]
+            suppressed["suppression_expires"] = match["expires"]
+            suppressed["suppression_path"] = match["path"]
+            report["suppressed_findings"].append(suppressed)
+    report["findings"] = active
 
 
 def write_local_reports(

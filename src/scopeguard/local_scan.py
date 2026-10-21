@@ -12,7 +12,7 @@ import tempfile
 
 import yaml
 from datetime import date, datetime, timezone
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 from urllib.parse import quote
 
@@ -251,7 +251,7 @@ _RULES = {
     "terraform.s3-public-access-disabled": ("tf_s3_block", "high"),
     "terraform.database-publicly-accessible": ("tf_database_public", "high"),
     "terraform.storage-unencrypted": ("tf_storage", "medium"),
-    "dependency.osv": ("dependency", "high"),
+    "dependency.osv": ("dependency", "unknown"),
 }
 
 _SECRET_ASSIGNMENT = re.compile(
@@ -912,7 +912,7 @@ def apply_suppressions(report: dict[str, Any], suppressions_path: Path | None) -
         expires_text = str(item["expires"]).strip()
         if not any(fnmatch.fnmatchcase(rule_id, rule_pattern) for rule_id in _RULES):
             raise ValidationError(f"suppression {index} rule_id matches no known rule")
-        if not path_pattern or path_pattern.startswith("/") or ".." in Path(path_pattern).parts:
+        if not path_pattern or path_pattern.startswith("/") or Path(path_pattern).is_absolute() or PureWindowsPath(path_pattern).is_absolute() or ".." in Path(path_pattern).parts or ".." in PureWindowsPath(path_pattern).parts:
             raise ValidationError(f"suppression {index} path must be a relative path pattern without '..'")
         if not reason:
             raise ValidationError(f"suppression {index} requires a non-empty reason")

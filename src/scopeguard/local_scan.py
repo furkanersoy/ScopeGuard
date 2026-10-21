@@ -10,6 +10,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from .config import ValidationError
 
@@ -431,6 +432,109 @@ def render_local_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+_CHECK_FOR_CATEGORY = {
+    "secret": "secrets",
+    "eval": "python",
+    "pickle": "python",
+    "yaml": "python",
+    "shell": "python",
+    "tls": "python",
+    "mktemp": "python",
+    "debug": "config",
+    "cors": "config",
+    "docker_root": "docker",
+    "docker_base": "docker",
+    "docker_secret": "docker",
+    "k8s_privileged": "kubernetes",
+    "k8s_escalation": "kubernetes",
+    "k8s_root": "kubernetes",
+    "k8s_host_namespace": "kubernetes",
+    "k8s_host_path": "kubernetes",
+    "k8s_capabilities": "kubernetes",
+}
+
+
+def render_local_sarif(report: dict[str, Any]) -> str:
+    """Render findings as a local SARIF 2.1.0 document without source snippets."""
+    text = _TEXT[report["language"]]
+    selected_checks = set(report["checks"])
+    rules: list[dict[str, Any]] = []
+    rule_indexes: dict[str, int] = {}
+    for rule_id, (category, severity) in sorted(_RULES.items()):
+        if _CHECK_FOR_CATEGORY[category] not in selected_checks:
+            continue
+        level = {"high": "error", "medium": "warning", "low": "note"}[severity]
+        rule_indexes[rule_id] = len(rules)
+        rules.append({
+            "id": rule_id,
+            "name": rule_id.replace(".", "_").replace("-", "_"),
+            "shortDescription": {"text": text[f"{category}.title"]},
+            "fullDescription": {"text": text[f"{category}.description"]},
+            "help": {"text": text[f"{category}.fix"]},
+            "helpUri": "https://github.com/furkanersoy/ScopeGuard#offline-local-source-inspection",
+            "defaultConfiguration": {"level": level},
+            "properties": {
+                "tags": ["security", category],
+                "scopeguard/severity": severity,
+            },
+        })
+
+    root = Path(report["scanned_path"])
+    base = root.parent if root.is_file() else root
+    base_uri = base.as_uri()
+    if not base_uri.endswith("/"):
+        base_uri += "/"
+
+    results: list[dict[str, Any]] = []
+    for finding in report["findings"]:
+        rule_id = finding["rule_id"]
+        severity = finding["severity"]
+        level = {"high": "error", "medium": "warning", "low": "note"}[severity]
+        uri = quote(finding["file"].replace("\\", "/"), safe="/-._~")
+        results.append({
+            "ruleId": rule_id,
+            "ruleIndex": rule_indexes[rule_id],
+            "level": level,
+            "message": {"text": finding["description"]},
+            "locations": [{
+                "physicalLocation": {
+                    "artifactLocation": {"uri": uri, "uriBaseId": "SCAN_ROOT"},
+                    "region": {"startLine": finding["line"]},
+                },
+            }],
+            "properties": {
+                "category": finding["category"],
+                "severity": severity,
+                "remediation": finding["remediation"],
+            },
+        })
+
+    sarif = {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "ScopeGuard",
+                    "informationUri": "https://github.com/furkanersoy/ScopeGuard",
+                    "rules": rules,
+                },
+            },
+            "originalUriBaseIds": {"SCAN_ROOT": {"uri": base_uri}},
+            "results": results,
+            "properties": {
+                "mode": report["mode"],
+                "language": report["language"],
+                "checks": report["checks"],
+                "scannedFiles": report["scanned_files"],
+                "noNetworkAccess": True,
+                "sourceSnippetsIncluded": False,
+            },
+        }],
+    }
+    return json.dumps(sarif, indent=2, ensure_ascii=False) + "\n"
+
+
 def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_paths: list[Path] | None = None) -> dict[str, Any]:
     """Scan local text files statically; no code execution and no network access."""
     if language not in _TEXT:
@@ -485,12 +589,19 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
     }
 
 
-def write_local_reports(report: dict[str, Any], json_path: Path, markdown_path: Path | None = None) -> None:
+def write_local_reports(
+    report: dict[str, Any],
+    json_path: Path,
+    markdown_path: Path | None = None,
+    sarif_path: Path | None = None,
+) -> None:
     outputs = [json_path.resolve()]
     if markdown_path is not None:
         outputs.append(markdown_path.resolve())
+    if sarif_path is not None:
+        outputs.append(sarif_path.resolve())
     if len(set(outputs)) != len(outputs):
-        raise ValidationError("JSON and Markdown outputs must use different paths")
+        raise ValidationError("JSON, Markdown, and SARIF outputs must use different paths")
     for output in outputs:
         if Path(report["scanned_path"]).resolve() == output:
             raise ValidationError("report output must not overwrite the scan target")
@@ -498,3 +609,5 @@ def write_local_reports(report: dict[str, Any], json_path: Path, markdown_path: 
     _atomic_write(json_path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     if markdown_path is not None:
         _atomic_write(markdown_path, render_local_markdown(report))
+    if sarif_path is not None:
+        _atomic_write(sarif_path, render_local_sarif(report))

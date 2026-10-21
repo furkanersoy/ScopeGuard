@@ -11,7 +11,7 @@ from . import __version__
 from .config import ValidationError, validate_inputs
 from .coverage import build_coverage, render_coverage_table
 from .console import colorize, run_console
-from .local_scan import inspect_path, write_local_reports
+from .local_scan import apply_suppressions, inspect_path, write_local_reports
 from .planner import build_plan
 from .runner import run_scenarios
 from .wizard import run_init_wizard
@@ -55,10 +55,12 @@ def _parser() -> argparse.ArgumentParser:
 
     inspect = subparsers.add_parser("inspect", help="Scan local source, configuration, Dockerfile, and Kubernetes patterns offline; never executes scanned code.")
     inspect.add_argument("--path", required=True, type=Path, help="File or directory to inspect")
-    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config", "docker", "kubernetes"), default=["secrets", "python", "config", "docker", "kubernetes"], help="Checks: secrets, python, config, docker, kubernetes (default: all)")
+    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config", "docker", "kubernetes", "terraform"), default=["secrets", "python", "config", "docker", "kubernetes", "terraform"], help="Checks: secrets, python, config, docker, kubernetes, terraform (default: all)")
     inspect.add_argument("--output", type=Path, default=Path("scopeguard-inspect.json"), help="Local JSON report path")
     inspect.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
     inspect.add_argument("--sarif-output", type=Path, help="Optional local SARIF 2.1.0 report path; no upload is performed")
+    inspect.add_argument("--html-output", type=Path, help="Optional local self-contained HTML report path")
+    inspect.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     return parser
 
@@ -70,19 +72,24 @@ def _execute(args: argparse.Namespace) -> int:
             outputs.append(args.markdown_output)
         if args.sarif_output:
             outputs.append(args.sarif_output)
+        if args.html_output:
+            outputs.append(args.html_output)
         try:
             report = inspect_path(args.path, args.checks, args.language, output_paths=outputs)
-            write_local_reports(report, args.output, args.markdown_output, args.sarif_output)
+            apply_suppressions(report, args.suppressions)
+            write_local_reports(report, args.output, args.markdown_output, args.sarif_output, args.html_output)
         except (ValidationError, OSError) as exc:
             print(f"Inspection failed: {exc}", file=sys.stderr)
             return 2
-        print(f"Scanned {report['scanned_files']} local file(s); findings: {len(report['findings'])}.")
+        print(f"Scanned {report['scanned_files']} local file(s); active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
         print("No code was executed and no network requests were sent. Matched secret values were omitted.")
         print(f"JSON report written to {args.output}")
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
         if args.sarif_output:
             print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
+        if args.html_output:
+            print(f"HTML report written to {args.html_output}")
         return 1 if report["findings"] else 0
 
     if args.command == "init":

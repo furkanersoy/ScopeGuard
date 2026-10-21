@@ -80,8 +80,9 @@ def _show_help(output: TextIO) -> None:
         "      [--markdown-output report.md] [--sarif-output report.sarif] [--language tr|en]\n"
         "      EN: Run configured read-only GET checks and save local reports.\n"
         "      TR: Tanımlı salt okunur GET kontrollerini çalıştırıp yerel rapor yazar.\n"
-        "  inspect --path <file-or-folder> --checks secrets python config docker kubernetes\n"
-        "          [--output report.json] [--markdown-output report.md] [--sarif-output report.sarif]\n"
+        "  inspect --path <file-or-folder> --checks secrets python config docker kubernetes terraform\n"
+        "          [--output report.json] [--markdown-output report.md] [--sarif-output report.sarif] [--html-output report.html]\n"
+        "          [--suppressions scopeguard-ignore.yaml]\n"
         "      EN: Select local check categories and save JSON, Markdown, and optional SARIF reports; scans are offline and never execute code.\n"
         "      TR: Yerel kontrol kategorilerini seçip JSON, Markdown ve isteğe bağlı SARIF raporu kaydeder; tarama çevrimdışıdır, kod çalıştırmaz.\n"
         "  menu | help | version | exit\n"
@@ -189,6 +190,12 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     sarif = _answer(source, output, "SARIF report path / SARIF rapor yolu", _report_sidecar(report, ".sarif"))
     if sarif is None:
         return False
+    html_report = _answer(source, output, "HTML report path / HTML rapor yolu", _report_sidecar(report, ".html"))
+    if html_report is None:
+        return False
+    suppressions = _answer(source, output, "Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter)", "")
+    if suppressions is None:
+        return False
     language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
@@ -204,7 +211,10 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             if checks and all(item in allowed for item in checks):
                 break
             output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\n")
-    _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--language", language], output)
+    _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language], output)
+    if suppressions:
+        args.extend(["--suppressions", suppressions])
+    _dispatch(command_handler, args, output)
     return True
 
 

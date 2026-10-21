@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 from typing import Any
 
@@ -239,3 +240,71 @@ def render_markdown_report(report: dict[str, Any]) -> str:
             ])
     lines.extend(["", text["redaction_note"], ""])
     return "\n".join(lines)
+
+
+def render_html_report(report: dict[str, Any]) -> str:
+    """Render a self-contained, localized HTML report with escaped report content."""
+    language = report.get("language", "en")
+    if language not in SUPPORTED_LANGUAGES:
+        raise ValueError(f"unsupported report language: {language}")
+    text = _TEXT[language]
+    summary = report["summary"]
+    status_names = {"PASS": "pass", "FAIL": "fail", "SKIPPED": "skipped", "ERROR": "error"}
+    check_rows = []
+    for result in report["results"]:
+        actual = result.get("actual_status", result.get("reason", "-"))
+        assertions = "; ".join(
+            f"{item['pointer']} {item['operator']}: {item['status']}"
+            for item in result.get("assertions", [])
+        ) or "-"
+        cells = (
+            text[status_names[result["status"]]], result["id"], result["identity"],
+            result["operation"], ", ".join(map(str, result["expected_status"])),
+            actual, assertions,
+        )
+        check_rows.append("<tr>" + "".join(f"<td>{html.escape(str(value))}</td>" for value in cells) + "</tr>")
+    finding_rows = []
+    for finding in report.get("findings", []):
+        cells = (
+            finding["severity"], finding["title"], finding["check_id"], finding["evidence"],
+            finding["description"], finding["impact"], finding["remediation"],
+        )
+        finding_rows.append("<tr>" + "".join(f"<td>{html.escape(str(value))}</td>" for value in cells) + "</tr>")
+    checks_body = "\\n".join(check_rows) or '<tr><td colspan="7">—</td></tr>'
+    findings_body = "\\n".join(finding_rows) or f'<tr><td colspan="7">{html.escape(text["findings"])}: 0</td></tr>'
+    labels = {
+        "title": text["report_title"], "generated": text["generated"], "version": text["version"],
+        "openapi": text["openapi"], "scenario": text["scenario"], "summary": text["summary"],
+        "checks": text["checks"], "findings": text["findings"], "status": text["status"],
+        "check": text["check"], "identity": text["identity"], "operation": text["operation"],
+        "expected": text["expected"], "actual": text["actual"], "assertions": text["assertions"],
+        "severity": text["severity"], "evidence": text["evidence"], "impact": text["impact"],
+        "remediation": text["remediation"], "redaction": text["redaction_note"],
+    }
+    labels = {key: html.escape(value) for key, value in labels.items()}
+    return f"""<!doctype html>
+<html lang="{language}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{labels["title"]}</title>
+<style>
+body{{font:14px system-ui,sans-serif;margin:2rem;max-width:1500px}}
+h1{{margin-bottom:.25rem}}.meta{{opacity:.8}}.summary{{display:flex;gap:1rem;flex-wrap:wrap}}
+.summary span{{padding:.6rem 1rem;border:1px solid #8888;border-radius:.5rem}}
+.wrap{{overflow:auto;margin:1rem 0 2rem}}table{{border-collapse:collapse;width:100%;min-width:900px}}
+th,td{{border:1px solid #8886;padding:.55rem;text-align:left;vertical-align:top}}
+th{{position:sticky;top:0;background:#263342}}td{{overflow-wrap:anywhere}}.note{{opacity:.8}}
+</style></head><body>
+<h1>{labels["title"]}</h1>
+<p class="meta">{labels["generated"]}: {html.escape(str(report["generated_at"]))} · {labels["version"]}: {html.escape(str(report["version"]))}<br>
+{labels["openapi"]}: {html.escape(str(report["spec_file"]))} · {labels["scenario"]}: {html.escape(str(report["scenario_file"]))}</p>
+<h2>{labels["summary"]}</h2>
+<div class="summary"><span>{html.escape(text["pass"])}: {summary["PASS"]}</span><span>{html.escape(text["fail"])}: {summary["FAIL"]}</span>
+<span>{html.escape(text["skipped"])}: {summary["SKIPPED"]}</span><span>{html.escape(text["error"])}: {summary["ERROR"]}</span></div>
+<h2>{labels["checks"]}</h2><div class="wrap"><table><thead><tr>
+<th>{labels["status"]}</th><th>{labels["check"]}</th><th>{labels["identity"]}</th><th>{labels["operation"]}</th>
+<th>{labels["expected"]}</th><th>{labels["actual"]}</th><th>{labels["assertions"]}</th></tr></thead><tbody>{checks_body}</tbody></table></div>
+<h2>{labels["findings"]}</h2><div class="wrap"><table><thead><tr>
+<th>{labels["severity"]}</th><th>{labels["findings"]}</th><th>{labels["check"]}</th><th>{labels["evidence"]}</th>
+<th>{labels["status"]}</th><th>{labels["impact"]}</th><th>{labels["remediation"]}</th></tr></thead><tbody>{findings_body}</tbody></table></div>
+<p class="note">{labels["redaction"]}</p></body></html>
+"""

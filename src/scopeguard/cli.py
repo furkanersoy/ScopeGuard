@@ -12,7 +12,7 @@ from .config import ValidationError, validate_inputs
 from .coverage import build_coverage, render_coverage_table
 from .console import colorize, run_console
 from .local_scan import apply_suppressions, inspect_path, write_local_reports
-from .dependency_scan import scan_dependencies
+from .dependency_scan import scan_dependencies, validate_dependency_outputs
 from .report_compare import compare_reports, write_comparison_reports
 from .planner import build_plan
 from .runner import run_scenarios
@@ -117,6 +117,7 @@ def _execute(args: argparse.Namespace) -> int:
             if candidate is not None:
                 outputs.append(candidate)
         try:
+            validate_dependency_outputs(args.path, outputs)
             report = scan_dependencies(args.path, args.language)
             apply_suppressions(report, args.suppressions)
             write_local_reports(report, args.output, args.markdown_output, args.sarif_output, args.html_output)
@@ -137,8 +138,13 @@ def _execute(args: argparse.Namespace) -> int:
 
     if args.command == "compare":
         try:
-            if args.output.resolve() in {args.previous.resolve(), args.current.resolve()}:
-                raise ValidationError("comparison output must not overwrite either input report")
+            outputs = [args.output, *[item for item in (args.markdown_output, args.html_output) if item is not None]]
+            resolved_outputs = [item.resolve() for item in outputs]
+            input_reports = {args.previous.resolve(), args.current.resolve()}
+            if len(set(resolved_outputs)) != len(resolved_outputs):
+                raise ValidationError("comparison output paths must be different")
+            if input_reports & set(resolved_outputs):
+                raise ValidationError("comparison outputs must not overwrite either input report")
             report = compare_reports(args.previous, args.current)
             write_comparison_reports(report, args.output, args.markdown_output, args.html_output)
         except (ValidationError, OSError) as exc:

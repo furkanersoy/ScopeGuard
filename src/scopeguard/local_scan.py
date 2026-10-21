@@ -105,6 +105,13 @@ _TEXT = {
         "html.active": "Active findings",
         "html.total": "Total findings",
         "html.empty": "No active findings match this filter.",
+        "html.status": "Status",
+        "html.active_status": "Active",
+        "html.suppressed_status": "Suppressed",
+        "html.description": "Description",
+        "html.remediation": "Remediation",
+        "html.severity_filter": "Severity",
+
 
         "summary": "ScopeGuard local inspection",
         "findings": "Findings",
@@ -192,6 +199,13 @@ _TEXT = {
         "html.active": "Etkin bulgular",
         "html.total": "Toplam bulgu",
         "html.empty": "Bu filtreyle eşleşen etkin bulgu yok.",
+        "html.status": "Durum",
+        "html.active_status": "Etkin",
+        "html.suppressed_status": "Bastırıldı",
+        "html.description": "Açıklama",
+        "html.remediation": "Düzeltme",
+        "html.severity_filter": "Önem",
+
 
         "summary": "ScopeGuard yerel inceleme",
         "findings": "Bulgular",
@@ -639,6 +653,80 @@ _CHECK_FOR_CATEGORY = {
 }
 
 
+def render_local_html(report: dict[str, Any]) -> str:
+    """Render a self-contained, escaped HTML report for local viewing."""
+    text = _TEXT[report["language"]]
+    active = report["findings"]
+    suppressed = report.get("suppressed_findings", [])
+    all_findings = [*active, *suppressed]
+    rows: list[str] = []
+    for finding in all_findings:
+        category = _RULES[finding["rule_id"]][0]
+        is_suppressed = "suppression_reason" in finding
+        status = text["html.suppressed_status"] if is_suppressed else text["html.active_status"]
+        reason = finding.get("suppression_reason", "")
+        expires = finding.get("suppression_expires", "")
+        cells = [
+            finding["severity"].title(),
+            finding["rule_id"],
+            finding["file"],
+            str(finding["line"]),
+            text[f"{category}.title"],
+            finding["description"],
+            finding["remediation"],
+            f"{status} — {reason} ({expires})" if is_suppressed else status,
+        ]
+        rows.append(
+            f'<tr data-severity="{html.escape(finding["severity"], quote=True)}" '
+            f'data-status="{"suppressed" if is_suppressed else "active"}">'
+            + "".join(f"<td>{html.escape(cell)}</td>" for cell in cells)
+            + "</tr>"
+        )
+    body = "\n".join(rows) or f'<tr><td colspan="8">{html.escape(text["no_findings"])}</td></tr>'
+    title = html.escape(text["summary"])
+    source_name = html.escape(Path(report["scanned_path"]).name)
+    empty = html.escape(text["html.empty"])
+    return f"""<!doctype html>
+<html lang="{report["language"]}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<style>
+:root{{color-scheme:light dark;font:14px system-ui,sans-serif}}
+body{{margin:2rem;max-width:1500px}}h1{{margin-bottom:.25rem}}.meta{{opacity:.75;margin-bottom:1.5rem}}
+.controls{{display:flex;gap:.75rem;margin:1rem 0}}input,select{{padding:.5rem;min-width:12rem}}
+.table-wrap{{overflow:auto}}table{{border-collapse:collapse;width:100%;min-width:1000px}}
+th,td{{border:1px solid #7776;padding:.55rem;text-align:left;vertical-align:top}}
+th{{position:sticky;top:0;background:#263342}}td{{max-width:28rem;overflow-wrap:anywhere}}
+tr[data-status="suppressed"]{{opacity:.68}}.note{{margin-top:1rem;opacity:.8}}
+</style>
+</head>
+<body>
+<h1>{title}</h1>
+<p class="meta">{html.escape(text["file"])}: {source_name} · {html.escape(text["html.active"])}: {len(active)} · {html.escape(text["suppressed"])}: {len(suppressed)} · {html.escape(text["html.total"])}: {len(all_findings)}</p>
+<div class="controls">
+<label>{html.escape(text["html.search"])} <input id="search" type="search"></label>
+<label>{html.escape(text["html.severity_filter"])}
+<select id="severity"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option></select></label>
+<label>{html.escape(text["html.status"])}
+<select id="status"><option value="">All</option><option value="active">{html.escape(text["html.active_status"])}</option><option value="suppressed">{html.escape(text["html.suppressed_status"])}</option></select></label>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>{html.escape(text["severity"])}</th><th>{html.escape(text["rule"])}</th><th>{html.escape(text["file"])}</th><th>{html.escape(text["line"])}</th><th>Finding</th><th>{html.escape(text["html.description"])}</th><th>{html.escape(text["html.remediation"])}</th><th>{html.escape(text["html.status"])}</th></tr></thead>
+<tbody id="findings">{body}</tbody></table></div>
+<p id="empty" hidden>{empty}</p>
+<p class="note">{html.escape(text["redaction"])}</p>
+<script>
+const search=document.getElementById("search"),severity=document.getElementById("severity"),status=document.getElementById("status");
+function filterRows(){{let visible=0;for(const row of document.querySelectorAll("#findings tr")){{const matchText=row.innerText.toLowerCase().includes(search.value.toLowerCase());const matchSeverity=!severity.value||row.dataset.severity===severity.value.toLowerCase();const matchStatus=!status.value||row.dataset.status===status.value;const show=matchText&&matchSeverity&&matchStatus;row.hidden=!show;if(show)visible++}}document.getElementById("empty").hidden=visible!==0}}
+for(const control of [search,severity,status])control.addEventListener("input",filterRows);
+</script>
+</body>
+</html>
+"""
+
+
 def render_local_sarif(report: dict[str, Any]) -> str:
     """Render findings as a local SARIF 2.1.0 document without source snippets."""
     text = _TEXT[report["language"]]
@@ -846,20 +934,26 @@ def write_local_reports(
     json_path: Path,
     markdown_path: Path | None = None,
     sarif_path: Path | None = None,
+    html_path: Path | None = None,
 ) -> None:
     outputs = [json_path.resolve()]
     if markdown_path is not None:
         outputs.append(markdown_path.resolve())
     if sarif_path is not None:
         outputs.append(sarif_path.resolve())
+    if html_path is not None:
+        outputs.append(html_path.resolve())
     if len(set(outputs)) != len(outputs):
-        raise ValidationError("JSON, Markdown, and SARIF outputs must use different paths")
+        raise ValidationError("JSON, Markdown, SARIF, and HTML outputs must use different paths")
     for output in outputs:
         if Path(report["scanned_path"]).resolve() == output:
             raise ValidationError("report output must not overwrite the scan target")
     report["findings_count"] = len(report["findings"])
+    report["suppressed_count"] = len(report.get("suppressed_findings", []))
     _atomic_write(json_path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     if markdown_path is not None:
         _atomic_write(markdown_path, render_local_markdown(report))
     if sarif_path is not None:
         _atomic_write(sarif_path, render_local_sarif(report))
+    if html_path is not None:
+        _atomic_write(html_path, render_local_html(report))

@@ -80,9 +80,9 @@ def _show_help(output: TextIO) -> None:
         "      [--markdown-output report.md] [--sarif-output report.sarif] [--language tr|en]\n"
         "      EN: Run configured read-only GET checks and save local reports.\n"
         "      TR: Tanımlı salt okunur GET kontrollerini çalıştırıp yerel rapor yazar.\n"
-        "  inspect --path <file-or-folder> --checks secrets python config\n"
-        "      EN: Scan local files offline; code is not run and secret values are redacted.\n"
-        "      TR: Yerel dosyaları çevrimdışı tarar; kod çalışmaz, sır değerleri gizlenir.\n"
+        "  inspect --path <file-or-folder> --checks secrets python config docker\n"
+        "      EN: Scan local source, configuration, and Dockerfiles offline; code is not run and secret values are redacted.\n"
+        "      TR: Yerel kaynak kodu, yapılandırma ve Dockerfile dosyalarını çevrimdışı tarar; kod çalışmaz, sır değerleri gizlenir.\n"
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"
@@ -173,8 +173,8 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
 def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, secrets_only: bool) -> bool:
     section = "Secret Detection / Gizli Bilgi Taraması" if secrets_only else "Source Code & Configuration / Kaynak Kod ve Yapılandırma"
     output.write(f"\n{section}\n")
-    output.write("This scan is local and offline. It does not execute source code.\n")
-    output.write("Bu tarama yerel ve çevrimdışıdır. Kaynak kodu çalıştırmaz.\n")
+    output.write("This scan is local and offline. It does not execute source code or build containers.\n")
+    output.write("Bu tarama yerel ve çevrimdışıdır. Kaynak kodu çalıştırmaz veya konteyner imajı oluşturmaz.\n")
     path = _answer(source, output, "File or folder to inspect / İncelenecek dosya veya klasör", ".")
     if path is None:
         return False

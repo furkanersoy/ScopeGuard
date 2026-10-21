@@ -285,7 +285,7 @@ def render_html_report(report: dict[str, Any]) -> str:
     return f"""<!doctype html>
 <html lang="{language}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{labels["title"]}</title>
+<title>{labels['title']}</title>
 <style>
 body{{font:14px system-ui,sans-serif;margin:2rem;max-width:1500px}}
 h1{{margin-bottom:.25rem}}.meta{{opacity:.8}}.summary{{display:flex;gap:1rem;flex-wrap:wrap}}
@@ -294,17 +294,17 @@ h1{{margin-bottom:.25rem}}.meta{{opacity:.8}}.summary{{display:flex;gap:1rem;fle
 th,td{{border:1px solid #8886;padding:.55rem;text-align:left;vertical-align:top}}
 th{{position:sticky;top:0;background:#263342}}td{{overflow-wrap:anywhere}}.note{{opacity:.8}}
 </style></head><body>
-<h1>{labels["title"]}</h1>
-<p class="meta">{labels["generated"]}: {html.escape(str(report["generated_at"]))} · {labels["version"]}: {html.escape(str(report["version"]))}<br>
-{labels["openapi"]}: {html.escape(str(report["spec_file"]))} · {labels["scenario"]}: {html.escape(str(report["scenario_file"]))}</p>
-<h2>{labels["summary"]}</h2>
-<div class="summary"><span>{html.escape(text["pass"])}: {summary["PASS"]}</span><span>{html.escape(text["fail"])}: {summary["FAIL"]}</span>
-<span>{html.escape(text["skipped"])}: {summary["SKIPPED"]}</span><span>{html.escape(text["error"])}: {summary["ERROR"]}</span></div>
-<h2>{labels["checks"]}</h2><div class="wrap"><table><thead><tr>
-<th>{labels["status"]}</th><th>{labels["check"]}</th><th>{labels["identity"]}</th><th>{labels["operation"]}</th>
-<th>{labels["expected"]}</th><th>{labels["actual"]}</th><th>{labels["assertions"]}</th></tr></thead><tbody>{checks_body}</tbody></table></div>
-<h2>{labels["findings"]}</h2><div class="wrap"><table><thead><tr>
-<th>{labels["severity"]}</th><th>{labels["findings"]}</th><th>{labels["check"]}</th><th>{labels["evidence"]}</th>
-<th>{labels["description"]}</th><th>{labels["impact"]}</th><th>{labels["remediation"]}</th></tr></thead><tbody>{findings_body}</tbody></table></div>
-<p class="note">{labels["redaction"]}</p></body></html>
+<h1>{labels['title']}</h1>
+<p class="meta">{labels['generated']}: {html.escape(str(report['generated_at']))} · {labels['version']}: {html.escape(str(report['version']))}<br>
+{labels['openapi']}: {html.escape(str(report['spec_file']))} · {labels['scenario']}: {html.escape(str(report['scenario_file']))}</p>
+<h2>{labels['summary']}</h2>
+<div class="summary"><span>{html.escape(text['pass'])}: {summary['PASS']}</span><span>{html.escape(text['fail'])}: {summary['FAIL']}</span>
+<span>{html.escape(text['skipped'])}: {summary['SKIPPED']}</span><span>{html.escape(text['error'])}: {summary['ERROR']}</span></div>
+<h2>{labels['checks']}</h2><div class="wrap"><table><thead><tr>
+<th>{labels['status']}</th><th>{labels['check']}</th><th>{labels['identity']}</th><th>{labels['operation']}</th>
+<th>{labels['expected']}</th><th>{labels['actual']}</th><th>{labels['assertions']}</th></tr></thead><tbody>{checks_body}</tbody></table></div>
+<h2>{labels['findings']}</h2><div class="wrap"><table><thead><tr>
+<th>{labels['severity']}</th><th>{labels['findings']}</th><th>{labels['check']}</th><th>{labels['evidence']}</th>
+<th>{labels['description']}</th><th>{labels['impact']}</th><th>{labels['remediation']}</th></tr></thead><tbody>{findings_body}</tbody></table></div>
+<p class="note">{labels['redaction']}</p></body></html>
 """

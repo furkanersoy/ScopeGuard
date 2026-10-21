@@ -270,8 +270,8 @@ def render_html_report(report: dict[str, Any]) -> str:
             finding["description"], finding["impact"], finding["remediation"],
         )
         finding_rows.append("<tr>" + "".join(f"<td>{html.escape(str(value))}</td>" for value in cells) + "</tr>")
-    checks_body = "\\n".join(check_rows) or '<tr><td colspan="7">—</td></tr>'
-    findings_body = "\\n".join(finding_rows) or f'<tr><td colspan="7">{html.escape(text["findings"])}: 0</td></tr>'
+    checks_body = "\n".join(check_rows) or '<tr><td colspan="7">—</td></tr>'
+    findings_body = "\n".join(finding_rows) or f'<tr><td colspan="7">{html.escape(text["findings"])}: 0</td></tr>'
     labels = {
         "title": text["report_title"], "generated": text["generated"], "version": text["version"],
         "openapi": text["openapi"], "scenario": text["scenario"], "summary": text["summary"],

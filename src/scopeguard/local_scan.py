@@ -714,6 +714,7 @@ def render_local_html(report: dict[str, Any]) -> str:
     description_label = html.escape(text["html.description"])
     remediation_label = html.escape(text["html.remediation"])
     redaction_label = html.escape(text["redaction"])
+    status_header_label = html.escape(text["html.status"])
     return f"""<!doctype html>
 <html lang="{language}">
 <head>
@@ -741,7 +742,7 @@ tr[data-status="suppressed"]{{opacity:.68}}.note{{margin-top:1rem;opacity:.8}}
 <select id="status"><option value="">All</option><option value="active">{active_status_label}</option><option value="suppressed">{suppressed_status_label}</option></select></label>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>{severity_label}</th><th>{rule_label}</th><th>{file_label}</th><th>{line_label}</th><th>Finding</th><th>{description_label}</th><th>{remediation_label}</th><th>{html.escape(text["html.status"])}</th></tr></thead>
+<thead><tr><th>{severity_label}</th><th>{rule_label}</th><th>{file_label}</th><th>{line_label}</th><th>Finding</th><th>{description_label}</th><th>{remediation_label}</th><th>{status_header_label}</th></tr></thead>
 <tbody id="findings">{body}</tbody></table></div>
 <p id="empty" hidden>{empty}</p>
 <p class="note">{redaction_label}</p>

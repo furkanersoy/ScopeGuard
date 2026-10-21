@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import ast
+import fnmatch
+import html
 import json
 import os
 import re
 import tempfile
 
 import yaml
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -81,6 +83,29 @@ _TEXT = {
         "k8s_capabilities.title": "Container requests ALL Linux capabilities",
         "k8s_capabilities.description": "The container requests every Linux capability, granting far more privilege than most workloads need.",
         "k8s_capabilities.fix": "Drop all capabilities by default and add back only the specific capabilities required.",
+        "tf_ingress.title": "Terraform ingress is open to the internet",
+        "tf_ingress.description": "A Terraform security group ingress rule accepts traffic from all IPv4 or IPv6 addresses. The allowed ports and workload exposure need review.",
+        "tf_ingress.fix": "Restrict ingress to the smallest required CIDR ranges and ports. Avoid 0.0.0.0/0 and ::/0 for administrative or sensitive services.",
+        "tf_s3_acl.title": "Terraform S3 ACL grants public access",
+        "tf_s3_acl.description": "An S3 bucket ACL grants public read or write access.",
+        "tf_s3_acl.fix": "Remove public ACL grants and use a reviewed bucket policy with S3 Block Public Access enabled.",
+        "tf_s3_block.title": "Terraform S3 public access block is disabled",
+        "tf_s3_block.description": "An S3 public access block setting is explicitly disabled, which may allow public ACLs or policies.",
+        "tf_s3_block.fix": "Enable all S3 Block Public Access settings unless a documented public bucket design requires otherwise.",
+        "tf_database_public.title": "Terraform database service is publicly accessible",
+        "tf_database_public.description": "A supported database resource explicitly enables public network accessibility.",
+        "tf_database_public.fix": "Disable public accessibility and use private networking with narrowly scoped access rules.",
+        "tf_storage.title": "Terraform storage encryption is disabled",
+        "tf_storage.description": "A supported storage resource explicitly disables encryption at rest.",
+        "tf_storage.fix": "Enable encryption at rest and use an approved key-management configuration.",
+        "suppressed": "Suppressed findings",
+        "suppression_reason": "Suppression reason",
+        "expires": "Expires",
+        "html.search": "Filter findings",
+        "html.active": "Active findings",
+        "html.total": "Total findings",
+        "html.empty": "No active findings match this filter.",
+
         "summary": "ScopeGuard local inspection",
         "findings": "Findings",
         "file": "File",
@@ -145,6 +170,29 @@ _TEXT = {
         "k8s_capabilities.title": "Konteyner tüm Linux yeteneklerini istiyor",
         "k8s_capabilities.description": "Konteyner tüm Linux yeteneklerini istiyor. Çoğu iş yükünün ihtiyaç duyduğundan çok daha fazla yetki verir.",
         "k8s_capabilities.fix": "Varsayılan olarak tüm yetenekleri kaldırın ve yalnızca gerekenleri tek tek ekleyin.",
+        "tf_ingress.title": "Terraform giriş kuralı internete açık",
+        "tf_ingress.description": "Terraform güvenlik grubu giriş kuralı IPv4 veya IPv6 üzerindeki tüm adreslerden trafik kabul ediyor. İzin verilen portlar ve iş yükünün maruziyeti incelenmelidir.",
+        "tf_ingress.fix": "Girişi gereken en dar CIDR aralıkları ve portlarla sınırlandırın. Yönetim veya hassas servislerde 0.0.0.0/0 ve ::/0 kullanmayın.",
+        "tf_s3_acl.title": "Terraform S3 ACL herkese açık erişim veriyor",
+        "tf_s3_acl.description": "S3 bucket ACL kuralı herkese açık okuma veya yazma izni veriyor.",
+        "tf_s3_acl.fix": "Herkese açık ACL izinlerini kaldırın; incelenmiş bucket politikası ve S3 Block Public Access kullanın.",
+        "tf_s3_block.title": "Terraform S3 herkese açık erişim engeli kapalı",
+        "tf_s3_block.description": "S3 herkese açık erişim engeli ayarlarından biri açıkça kapatılmış; bu durum ACL veya politikalarla erişim açılmasına neden olabilir.",
+        "tf_s3_block.fix": "Belgelenmiş herkese açık bucket gereksinimi yoksa tüm S3 Block Public Access ayarlarını açın.",
+        "tf_database_public.title": "Terraform veritabanı servisi herkese açık",
+        "tf_database_public.description": "Desteklenen bir veritabanı kaynağında internetten erişilebilirlik açıkça etkinleştirilmiş.",
+        "tf_database_public.fix": "İnternetten erişilebilirliği kapatın; özel ağ ve dar kapsamlı erişim kuralları kullanın.",
+        "tf_storage.title": "Terraform depolama şifrelemesi kapalı",
+        "tf_storage.description": "Desteklenen bir depolama kaynağında bekleme anındaki şifreleme açıkça devre dışı bırakılmış.",
+        "tf_storage.fix": "Bekleme anındaki şifrelemeyi açın ve onaylı bir anahtar yönetimi ayarı kullanın.",
+        "suppressed": "Bastırılan bulgular",
+        "suppression_reason": "İstisna gerekçesi",
+        "expires": "Bitiş tarihi",
+        "html.search": "Bulgularda filtrele",
+        "html.active": "Etkin bulgular",
+        "html.total": "Toplam bulgu",
+        "html.empty": "Bu filtreyle eşleşen etkin bulgu yok.",
+
         "summary": "ScopeGuard yerel inceleme",
         "findings": "Bulgular",
         "file": "Dosya",
@@ -176,6 +224,11 @@ _RULES = {
     "kubernetes.host-namespace": ("k8s_host_namespace", "high"),
     "kubernetes.host-path": ("k8s_host_path", "high"),
     "kubernetes.capabilities-all": ("k8s_capabilities", "high"),
+    "terraform.public-ingress": ("tf_ingress", "high"),
+    "terraform.public-s3-acl": ("tf_s3_acl", "high"),
+    "terraform.s3-public-access-disabled": ("tf_s3_block", "high"),
+    "terraform.database-publicly-accessible": ("tf_database_public", "high"),
+    "terraform.storage-unencrypted": ("tf_storage", "medium"),
 }
 
 _SECRET_ASSIGNMENT = re.compile(
@@ -443,6 +496,67 @@ def _kubernetes_findings(source: str, relative: str, findings: list[dict[str, An
     except yaml.YAMLError:
         return
 
+def _terraform_findings(source: str, relative: str, findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
+    """Find selected risky settings in Terraform resource blocks without evaluating HCL."""
+    lines = source.splitlines()
+    resource_type: str | None = None
+    resource_depth = 0
+    ingress_depth: int | None = None
+
+    for number, raw in enumerate(lines, 1):
+        line = raw.split("#", 1)[0].split("//", 1)[0].strip()
+        if not line:
+            continue
+
+        start = re.match(r'(?i)^resource\s+"([^"]+)"\s+"[^"]+"\s*\{', line)
+        if start:
+            resource_type = start.group(1).lower()
+            resource_depth = line.count("{") - line.count("}")
+            ingress_depth = None
+            continue
+
+        if resource_type is None:
+            continue
+
+        if re.match(r"(?i)^ingress\s*\{", line):
+            ingress_depth = resource_depth + line.count("{") - line.count("}") - 1
+        if ingress_depth is not None and resource_type in {
+            "aws_security_group", "aws_security_group_rule", "aws_vpc_security_group_ingress_rule"
+        }:
+            if re.search(r'(?i)(?:cidr_blocks|cidr_ipv4)\s*=\s*(?:\[\s*)?["\'](?:0\.0\.0\.0/0|::/0)["\']', line):
+                _add_finding(findings, seen, "terraform.public-ingress", relative, number)
+
+        if resource_type in {"aws_s3_bucket", "aws_s3_bucket_acl"}:
+            if re.search(r'(?i)\bacl\s*=\s*["\']public-(?:read|read-write)["\']', line):
+                _add_finding(findings, seen, "terraform.public-s3-acl", relative, number)
+
+        if resource_type == "aws_s3_bucket_public_access_block":
+            if re.search(r"(?i)\b(?:block_public_acls|block_public_policy|ignore_public_acls|restrict_public_buckets)\s*=\s*false\b", line):
+                _add_finding(findings, seen, "terraform.s3-public-access-disabled", relative, number)
+
+        if resource_type in {
+            "aws_db_instance", "aws_rds_cluster", "aws_elasticache_cluster",
+            "aws_elasticache_replication_group", "aws_redshift_cluster",
+        } and re.search(r"(?i)\bpublicly_accessible\s*=\s*true\b", line):
+            _add_finding(findings, seen, "terraform.database-publicly-accessible", relative, number)
+
+        if resource_type in {
+            "aws_ebs_volume", "aws_db_instance", "aws_rds_cluster",
+            "aws_elasticache_cluster", "aws_elasticache_replication_group",
+        } and re.search(r"(?i)\b(?:encrypted|storage_encrypted)\s*=\s*false\b", line):
+            _add_finding(findings, seen, "terraform.storage-unencrypted", relative, number)
+
+        opens = line.count("{")
+        closes = line.count("}")
+        resource_depth += opens - closes
+        if ingress_depth is not None and resource_depth < ingress_depth:
+            ingress_depth = None
+        if resource_depth <= 0:
+            resource_type = None
+            resource_depth = 0
+            ingress_depth = None
+
+
 def _scan_line_rules(line: str, relative: str, number: int, checks: set[str], findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
     if "secrets" in checks:
         secret_match = _SECRET_ASSIGNMENT.search(line)
@@ -508,6 +622,11 @@ _CHECK_FOR_CATEGORY = {
     "k8s_host_namespace": "kubernetes",
     "k8s_host_path": "kubernetes",
     "k8s_capabilities": "kubernetes",
+    "tf_ingress": "terraform",
+    "tf_s3_acl": "terraform",
+    "tf_s3_block": "terraform",
+    "tf_database_public": "terraform",
+    "tf_storage": "terraform",
 }
 
 
@@ -598,9 +717,9 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
     """Scan local text files statically; no code execution and no network access."""
     if language not in _TEXT:
         raise ValidationError("language must be 'tr' or 'en'")
-    allowed = {"secrets", "python", "config", "docker", "kubernetes"}
+    allowed = {"secrets", "python", "config", "docker", "kubernetes", "terraform"}
     if not checks or len(set(checks)) != len(checks) or any(check not in allowed for check in checks):
-        raise ValidationError("select one or more distinct checks: secrets, python, config, docker, kubernetes")
+        raise ValidationError("select one or more distinct checks: secrets, python, config, docker, kubernetes, terraform")
     if not path.exists():
         raise ValidationError(f"scan path does not exist: {path}")
     root = path.absolute()
@@ -626,6 +745,8 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
             _docker_findings(source, relative, findings, seen)
         if "kubernetes" in checks and file_path.suffix.lower() in {".yaml", ".yml"}:
             _kubernetes_findings(source, relative, findings, seen)
+        if "terraform" in checks and (file_path.suffix.lower() == ".tf" or file_path.name.lower().endswith(".tf.json")):
+            _terraform_findings(source, relative, findings, seen)
         if "secrets" in checks or "config" in checks:
             for number, line in enumerate(source.splitlines(), 1):
                 _scan_line_rules(line, relative, number, set(checks), findings, seen)

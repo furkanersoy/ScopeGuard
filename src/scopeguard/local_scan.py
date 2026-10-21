@@ -537,7 +537,7 @@ def _terraform_findings(source: str, relative: str, findings: list[dict[str, Any
         if ingress_depth is not None and resource_type in {
             "aws_security_group", "aws_security_group_rule", "aws_vpc_security_group_ingress_rule"
         }:
-            if re.search(r'(?i)(?:cidr_blocks|cidr_ipv4)\s*=\s*(?:\[\s*)?["\'](?:0\.0\.0\.0/0|::/0)["\']', line):
+            if re.search(r'(?i)(?:cidr_blocks|cidr_ipv4|ipv6_cidr_blocks)\s*=\s*(?:\[\s*)?["\'](?:0\.0\.0\.0/0|::/0)["\']', line):
                 _add_finding(findings, seen, "terraform.public-ingress", relative, number)
 
         if resource_type in {"aws_s3_bucket", "aws_s3_bucket_acl"}:
@@ -563,7 +563,7 @@ def _terraform_findings(source: str, relative: str, findings: list[dict[str, Any
         opens = line.count("{")
         closes = line.count("}")
         resource_depth += opens - closes
-        if ingress_depth is not None and resource_depth < ingress_depth:
+        if ingress_depth is not None and resource_depth <= ingress_depth:
             ingress_depth = None
         if resource_depth <= 0:
             resource_type = None

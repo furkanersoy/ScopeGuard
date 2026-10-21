@@ -698,8 +698,24 @@ def render_local_html(report: dict[str, Any]) -> str:
     title = html.escape(text["summary"])
     source_name = html.escape(Path(report["scanned_path"]).name)
     empty = html.escape(text["html.empty"])
+    language = report["language"]
+    file_label = html.escape(text["file"])
+    active_label = html.escape(text["html.active"])
+    suppressed_label = html.escape(text["suppressed"])
+    total_label = html.escape(text["html.total"])
+    search_label = html.escape(text["html.search"])
+    severity_filter_label = html.escape(text["html.severity_filter"])
+    status_label = html.escape(text["html.status"])
+    active_status_label = html.escape(text["html.active_status"])
+    suppressed_status_label = html.escape(text["html.suppressed_status"])
+    severity_label = html.escape(text["severity"])
+    rule_label = html.escape(text["rule"])
+    line_label = html.escape(text["line"])
+    description_label = html.escape(text["html.description"])
+    remediation_label = html.escape(text["html.remediation"])
+    redaction_label = html.escape(text["redaction"])
     return f"""<!doctype html>
-<html lang="{report["language"]}">
+<html lang="{language}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -716,19 +732,19 @@ tr[data-status="suppressed"]{{opacity:.68}}.note{{margin-top:1rem;opacity:.8}}
 </head>
 <body>
 <h1>{title}</h1>
-<p class="meta">{html.escape(text["file"])}: {source_name} · {html.escape(text["html.active"])}: {len(active)} · {html.escape(text["suppressed"])}: {len(suppressed)} · {html.escape(text["html.total"])}: {len(all_findings)}</p>
+<p class="meta">{file_label}: {source_name} · {active_label}: {len(active)} · {suppressed_label}: {len(suppressed)} · {total_label}: {len(all_findings)}</p>
 <div class="controls">
-<label>{html.escape(text["html.search"])} <input id="search" type="search"></label>
-<label>{html.escape(text["html.severity_filter"])}
+<label>{search_label} <input id="search" type="search"></label>
+<label>{severity_filter_label}
 <select id="severity"><option value="">All</option><option>Critical</option><option>High</option><option>Medium</option><option>Moderate</option><option>Low</option><option>Unknown</option></select></label>
-<label>{html.escape(text["html.status"])}
-<select id="status"><option value="">All</option><option value="active">{html.escape(text["html.active_status"])}</option><option value="suppressed">{html.escape(text["html.suppressed_status"])}</option></select></label>
+<label>{status_label}
+<select id="status"><option value="">All</option><option value="active">{active_status_label}</option><option value="suppressed">{suppressed_status_label}</option></select></label>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>{html.escape(text["severity"])}</th><th>{html.escape(text["rule"])}</th><th>{html.escape(text["file"])}</th><th>{html.escape(text["line"])}</th><th>Finding</th><th>{html.escape(text["html.description"])}</th><th>{html.escape(text["html.remediation"])}</th><th>{html.escape(text["html.status"])}</th></tr></thead>
+<thead><tr><th>{severity_label}</th><th>{rule_label}</th><th>{file_label}</th><th>{line_label}</th><th>Finding</th><th>{description_label}</th><th>{remediation_label}</th><th>{html.escape(text["html.status"])}</th></tr></thead>
 <tbody id="findings">{body}</tbody></table></div>
 <p id="empty" hidden>{empty}</p>
-<p class="note">{html.escape(text["redaction"])}</p>
+<p class="note">{redaction_label}</p>
 <script>
 const search=document.getElementById("search"),severity=document.getElementById("severity"),status=document.getElementById("status");
 function filterRows(){{let visible=0;for(const row of document.querySelectorAll("#findings tr")){{const matchText=row.innerText.toLowerCase().includes(search.value.toLowerCase());const matchSeverity=!severity.value||row.dataset.severity===severity.value.toLowerCase();const matchStatus=!status.value||row.dataset.status===status.value;const show=matchText&&matchSeverity&&matchStatus;row.hidden=!show;if(show)visible++}}document.getElementById("empty").hidden=visible!==0}}

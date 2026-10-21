@@ -2,7 +2,7 @@
 
 [English](README.md) | [Turkish version](README.tr.md)
 
-**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source, configuration, Dockerfile, and Kubernetes manifest and Terraform configuration patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, offline source and Terraform checks, optional OSV dependency lookups, reasoned expiring suppressions, bilingual findings, and local JSON, Markdown, SARIF, and HTML reports with comparison support.
+**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected risks in source code, configuration, Dockerfiles, Kubernetes manifests, and Terraform files. It includes an offline request planner and coverage matrix, a read-only API scenario runner, offline source and Terraform checks, optional OSV dependency lookups, reasoned expiring suppressions, bilingual findings, and local JSON, Markdown, SARIF, and HTML reports with comparison support.
 
 ## Current milestone
 
@@ -12,7 +12,7 @@
 - `GET /vulnerable/records/{id}` intentionally demonstrates a broken object-level authorization check.
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
 - `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
-- `scopeguard inspect` scans selected local source, configuration, Dockerfile, and Kubernetes manifest and Terraform configuration patterns without executing code, building containers, or using the network.
+- `scopeguard inspect` scans selected local source, configuration, Dockerfile, Kubernetes, and Terraform patterns without executing code, building containers, or using the network.
 - API, local, and dependency findings can be saved as JSON, Markdown, SARIF 2.1.0, and self-contained HTML files at user-selected local paths. Reports stay local by default.
 - Dependency checks query OSV only when `--allow-network` is explicitly provided; only package names, ecosystems, and pinned versions are sent.
 - Suppressions require a rule, relative path pattern, reason, and expiry date; suppressed items remain visible in reports.

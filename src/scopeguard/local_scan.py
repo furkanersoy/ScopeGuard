@@ -720,7 +720,7 @@ tr[data-status="suppressed"]{{opacity:.68}}.note{{margin-top:1rem;opacity:.8}}
 <div class="controls">
 <label>{html.escape(text["html.search"])} <input id="search" type="search"></label>
 <label>{html.escape(text["html.severity_filter"])}
-<select id="severity"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option><option>Unknown</option></select></label>
+<select id="severity"><option value="">All</option><option>Critical</option><option>High</option><option>Medium</option><option>Moderate</option><option>Low</option><option>Unknown</option></select></label>
 <label>{html.escape(text["html.status"])}
 <select id="status"><option value="">All</option><option value="active">{html.escape(text["html.active_status"])}</option><option value="suppressed">{html.escape(text["html.suppressed_status"])}</option></select></label>
 </div>

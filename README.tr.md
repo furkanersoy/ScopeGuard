@@ -2,7 +2,7 @@
 
 [English version](README.md) | Türkçe
 
-**Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını ve yerel kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifestlerindeki seçili risk kalıplarını denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, yerel kaynak ve Terraform kontrolleri, isteğe bağlı OSV bağımlılık sorgusu, gerekçeli ve süreli istisnalar, Türkçe/İngilizce bulgular ve yerel JSON, Markdown, SARIF ve HTML raporları sunar.
+**Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını; kaynak kodu, yapılandırma, Dockerfile, Kubernetes ve Terraform dosyalarındaki seçili risk kalıplarını denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, yerel kaynak ve Terraform kontrolleri, isteğe bağlı OSV bağımlılık sorgusu, gerekçeli ve süreli istisnalar, Türkçe/İngilizce bulgular ve yerel JSON, Markdown, SARIF ve HTML raporları sunar.
 
 ## Güncel özellikler
 
@@ -12,7 +12,7 @@
 - `GET /vulnerable/records/{id}` nesne düzeyinde yetkilendirme hatasını göstermek için bilerek savunmasız bırakılmıştır.
 - `scopeguard validate` OpenAPI belgesini ve YAML senaryosunu ağ erişimi olmadan doğrular.
 - `scopeguard run` yalnızca senaryoda açıkça tanımlanan salt okunur `GET` isteklerini gönderir ve yerel rapor oluşturur.
-- `scopeguard inspect` seçilen kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifest ve Terraform yapılandırma kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar; bulguları JSON, Markdown ve SARIF 2.1.0 olarak kaydedebilir.
+- `scopeguard inspect` seçilen kaynak kodu, yapılandırma, Dockerfile, Kubernetes manifesti ve Terraform kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar; bulguları JSON, Markdown, SARIF 2.1.0 ve HTML olarak kaydedebilir.
 - API, yerel tarama ve bağımlılık bulguları JSON, Markdown, SARIF 2.1.0 ve tek dosyalı HTML olarak kaydedilebilir.
 - Bağımlılık kontrolü yalnızca açıkça `--allow-network` verildiğinde OSV'ye bağlanır; yalnızca paket adı, ekosistem ve sabitlenmiş sürüm gönderilir.
 - İstisna tanımları kural, göreli dosya yolu, gerekçe ve bitiş tarihi ister; bastırılan bulgular raporda görünür kalır.

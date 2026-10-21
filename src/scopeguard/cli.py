@@ -13,6 +13,7 @@ from .coverage import build_coverage, render_coverage_table
 from .console import colorize, run_console
 from .local_scan import apply_suppressions, inspect_path, write_local_reports
 from .dependency_scan import scan_dependencies
+from .report_compare import compare_reports, write_comparison_reports
 from .planner import build_plan
 from .runner import run_scenarios
 from .wizard import run_init_wizard
@@ -73,6 +74,13 @@ def _parser() -> argparse.ArgumentParser:
     dependencies.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     dependencies.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
 
+    compare = subparsers.add_parser("compare", help="Compare two local ScopeGuard JSON reports and list added, resolved, and unchanged findings.")
+    compare.add_argument("--previous", required=True, type=Path, help="Earlier JSON report")
+    compare.add_argument("--current", required=True, type=Path, help="Newer JSON report")
+    compare.add_argument("--output", type=Path, default=Path("scopeguard-diff.json"), help="Local JSON comparison path")
+    compare.add_argument("--markdown-output", type=Path, help="Optional local Markdown comparison path")
+    compare.add_argument("--html-output", type=Path, help="Optional local HTML comparison path")
+
     return parser
 
 
@@ -126,6 +134,24 @@ def _execute(args: argparse.Namespace) -> int:
         if args.html_output:
             print(f"HTML report written to {args.html_output}")
         return 1 if report["findings"] else 0
+
+    if args.command == "compare":
+        try:
+            if args.output.resolve() in {args.previous.resolve(), args.current.resolve()}:
+                raise ValidationError("comparison output must not overwrite either input report")
+            report = compare_reports(args.previous, args.current)
+            write_comparison_reports(report, args.output, args.markdown_output, args.html_output)
+        except (ValidationError, OSError) as exc:
+            print(f"Report comparison failed: {exc}", file=sys.stderr)
+            return 2
+        summary = report["summary"]
+        print(f"Added: {summary['added']}; resolved: {summary['resolved']}; unchanged: {summary['unchanged']}.")
+        print(f"Comparison JSON written to {args.output}")
+        if args.markdown_output:
+            print(f"Comparison Markdown written to {args.markdown_output}")
+        if args.html_output:
+            print(f"Comparison HTML written to {args.html_output}")
+        return 1 if summary["added"] else 0
 
     if args.command == "init":
         try:

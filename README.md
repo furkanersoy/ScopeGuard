@@ -107,6 +107,12 @@ scopeguard inspect --path . --checks secrets python config docker kubernetes --o
 
 Use `--checks` with one or more of `secrets`, `python`, `config`, `docker`, and `kubernetes` to choose categories. The `docker` check examines Dockerfiles offline for selected container hardening issues; it does not build images or contact registries. The `kubernetes` check applies static heuristics to YAML manifests for selected pod and container security settings; it does not connect to a cluster. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The report contains file names and line numbers but omits source snippets and matched secret values. The command returns exit status `1` when it finds findings; inspect the report and verify each result.
 
+Try the safe, synthetic fixtures in [examples/local-scan](examples/local-scan/README.md). They demonstrate expected findings across all five categories and list the rule IDs and severities. The fixture README explains the report evidence fields and remediation guidance. Findings are expected, so this sample command exits with status `1`:
+
+```powershell
+scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes --output local-scan.json --markdown-output local-scan.md --language en
+```
+
 Create a starter scenario interactively from an OpenAPI document:
 
 ```powershell

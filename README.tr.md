@@ -79,7 +79,7 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 
 1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve tanımlı kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı OpenAPI dosyasını, GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen durum kodlarını sorar. Kontrolleri çalıştırırken giriş dosyaları, yerel rapor yolu ve rapor dili seçilir; JSON, Markdown ve SARIF raporları bilgisayara yazılır. Dahil edilen demo üzerinde çalıştırmak için önce ikinci bir terminalde demo API'yi başlat.
 2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker` ve `kubernetes` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes` olur; sır taraması ana menüde ayrıca kısayol olarak bulunur. Seçilen yerel dosya veya klasör çevrimdışı taranır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. Menü JSON, Markdown ve SARIF rapor yollarını sorar.
-3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit kodlanmış gizli bilgi kalıplarını arar ve JSON ile Markdown raporlarını yerel olarak kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
+3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit kodlanmış gizli bilgi kalıplarını arar ve JSON, Markdown ve SARIF raporlarını yerel olarak kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
 4. **Gelişmiş komut konsolu** — standart CLI komutlarını (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage` ve `run`) kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz. Menüde geri dönmek veya çıkmak için `0` seçeneğini kullan.
 
 Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
@@ -88,7 +88,7 @@ Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk i�
 
 ScopeGuard, API denetimlerinden bağımsız olarak yerel kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifestlerini inceleyebilir. Desteklenen metin dosyalarını okur; kodu çalıştırmaz ve ağa bağlanmaz. Kontroller sabit atanmış olabilecek kimlik bilgilerini, `eval`/`exec`, güvensiz nesne veya YAML açma, `shell=True`, TLS doğrulamasını kapatma ve bazı güvensiz yapılandırma kalıplarını arar. Dockerfile kontrolleri son imaj aşamasında root kullanıcı kullanımını, digest ile sabitlenmemiş taban imajlarını ve kimlik bilgisine benzeyen ARG/ENV atamalarını inceler. Kubernetes manifest kontrolleri ayrıcalıklı konteyner, yetki yükseltme, root kullanıcı, host namespace, hostPath bağlama ve ALL capability kalıplarını statik olarak arar; kümeye bağlanmaz ve Kubernetes şemasının tamamını doğrulamaz. Bulgu raporunda kaynak kod parçaları ve bulunan sır değerleri yer almaz.
 
-Tüm kontrolleri çalıştırıp JSON ve Türkçe Markdown raporu oluştur:
+Tüm kontrolleri çalıştırıp JSON, Türkçe Markdown ve SARIF raporları oluştur:
 
 ```powershell
 scopeguard inspect --path . --checks secrets python config docker kubernetes --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language tr
@@ -101,6 +101,8 @@ Beş kategoride örnek bulguları görmek için [examples/local-scan](examples/l
 ```powershell
 scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language tr
 ```
+
+Güvenli karşılaştırma örnekleri için aynı seçeneklerle `examples/local-scan/secure-patterns` klasörünü ve farklı rapor dosya adlarını tara. Bu taramanın sıfır bulgu üretmesi ve `0` çıkış koduyla tamamlanması beklenir.
 
 ## API senaryosu oluşturma
 

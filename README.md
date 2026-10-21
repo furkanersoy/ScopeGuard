@@ -79,7 +79,7 @@ The local inspection checks are heuristic and need human review. Use quoted path
 After cloning or downloading the project, double-click `ScopeGuard.bat`. On its first launch it creates a private `.venv` folder and installs ScopeGuard and its dependencies. Later launches reuse that setup. You do not need to activate the environment or type setup commands yourself. Python 3.11 or newer and an internet connection are needed for the first setup. You can pass normal ScopeGuard arguments to the launcher from PowerShell, too:
 
 ```powershell
-.\ScopeGuard.bat inspect --path . --checks secrets python config docker --language tr
+.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes --language tr
 ```
 
 On Linux or macOS, make the launcher executable once with `chmod +x scopeguard.sh`, then run `./scopeguard.sh`. It performs the same first-run setup and opens the interactive console. Arguments can be passed after the script name.
@@ -97,7 +97,7 @@ This avoids a project `.venv` and a manual activation step. It installs dependen
 
 ## Offline local source inspection
 
-ScopeGuard can inspect local source and configuration files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS, plus Dockerfile checks for root execution, mutable base image references, and credential-like ARG/ENV assignments, and Kubernetes manifest checks for privileged containers, privilege escalation, root execution, host namespaces, hostPath mounts, and added ALL capabilities. Kubernetes inspection is a static text-based heuristic; it does not contact a cluster or validate complete Kubernetes semantics. These heuristic findings need human review; this is not a complete vulnerability scanner.
+ScopeGuard can inspect local source, configuration, Dockerfile, and Kubernetes manifest files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS, plus Dockerfile checks for root execution, mutable base image references, and credential-like ARG/ENV assignments, and Kubernetes manifest checks for privileged containers, privilege escalation, root execution, host namespaces, hostPath mounts, and added ALL capabilities. Kubernetes inspection is a static text-based heuristic; it does not contact a cluster or validate complete Kubernetes semantics. These heuristic findings need human review; this is not a complete vulnerability scanner.
 
 Run all local inspection checks and save reports on your computer:
 

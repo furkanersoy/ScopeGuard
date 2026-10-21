@@ -80,9 +80,9 @@ def _show_help(output: TextIO) -> None:
         "      [--markdown-output report.md] [--sarif-output report.sarif] [--language tr|en]\n"
         "      EN: Run configured read-only GET checks and save local reports.\n"
         "      TR: Tanımlı salt okunur GET kontrollerini çalıştırıp yerel rapor yazar.\n"
-        "  inspect --path <file-or-folder> --checks secrets python config docker\n"
-        "      EN: Scan local source, configuration, and Dockerfiles offline; code is not run and secret values are redacted.\n"
-        "      TR: Yerel kaynak kodu, yapılandırma ve Dockerfile dosyalarını çevrimdışı tarar; kod çalışmaz, sır değerleri gizlenir.\n"
+        "  inspect --path <file-or-folder> --checks secrets python config docker kubernetes\n"
+        "      EN: Select secrets, Python, config, Dockerfile, and Kubernetes manifest checks; scans are offline and never execute code.\n"
+        "      TR: Sır, Python, yapılandırma, Dockerfile ve Kubernetes manifest kontrollerini seçer; tarama çevrimdışıdır ve kod çalıştırmaz.\n"
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"
@@ -171,7 +171,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
 
 
 def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, secrets_only: bool) -> bool:
-    section = "Secret Detection / Gizli Bilgi Taraması" if secrets_only else "Source, Configuration & Dockerfile / Kaynak Kod, Yapılandırma ve Dockerfile"
+    section = "Secret Detection / Gizli Bilgi Taraması" if secrets_only else "Local Security Checks / Yerel Güvenlik Kontrolleri"
     output.write(f"\n{section}\n")
     output.write("This scan is local and offline. It does not execute source code or build containers.\n")
     output.write("Bu tarama yerel ve çevrimdışıdır. Kaynak kodu çalıştırmaz veya konteyner imajı oluşturmaz.\n")
@@ -188,7 +188,18 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
-    checks = ["secrets"] if secrets_only else ["python", "config"]
+    if secrets_only:
+        checks = ["secrets"]
+    else:
+        allowed = {"secrets", "python", "config", "docker", "kubernetes"}
+        while True:
+            selected = _answer(source, output, "Checks, comma-separated (secrets, python, config, docker, kubernetes) / Kontrolleri virgülle seçin", "python,config,docker,kubernetes")
+            if selected is None:
+                return False
+            checks = list(dict.fromkeys(item.strip().lower() for item in selected.split(",") if item.strip()))
+            if checks and all(item in allowed for item in checks):
+                break
+            output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\\n")
     _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--language", language], output)
     return True
 

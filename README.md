@@ -2,7 +2,7 @@
 
 [English](README.md) | [Turkish version](README.tr.md)
 
-**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source/configuration patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, bilingual findings, and local JSON, Markdown, and SARIF reports.
+**Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected local source, configuration, and Dockerfile patterns. It includes an offline request planner and coverage matrix, a read-only API scenario runner, bilingual findings, and local JSON, Markdown, and SARIF reports.
 
 ## Current milestone
 
@@ -12,7 +12,7 @@
 - `GET /vulnerable/records/{id}` intentionally demonstrates a broken object-level authorization check.
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
 - `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
-- `scopeguard inspect` scans selected local source/configuration patterns without executing code or using the network.
+- `scopeguard inspect` scans selected local source, configuration, and Dockerfile patterns without executing code, building containers, or using the network.
 - API finding reports support Turkish and English; JSON and Markdown reports stay on the paths selected by the user. SARIF output is available for API runs.
 - Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
 
@@ -24,7 +24,7 @@
 4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
 5. Run `exit` in the first window to leave the interactive console. To run a command directly from PowerShell, prefix it with `ScopeGuard.bat`, for example `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
-To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
+To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config docker --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
 
 To install without creating a project `.venv`, run `py -3 -m pip install --user .` from the repository folder, then start ScopeGuard with `py -3 -m scopeguard`. This installs dependencies into your user Python account. The launcher is recommended when you want to keep ScopeGuard dependencies isolated from other Python tools.
 
@@ -33,7 +33,7 @@ To install without creating a project `.venv`, run `py -3 -m pip install --user 
 | Command | What it checks or does | Network use |
 | --- | --- | --- |
 | `init` | Creates scenarios for anonymous access, BOLA/IDOR, BFLA, or custom GET status checks. | None |
-| `inspect` | Selects local checks for hard-coded secrets, risky Python patterns, and configuration. | None; source code is not run |
+| `inspect` | Selects local checks for hard-coded secrets, risky Python patterns, configuration, and Dockerfile hardening. | None; source code is not run |
 | `validate` | Validates the OpenAPI document and scenario configuration. | None |
 | `plan` | Shows the exact requests and identities in a scenario. | None; tokens are not read |
 | `coverage` | Shows configured identity/endpoint pairs; `--strict` enforces required coverage. | None; tokens are not read |
@@ -68,7 +68,7 @@ Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) fo
 Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows) to open the bilingual menu:
 
 1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run the configured checks. Scenario creation asks for an OpenAPI file, selected GET operations, sample path values, identities, and expected status codes. Running checks asks for the input files, local report path, and report language; JSON, Markdown, and SARIF reports are saved locally. To run checks against the included demo, start it in a second terminal first.
-2. **Source Code & Configuration** — scans a selected local file or folder for supported Python and configuration risk patterns. It asks for the scan path, JSON and Markdown report paths, and report language. It reads files without executing them or contacting a service.
+2. **Source Code & Configuration** — scans a selected local file or folder for supported Python, configuration, and Dockerfile risk patterns. It asks for the scan path, JSON and Markdown report paths, and report language. It reads files without executing them or contacting a service.
 3. **Secret Detection** — scans a selected local file or folder for supported hard-coded secret patterns and saves local JSON and Markdown reports. It does not print matched secret values.
 4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.
 
@@ -79,7 +79,7 @@ The local inspection checks are heuristic and need human review. Use quoted path
 After cloning or downloading the project, double-click `ScopeGuard.bat`. On its first launch it creates a private `.venv` folder and installs ScopeGuard and its dependencies. Later launches reuse that setup. You do not need to activate the environment or type setup commands yourself. Python 3.11 or newer and an internet connection are needed for the first setup. You can pass normal ScopeGuard arguments to the launcher from PowerShell, too:
 
 ```powershell
-.\ScopeGuard.bat inspect --path . --checks secrets python config --language tr
+.\ScopeGuard.bat inspect --path . --checks secrets python config docker --language tr
 ```
 
 On Linux or macOS, make the launcher executable once with `chmod +x scopeguard.sh`, then run `./scopeguard.sh`. It performs the same first-run setup and opens the interactive console. Arguments can be passed after the script name.
@@ -97,15 +97,15 @@ This avoids a project `.venv` and a manual activation step. It installs dependen
 
 ## Offline local source inspection
 
-ScopeGuard can inspect local source and configuration files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS. These heuristic findings need human review; this is not a complete vulnerability scanner.
+ScopeGuard can inspect local source and configuration files independently of API checks. It reads supported text files without executing them or making network requests. The starter checks look for credential-like hard-coded values, selected risky Python calls (such as `eval`, unsafe deserialization, shell-enabled subprocess calls, and disabled TLS verification), and configuration patterns such as debug mode or wildcard CORS, plus Dockerfile checks for root execution, mutable base image references, and credential-like ARG/ENV assignments. These heuristic findings need human review; this is not a complete vulnerability scanner.
 
 Run all local inspection checks and save reports on your computer:
 
 ```powershell
-scopeguard inspect --path . --checks secrets python config --output inspect.json --markdown-output inspect.md --language tr
+scopeguard inspect --path . --checks secrets python config docker --output inspect.json --markdown-output inspect.md --language tr
 ```
 
-Use `--checks` with one or more of `secrets`, `python`, and `config` to choose categories. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The report contains file names and line numbers but omits source snippets and matched secret values. The command returns exit status `1` when it finds findings; inspect the report and verify each result.
+Use `--checks` with one or more of `secrets`, `python`, `config`, and `docker` to choose categories. The `docker` check examines Dockerfiles offline for selected container hardening issues; it does not build images or contact registries. ScopeGuard skips common virtual environment, dependency, and build folders, and ignores files larger than 1 MB. The report contains file names and line numbers but omits source snippets and matched secret values. The command returns exit status `1` when it finds findings; inspect the report and verify each result.
 
 Create a starter scenario interactively from an OpenAPI document:
 

@@ -53,9 +53,9 @@ def _parser() -> argparse.ArgumentParser:
     init.add_argument("--output", type=Path, default=Path("scopeguard.yaml"), help="Scenario file to create (default: scopeguard.yaml)")
     init.add_argument("--force", action="store_true", help="Replace the output file if it already exists")
 
-    inspect = subparsers.add_parser("inspect", help="Scan local source/configuration files offline; never executes scanned code.")
+    inspect = subparsers.add_parser("inspect", help="Scan local source, configuration, and Dockerfile patterns offline; never executes scanned code.")
     inspect.add_argument("--path", required=True, type=Path, help="File or directory to inspect")
-    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config"), default=["secrets", "python", "config"], help="Checks to run (default: all)")
+    inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config", "docker"), default=["secrets", "python", "config", "docker"], help="Checks: secrets, python, config, docker (default: all)")
     inspect.add_argument("--output", type=Path, default=Path("scopeguard-inspect.json"), help="Local JSON report path")
     inspect.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")

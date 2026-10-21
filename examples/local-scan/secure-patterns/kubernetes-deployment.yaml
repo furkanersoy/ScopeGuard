@@ -1,0 +1,27 @@
+# Example security context for static comparison only.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scopeguard-secure-fixture
+spec:
+  selector:
+    matchLabels:
+      app: scopeguard-secure-fixture
+  template:
+    metadata:
+      labels:
+        app: scopeguard-secure-fixture
+    spec:
+      hostNetwork: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: fixture
+          image: nginx:1.27
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

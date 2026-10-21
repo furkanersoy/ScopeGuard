@@ -261,10 +261,7 @@ def _console_command(tokens: Sequence[str]) -> int:
     if args.command is None:
         parser.print_help()
         return 0
-    code = _execute(args)
-    if code:
-        print(f"Command finished with exit code {code}.")
-    return code
+    return _execute(args)
 
 
 def main(argv: Sequence[str] | None = None) -> None:

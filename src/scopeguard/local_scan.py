@@ -98,6 +98,10 @@ _TEXT = {
         "tf_storage.title": "Terraform storage encryption is disabled",
         "tf_storage.description": "A supported storage resource explicitly disables encryption at rest.",
         "tf_storage.fix": "Enable encryption at rest and use an approved key-management configuration.",
+        "dependency.title": "Known vulnerable dependency version",
+        "dependency.description": "The OSV vulnerability database reports this exact package version in an affected range. Review the advisory and whether the vulnerable code path is reachable.",
+        "dependency.fix": "Upgrade to a fixed version listed in the advisory when available. If no fixed version is listed, evaluate the advisory's mitigation guidance.",
+
         "suppressed": "Suppressed findings",
         "suppression_reason": "Suppression reason",
         "expires": "Expires",
@@ -192,6 +196,10 @@ _TEXT = {
         "tf_storage.title": "Terraform depolama şifrelemesi kapalı",
         "tf_storage.description": "Desteklenen bir depolama kaynağında bekleme anındaki şifreleme açıkça devre dışı bırakılmış.",
         "tf_storage.fix": "Bekleme anındaki şifrelemeyi açın ve onaylı bir anahtar yönetimi ayarı kullanın.",
+        "dependency.title": "Bilinen zafiyet içeren bağımlılık sürümü",
+        "dependency.description": "OSV zafiyet veritabanı bu paket sürümünü etkilenen aralıkta bildiriyor. Uyarıyı ve zafiyetli kod yolunun erişilebilir olup olmadığını inceleyin.",
+        "dependency.fix": "Uyarıda belirtilen düzeltilmiş sürüme yükseltin. Düzeltilmiş sürüm yoksa uyarıdaki azaltma önerilerini değerlendirin.",
+
         "suppressed": "Bastırılan bulgular",
         "suppression_reason": "İstisna gerekçesi",
         "expires": "Bitiş tarihi",
@@ -243,6 +251,7 @@ _RULES = {
     "terraform.s3-public-access-disabled": ("tf_s3_block", "high"),
     "terraform.database-publicly-accessible": ("tf_database_public", "high"),
     "terraform.storage-unencrypted": ("tf_storage", "medium"),
+    "dependency.osv": ("dependency", "high"),
 }
 
 _SECRET_ASSIGNMENT = re.compile(
@@ -612,7 +621,7 @@ def render_local_markdown(report: dict[str, Any]) -> str:
     ]
     for finding in active:
         category = _RULES[finding["rule_id"]][0]
-        lines.append(f"| {finding['severity'].title()} | {text[f'{category}.title']} | {finding['file']} | {finding['line']} |")
+        lines.append(f"| {finding['severity'].title()} | {finding.get("title", text[f'{category}.title'])} | {finding['file']} | {finding['line']} |")
         lines.extend(["", f"**{text[f'{category}.description']}**", "", f"**{text[f'{category}.fix']}**", ""])
     if not active:
         lines.extend(["", text["no_findings"], ""])
@@ -650,6 +659,7 @@ _CHECK_FOR_CATEGORY = {
     "tf_s3_block": "terraform",
     "tf_database_public": "terraform",
     "tf_storage": "terraform",
+    "dependency": "dependencies",
 }
 
 
@@ -670,8 +680,8 @@ def render_local_html(report: dict[str, Any]) -> str:
             finding["severity"].title(),
             finding["rule_id"],
             finding["file"],
-            str(finding["line"]),
-            text[f"{category}.title"],
+            str(finding.get("line") or ""),
+            finding.get("title", text[f"{category}.title"]),
             finding["description"],
             finding["remediation"],
             f"{status} — {reason} ({expires})" if is_suppressed else status,
@@ -708,7 +718,7 @@ tr[data-status="suppressed"]{{opacity:.68}}.note{{margin-top:1rem;opacity:.8}}
 <div class="controls">
 <label>{html.escape(text["html.search"])} <input id="search" type="search"></label>
 <label>{html.escape(text["html.severity_filter"])}
-<select id="severity"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option></select></label>
+<select id="severity"><option value="">All</option><option>High</option><option>Medium</option><option>Low</option><option>Unknown</option></select></label>
 <label>{html.escape(text["html.status"])}
 <select id="status"><option value="">All</option><option value="active">{html.escape(text["html.active_status"])}</option><option value="suppressed">{html.escape(text["html.suppressed_status"])}</option></select></label>
 </div>
@@ -736,7 +746,7 @@ def render_local_sarif(report: dict[str, Any]) -> str:
     for rule_id, (category, severity) in sorted(_RULES.items()):
         if _CHECK_FOR_CATEGORY[category] not in selected_checks:
             continue
-        level = {"high": "error", "medium": "warning", "low": "note"}[severity]
+        level = {"high": "error", "medium": "warning", "low": "note", "unknown": "warning"}[severity]
         rule_indexes[rule_id] = len(rules)
         rules.append({
             "id": rule_id,
@@ -772,17 +782,19 @@ def render_local_sarif(report: dict[str, Any]) -> str:
             "ruleId": rule_id,
             "ruleIndex": rule_indexes[rule_id],
             "level": level,
-            "message": {"text": finding["description"]},
+            "message": {"text": f"{finding.get('title', '')}: {finding['description']}".strip(": ")},
             "locations": [{
                 "physicalLocation": {
                     "artifactLocation": {"uri": uri},
-                    "region": {"startLine": finding["line"]},
+                    "region": {"startLine": finding["line"]} if isinstance(finding.get("line"), int) and finding["line"] > 0 else {},
                 },
             }],
             "properties": {
                 "category": finding["category"],
                 "severity": severity,
                 "remediation": finding["remediation"],
+                **({"vulnerabilityId": finding["vulnerability_id"]} if finding.get("vulnerability_id") else {}),
+                **({"package": finding["package"], "version": finding["version"], "ecosystem": finding["ecosystem"]} if finding.get("package") else {}),
             },
         })
         if "suppression_reason" in finding:

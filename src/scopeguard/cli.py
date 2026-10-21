@@ -58,6 +58,7 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--checks", nargs="+", choices=("secrets", "python", "config", "docker", "kubernetes"), default=["secrets", "python", "config", "docker", "kubernetes"], help="Checks: secrets, python, config, docker, kubernetes (default: all)")
     inspect.add_argument("--output", type=Path, default=Path("scopeguard-inspect.json"), help="Local JSON report path")
     inspect.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
+    inspect.add_argument("--sarif-output", type=Path, help="Optional local SARIF 2.1.0 report path; no upload is performed")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     return parser
 
@@ -67,9 +68,11 @@ def _execute(args: argparse.Namespace) -> int:
         outputs = [args.output]
         if args.markdown_output:
             outputs.append(args.markdown_output)
+        if args.sarif_output:
+            outputs.append(args.sarif_output)
         try:
             report = inspect_path(args.path, args.checks, args.language, output_paths=outputs)
-            write_local_reports(report, args.output, args.markdown_output)
+            write_local_reports(report, args.output, args.markdown_output, args.sarif_output)
         except (ValidationError, OSError) as exc:
             print(f"Inspection failed: {exc}", file=sys.stderr)
             return 2
@@ -78,6 +81,8 @@ def _execute(args: argparse.Namespace) -> int:
         print(f"JSON report written to {args.output}")
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
+        if args.sarif_output:
+            print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
         return 1 if report["findings"] else 0
 
     if args.command == "init":

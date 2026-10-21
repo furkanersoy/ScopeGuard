@@ -202,16 +202,16 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     if secrets_only:
         checks = ["secrets"]
     else:
-        allowed = {"secrets", "python", "config", "docker", "kubernetes"}
+        allowed = {"secrets", "python", "config", "docker", "kubernetes", "terraform"}
         while True:
-            selected = _answer(source, output, "Checks, comma-separated (secrets, python, config, docker, kubernetes) / Kontrolleri virgülle seçin", "python,config,docker,kubernetes")
+            selected = _answer(source, output, "Checks, comma-separated (secrets, python, config, docker, kubernetes, terraform) / Kontrolleri virgülle seçin", "python,config,docker,kubernetes,terraform")
             if selected is None:
                 return False
             checks = list(dict.fromkeys(item.strip().lower() for item in selected.split(",") if item.strip()))
             if checks and all(item in allowed for item in checks):
                 break
             output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\n")
-    _dispatch(command_handler, ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language], output)
+    args = ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language]
     if suppressions:
         args.extend(["--suppressions", suppressions])
     _dispatch(command_handler, args, output)

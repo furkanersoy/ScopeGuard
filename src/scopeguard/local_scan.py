@@ -621,7 +621,8 @@ def render_local_markdown(report: dict[str, Any]) -> str:
     ]
     for finding in active:
         category = _RULES[finding["rule_id"]][0]
-        lines.append(f"| {finding['severity'].title()} | {finding.get("title", text[f'{category}.title'])} | {finding['file']} | {finding['line']} |")
+        title = finding.get("title", text[f"{category}.title"])
+        lines.append(f"| {finding['severity'].title()} | {title} | {finding['file']} | {finding['line']} |")
         lines.extend(["", f"**{text[f'{category}.description']}**", "", f"**{text[f'{category}.fix']}**", ""])
     if not active:
         lines.extend(["", text["no_findings"], ""])
@@ -686,9 +687,10 @@ def render_local_html(report: dict[str, Any]) -> str:
             finding["remediation"],
             f"{status} — {reason} ({expires})" if is_suppressed else status,
         ]
+        status_key = "suppressed" if is_suppressed else "active"
+        escaped_severity = html.escape(finding["severity"], quote=True)
         rows.append(
-            f'<tr data-severity="{html.escape(finding["severity"], quote=True)}" '
-            f'data-status="{"suppressed" if is_suppressed else "active"}">'
+            f'<tr data-severity="{escaped_severity}" data-status="{status_key}">'
             + "".join(f"<td>{html.escape(cell)}</td>" for cell in cells)
             + "</tr>"
         )
@@ -774,7 +776,7 @@ def render_local_sarif(report: dict[str, Any]) -> str:
     for finding in all_findings:
         rule_id = finding["rule_id"]
         severity = finding["severity"]
-        level = {"high": "error", "medium": "warning", "low": "note"}[severity]
+        level = {"critical": "error", "high": "error", "medium": "warning", "moderate": "warning", "low": "note", "unknown": "warning"}[severity]
         relative_path = Path(finding["file"])
         artifact_path = relative_path if path_prefix == Path(".") else path_prefix / relative_path
         uri = quote(artifact_path.as_posix(), safe="/-._~")

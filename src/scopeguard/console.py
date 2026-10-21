@@ -341,7 +341,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
                 return
         elif choice == "5":
             if not _dependencies_menu(command_handler, source, output):
-                output.write("ScopeGuard closed.\\n")
+                output.write("ScopeGuard closed.\n")
                 return
         elif choice.lower() in {"help", "?"}:
             _show_help(output)

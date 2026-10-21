@@ -1,0 +1,32 @@
+# Intentionally insecure static-analysis fixture. Do not apply to a cluster.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scopeguard-training-fixture
+spec:
+  selector:
+    matchLabels:
+      app: scopeguard-training-fixture
+  template:
+    metadata:
+      labels:
+        app: scopeguard-training-fixture
+    spec:
+      hostNetwork: true
+      containers:
+        - name: fixture
+          image: nginx:latest
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+            runAsUser: 0
+            capabilities:
+              add:
+                - ALL
+          volumeMounts:
+            - name: host-data
+              mountPath: /host
+      volumes:
+        - name: host-data
+          hostPath:
+            path: /var/lib

@@ -51,6 +51,15 @@ _TEXT = {
         "cors.title": "Wildcard CORS origin",
         "cors.description": "A CORS configuration allows every origin. This may expose browser-accessible responses to untrusted sites when credentials or sensitive data are involved.",
         "cors.fix": "Allow only the exact trusted origins required by the application and review credential handling.",
+        "docker_root.title": "Container may run as root",
+        "docker_root.description": "The final image stage has no explicit non-root USER, or selects root. The container may therefore start with elevated privileges.",
+        "docker_root.fix": "Create or select a dedicated unprivileged user in the final image stage and set it with USER.",
+        "docker_base.title": "Base image is not pinned by digest",
+        "docker_base.description": "A Dockerfile base image uses a tag or an untagged reference rather than an immutable digest. Tags can resolve to different image contents over time.",
+        "docker_base.fix": "Pin trusted base images with an @sha256 digest and update that digest through reviewed changes.",
+        "docker_secret.title": "Possible secret in Docker build instruction",
+        "docker_secret.description": "An ARG or ENV instruction assigns a credential-like value. Docker build arguments or environment values may be retained in image metadata or layers; the value is omitted from this report.",
+        "docker_secret.fix": "Do not pass secrets through ARG or ENV. Use a build-secret mechanism and a secret manager, and rotate any value that was exposed.",
         "summary": "ScopeGuard local inspection",
         "findings": "Findings",
         "file": "File",
@@ -88,6 +97,15 @@ _TEXT = {
         "cors.title": "Tüm kaynaklara açık CORS kuralı",
         "cors.description": "CORS yapılandırması tüm kaynaklara izin veriyor. Kimlik bilgileri veya hassas veriler söz konusuysa güvenilmeyen siteler tarayıcı yanıtlarına erişebilir.",
         "cors.fix": "Yalnızca uygulamanın ihtiyaç duyduğu tam ve güvenilir kaynaklara izin verin; kimlik bilgisi kullanımını gözden geçirin.",
+        "docker_root.title": "Konteyner root kullanıcısıyla çalışabilir",
+        "docker_root.description": "Son imaj aşamasında root olmayan bir USER tanımlanmamış veya root seçilmiş. Bu nedenle konteyner yüksek yetkilerle başlayabilir.",
+        "docker_root.fix": "Son imaj aşamasında ayrıcalıksız bir kullanıcı oluşturun veya seçin ve USER ile etkinleştirin.",
+        "docker_base.title": "Taban imaj digest ile sabitlenmemiş",
+        "docker_base.description": "Dockerfile taban imajı değişmez digest yerine etiketli veya etiketsiz bir başvuru kullanıyor. Etiketler zamanla farklı imaj içeriklerine işaret edebilir.",
+        "docker_base.fix": "Güvenilir taban imajlarını @sha256 digest ile sabitleyin; digest güncellemelerini inceleyerek yapın.",
+        "docker_secret.title": "Docker derleme komutunda olası sabit sır",
+        "docker_secret.description": "Bir ARG veya ENV komutuna kimlik bilgisine benzeyen bir değer atanmış. Derleme argümanları veya ortam değerleri imaj metaverisinde ya da katmanlarında kalabilir; değer rapora eklenmez.",
+        "docker_secret.fix": "Sırları ARG veya ENV ile aktarmayın. Derleme sırrı mekanizması ve sır yöneticisi kullanın; açığa çıkan değerleri yenileyin.",
         "summary": "ScopeGuard yerel inceleme",
         "findings": "Bulgular",
         "file": "Dosya",
@@ -110,6 +128,9 @@ _RULES = {
     "config.debug-enabled": ("debug", "medium"),
     "config.cors-wildcard": ("cors", "medium"),
     "config.tls-verify-disabled": ("tls", "medium"),
+    "docker.root-user": ("docker_root", "medium"),
+    "docker.mutable-base-image": ("docker_base", "low"),
+    "docker.build-arg-secret": ("docker_secret", "high"),
 }
 
 _SECRET_ASSIGNMENT = re.compile(
@@ -126,8 +147,19 @@ _CONFIG_RULES = (
 )
 
 
+
+_DOCKER_SECRET_ASSIGNMENT = re.compile(
+    r"(?i)^\s*(?:ARG|ENV)\s+([A-Za-z_][A-Za-z0-9_.-]*(?:SECRET|TOKEN|PASSWORD|PASSWD|API[_-]?KEY|CREDENTIAL)[A-Za-z0-9_.-]*)\s*=\s*(.*?)\s*$"
+)
+
+
+def _is_dockerfile(path: Path) -> bool:
+    name = path.name.lower()
+    return name == "dockerfile" or name.startswith("dockerfile.") or name.endswith(".dockerfile")
+
+
 def _is_text_candidate(path: Path) -> bool:
-    return path.suffix.lower() in TEXT_EXTENSIONS or path.name == ".env" or path.name.startswith(".env.") or path.name.lower() == "dockerfile"
+    return path.suffix.lower() in TEXT_EXTENSIONS or path.name == ".env" or path.name.startswith(".env.") or _is_dockerfile(path)
 
 
 def _iter_files(root: Path) -> list[Path]:
@@ -207,6 +239,56 @@ def _python_findings(source: str, relative: str, findings: list[dict[str, Any]],
             _add_finding(findings, seen, rule_id, relative, getattr(node, "lineno", 1))
 
 
+def _docker_findings(source: str, relative: str, findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
+    """Report selected Dockerfile hardening heuristics without building an image."""
+    final_from_line: int | None = None
+    final_user_line: int | None = None
+    final_user: str | None = None
+    stage_aliases: set[str] = set()
+
+    for number, line in enumerate(source.splitlines(), 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        from_match = re.match(r"(?i)^FROM\s+(?:--platform=\S+\s+)?(\S+)(?:\s+AS\s+(\S+))?", stripped)
+        if from_match:
+            image = from_match.group(1)
+            final_from_line = number
+            final_user_line = None
+            final_user = None
+            normalized_image = image.lower()
+            is_variable = "$" in image
+            is_previous_stage = normalized_image in stage_aliases
+            if (
+                normalized_image != "scratch"
+                and not is_variable
+                and not is_previous_stage
+                and "@sha256:" not in normalized_image
+            ):
+                _add_finding(findings, seen, "docker.mutable-base-image", relative, number)
+            if from_match.group(2):
+                stage_aliases.add(from_match.group(2).lower())
+            continue
+
+        user_match = re.match(r"(?i)^USER\s+(\S+)", stripped)
+        if user_match:
+            final_user = user_match.group(1)
+            final_user_line = number
+            continue
+
+        secret_match = _DOCKER_SECRET_ASSIGNMENT.match(stripped)
+        if secret_match:
+            value = secret_match.group(2).strip().strip("\"'")
+            if value and "$" not in value and not _PLACEHOLDER.search(value):
+                _add_finding(findings, seen, "docker.build-arg-secret", relative, number)
+
+    if final_from_line is not None:
+        user_id = final_user.lower().split(":", 1)[0] if final_user else None
+        if final_user is None or (not final_user.startswith("$") and user_id in {"root", "0"}):
+            _add_finding(findings, seen, "docker.root-user", relative, final_user_line or final_from_line)
+
+
 def _scan_line_rules(line: str, relative: str, number: int, checks: set[str], findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]) -> None:
     if "secrets" in checks:
         secret_match = _SECRET_ASSIGNMENT.search(line)
@@ -257,9 +339,9 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
     """Scan local text files statically; no code execution and no network access."""
     if language not in _TEXT:
         raise ValidationError("language must be 'tr' or 'en'")
-    allowed = {"secrets", "python", "config"}
+    allowed = {"secrets", "python", "config", "docker"}
     if not checks or len(set(checks)) != len(checks) or any(check not in allowed for check in checks):
-        raise ValidationError("select one or more distinct checks: secrets, python, config")
+        raise ValidationError("select one or more distinct checks: secrets, python, config, docker")
     if not path.exists():
         raise ValidationError(f"scan path does not exist: {path}")
     root = path.absolute()
@@ -281,6 +363,8 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
         relative = file_path.name if root.is_file() else str(file_path.relative_to(root))
         if "python" in checks and file_path.suffix.lower() in {".py", ".pyi"}:
             _python_findings(source, relative, findings, seen)
+        if "docker" in checks and _is_dockerfile(file_path):
+            _docker_findings(source, relative, findings, seen)
         if "secrets" in checks or "config" in checks:
             for number, line in enumerate(source.splitlines(), 1):
                 _scan_line_rules(line, relative, number, set(checks), findings, seen)

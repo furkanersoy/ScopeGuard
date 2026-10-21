@@ -543,9 +543,9 @@ def _terraform_findings(source: str, relative: str, findings: list[dict[str, Any
 
         if re.match(r"(?i)^ingress\s*\{", line):
             ingress_depth = resource_depth + line.count("{") - line.count("}") - 1
-        if ingress_depth is not None and resource_type in {
-            "aws_security_group", "aws_security_group_rule", "aws_vpc_security_group_ingress_rule"
-        }:
+        is_ingress_resource = resource_type in {"aws_security_group_rule", "aws_vpc_security_group_ingress_rule"}
+        is_ingress_block = resource_type == "aws_security_group" and ingress_depth is not None
+        if is_ingress_resource or is_ingress_block:
             if re.search(r'(?i)(?:cidr_blocks|cidr_ipv4|ipv6_cidr_blocks)\s*=\s*(?:\[\s*)?["\'](?:0\.0\.0\.0/0|::/0)["\']', line):
                 _add_finding(findings, seen, "terraform.public-ingress", relative, number)
 

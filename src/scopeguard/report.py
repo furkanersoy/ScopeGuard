@@ -14,7 +14,7 @@ _TEXT = {
         "openapi": "OpenAPI", "scenario": "Scenario", "summary": "Summary", "checks": "Checks",
         "findings": "Findings", "status": "Status", "check": "Check", "identity": "Identity",
         "operation": "Operation", "expected": "Expected", "actual": "Actual", "assertions": "Assertions",
-        "severity": "Severity", "evidence": "Evidence", "impact": "Impact", "remediation": "Recommended remediation",
+        "severity": "Severity", "evidence": "Evidence", "description": "Description", "impact": "Impact", "remediation": "Recommended remediation",
         "high": "High", "pass": "PASS", "fail": "FAIL", "skipped": "SKIPPED", "error": "ERROR",
         "generic_title": "Authorization check failed",
         "generic_description": "The check did not match its expected result. Review the endpoint policy and scenario configuration.",
@@ -41,7 +41,7 @@ _TEXT = {
         "openapi": "OpenAPI", "scenario": "Senaryo", "summary": "Özet", "checks": "Kontroller",
         "findings": "Güvenlik bulguları", "status": "Durum", "check": "Kontrol", "identity": "Kimlik",
         "operation": "İşlem", "expected": "Beklenen", "actual": "Alınan", "assertions": "JSON doğrulamaları",
-        "severity": "Önem derecesi", "evidence": "Kanıt", "impact": "Olası etki", "remediation": "Önerilen düzeltme",
+        "severity": "Önem derecesi", "evidence": "Kanıt", "description": "Açıklama", "impact": "Olası etki", "remediation": "Önerilen düzeltme",
         "high": "Yüksek", "pass": "BAŞARILI", "fail": "BAŞARISIZ", "skipped": "ATLANDI", "error": "HATA",
         "generic_title": "Yetkilendirme kontrolü başarısız",
         "generic_description": "Kontrol, senaryoda beklenen sonuçla eşleşmedi. Uç nokta politikasını ve senaryo ayarlarını inceleyin.",
@@ -278,7 +278,7 @@ def render_html_report(report: dict[str, Any]) -> str:
         "checks": text["checks"], "findings": text["findings"], "status": text["status"],
         "check": text["check"], "identity": text["identity"], "operation": text["operation"],
         "expected": text["expected"], "actual": text["actual"], "assertions": text["assertions"],
-        "severity": text["severity"], "evidence": text["evidence"], "impact": text["impact"],
+        "severity": text["severity"], "evidence": text["evidence"], "description": text["description"], "impact": text["impact"],
         "remediation": text["remediation"], "redaction": text["redaction_note"],
     }
     labels = {key: html.escape(value) for key, value in labels.items()}
@@ -305,6 +305,6 @@ th{{position:sticky;top:0;background:#263342}}td{{overflow-wrap:anywhere}}.note{
 <th>{labels["expected"]}</th><th>{labels["actual"]}</th><th>{labels["assertions"]}</th></tr></thead><tbody>{checks_body}</tbody></table></div>
 <h2>{labels["findings"]}</h2><div class="wrap"><table><thead><tr>
 <th>{labels["severity"]}</th><th>{labels["findings"]}</th><th>{labels["check"]}</th><th>{labels["evidence"]}</th>
-<th>{labels["status"]}</th><th>{labels["impact"]}</th><th>{labels["remediation"]}</th></tr></thead><tbody>{findings_body}</tbody></table></div>
+<th>{labels["description"]}</th><th>{labels["impact"]}</th><th>{labels["remediation"]}</th></tr></thead><tbody>{findings_body}</tbody></table></div>
 <p class="note">{labels["redaction"]}</p></body></html>
 """

@@ -65,8 +65,8 @@ def compare_reports(previous_path: Path, current_path: Path) -> dict[str, Any]:
             "added": sum(1 for item in entries if item["state"] == "added"),
             "resolved": sum(1 for item in entries if item["state"] == "resolved"),
             "unchanged": sum(1 for item in entries if item["state"] == "unchanged"),
-            "suppressed_previous": len(previous.get("suppressed_findings", [])),
-            "suppressed_current": len(current.get("suppressed_findings", [])),
+            "suppressed_previous": len(previous.get("suppressed_findings") or []),
+            "suppressed_current": len(current.get("suppressed_findings") or []),
         },
         "entries": entries,
     }
@@ -80,7 +80,7 @@ def render_comparison_markdown(report: dict[str, Any]) -> str:
         f"- Current: {report['current_report']}",
         f"- Added: {summary['added']} · Resolved: {summary['resolved']} · Unchanged: {summary['unchanged']}",
         f"- Suppressed: {summary['suppressed_previous']} → {summary['suppressed_current']}", "",
-        "| State | Rule | File | Line | Advisory / Package | |",
+        "| State | Rule | File | Line | Advisory / Package | Finding |",
         "| --- | --- | --- | ---: | --- | --- |",
     ]
     for item in report["entries"]:

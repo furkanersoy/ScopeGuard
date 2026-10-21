@@ -12,7 +12,7 @@
 - `GET /vulnerable/records/{id}` nesne düzeyinde yetkilendirme hatasını göstermek için bilerek savunmasız bırakılmıştır.
 - `scopeguard validate` OpenAPI belgesini ve YAML senaryosunu ağ erişimi olmadan doğrular.
 - `scopeguard run` yalnızca senaryoda açıkça tanımlanan salt okunur `GET` isteklerini gönderir ve yerel rapor oluşturur.
-- `scopeguard inspect` seçilen kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifest kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar; bulguları JSON, Markdown ve SARIF 2.1.0 olarak kaydedebilir.
+- `scopeguard inspect` seçilen kaynak kodu, yapılandırma, Dockerfile ve Kubernetes manifest ve Terraform yapılandırma kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar; bulguları JSON, Markdown ve SARIF 2.1.0 olarak kaydedebilir.
 - Uzak hedef için yapılandırmada tam HTTPS sunucu/port izin listesi ve çalıştırırken ayrıca `--allow-remote` gerekir.
 
 ## Hızlı başlangıç (Windows)
@@ -23,7 +23,7 @@
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
 5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
-Yerel kaynak kodunu doğrudan taramak için `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes --output inspect.json --markdown-output inspect.md --language tr` komutunu kullan. Gerçek servisleri yalnızca açıkça yetkilendirildiğin test kapsamlarında çalıştır.
+Yerel kaynak kodunu doğrudan taramak için `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --language tr` komutunu kullan. Gerçek servisleri yalnızca açıkça yetkilendirildiğin test kapsamlarında çalıştır.
 
 ### Sanal ortam oluşturmadan çalıştırma
 
@@ -41,7 +41,7 @@ Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı 
 | Komut | Ne yapar? | Ağ kullanımı |
 | --- | --- | --- |
 | `init` | Anonim erişim, BOLA/IDOR, BFLA veya özel GET durum kodu kontrolleri için senaryo oluşturur. | Yok |
-| `inspect` | Sabit sır, riskli Python kalıpları, yapılandırma, Dockerfile ve Kubernetes manifest güvenlik kontrollerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
+| `inspect` | Sabit sır, riskli Python kalıpları, yapılandırma, Dockerfile Kubernetes manifest ve Terraform güvenlik kontrollerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
 | `validate` | OpenAPI belgesini ve senaryo yapılandırmasını doğrular. | Yok |
 | `plan` | Senaryodaki istekleri ve kimlikleri önizler. | Yok; token okunmaz |
 | `coverage` | Kimlik/uç nokta kontrollerini matriste gösterir; `--strict` zorunlu kapsamı uygular. | Yok; token okunmaz |
@@ -69,7 +69,7 @@ python3 -m venv .venv
 python -m pip install .
 ```
 
-Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez çalıştırıp `./scopeguard.sh` ile başlatabilirsin. Betik ilk açılışta sanal ortamı kurar, sonraki çalıştırmalarda tekrar kullanır. Komutları doğrudan da betiğe iletebilirsin: `./scopeguard.sh inspect --path . --checks secrets python config docker kubernetes`.
+Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez çalıştırıp `./scopeguard.sh` ile başlatabilirsin. Betik ilk açılışta sanal ortamı kurar, sonraki çalıştırmalarda tekrar kullanır. Komutları doğrudan da betiğe iletebilirsin: `./scopeguard.sh inspect --path . --checks secrets python config docker kubernetes terraform`.
 
 Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
 
@@ -78,7 +78,7 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 `scopeguard` komutunu argümansız çalıştır veya Windows'ta `ScopeGuard.bat` dosyasına çift tıklayarak iki dilli başlangıç menüsünü aç:
 
 1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve tanımlı kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı OpenAPI dosyasını, GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen durum kodlarını sorar. Kontrolleri çalıştırırken giriş dosyaları, yerel rapor yolu ve rapor dili seçilir; JSON, Markdown ve SARIF raporları bilgisayara yazılır. Dahil edilen demo üzerinde çalıştırmak için önce ikinci bir terminalde demo API'yi başlat.
-2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker` ve `kubernetes` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes` olur; sır taraması ana menüde ayrıca kısayol olarak bulunur. Seçilen yerel dosya veya klasör çevrimdışı taranır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. Menü JSON, Markdown ve SARIF rapor yollarını sorar.
+2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker` ve `kubernetes` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes,terraform,terraform` olur; sır taraması ana menüde ayrıca kısayol olarak bulunur. Seçilen yerel dosya veya klasör çevrimdışı taranır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. Menü JSON, Markdown ve SARIF rapor yollarını sorar.
 3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit kodlanmış gizli bilgi kalıplarını arar ve JSON, Markdown ve SARIF raporlarını yerel olarak kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
 4. **Gelişmiş komut konsolu** — standart CLI komutlarını (`help`, `version`, `init`, `inspect`, `validate`, `plan`, `coverage` ve `run`) kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz. Menüde geri dönmek veya çıkmak için `0` seçeneğini kullan.
 
@@ -91,7 +91,7 @@ ScopeGuard, API denetimlerinden bağımsız olarak yerel kaynak kodu, yapıland�
 Tüm kontrolleri çalıştırıp JSON, Türkçe Markdown ve SARIF raporları oluştur:
 
 ```powershell
-scopeguard inspect --path . --checks secrets python config docker kubernetes --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language tr
+scopeguard inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --sarif-output inspect.sarif --language tr
 ```
 
 `--checks` için `secrets`, `python`, `config`, `docker` ve `kubernetes` seçeneklerinden bir veya birkaçını belirt. `docker` Dockerfile dosyalarını çevrimdışı inceler; imaj oluşturmaz ve kayıt sunucularına bağlanmaz. `kubernetes` YAML manifestlerinde seçili güvenlik ayarlarını statik olarak tarar; kümeye bağlanmaz. Örneğin yalnızca Python kalıpları için `--checks python` kullan. Yaygın sanal ortam, bağımlılık ve derleme klasörleri atlanır; 1 MB üzerindeki dosyalar incelenmez. Raporlar dosya ve satır konumunu gösterir; kaynak kod parçalarını ve eşleşen sır değerlerini içermez. İsteğe bağlı SARIF 2.1.0 çıktısı yüksek/orta/düşük önem derecelerini error/warning/note seviyelerine eşler; açıklama ve düzeltme önerisi ekler. Dosya yerel yazılır, ScopeGuard yükleme yapmaz. Bulgu bulunduğunda komut `1` çıkış kodu verir. Raporu açıp her bulguyu doğrula; sezgisel kontroller yanlış pozitif üretebilir.
@@ -99,7 +99,7 @@ scopeguard inspect --path . --checks secrets python config docker kubernetes --o
 Beş kategoride örnek bulguları görmek için [examples/local-scan](examples/local-scan/README.md) içindeki sentetik dosyaları kullan. Bu dosyalar beklenen kural kimliklerini ve önem derecelerini açıklar; rapordaki kanıt konumu ve düzeltme önerisini gösterir. Bulgular beklendiği için örnek komut `1` çıkış kodu verir:
 
 ```powershell
-scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language tr
+scopeguard inspect --path examples/local-scan/insecure-patterns --checks secrets python config docker kubernetes terraform --output local-scan.json --markdown-output local-scan.md --sarif-output local-scan.sarif --language tr
 ```
 
 Güvenli karşılaştırma örnekleri için aynı seçeneklerle `examples/local-scan/secure-patterns` klasörünü ve farklı rapor dosya adlarını tara. Bu taramanın sıfır bulgu üretmesi ve `0` çıkış koduyla tamamlanması beklenir.

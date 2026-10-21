@@ -1,0 +1,4 @@
+# Synthetic configuration fixture for offline scanning.
+debug: true
+verify_ssl: false
+allow_origins: ["*"]

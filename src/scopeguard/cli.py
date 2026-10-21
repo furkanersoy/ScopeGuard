@@ -12,6 +12,7 @@ from .config import ValidationError, validate_inputs
 from .coverage import build_coverage, render_coverage_table
 from .console import colorize, run_console
 from .local_scan import apply_suppressions, inspect_path, write_local_reports
+from .dependency_scan import scan_dependencies
 from .planner import build_plan
 from .runner import run_scenarios
 from .wizard import run_init_wizard
@@ -62,6 +63,16 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--html-output", type=Path, help="Optional local self-contained HTML report path")
     inspect.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
+    dependencies = subparsers.add_parser("dependencies", help="Check pinned lockfile versions against OSV; sends package names and versions over HTTPS only when --allow-network is supplied.")
+    dependencies.add_argument("--path", required=True, type=Path, help="Lockfile or directory containing supported lockfiles")
+    dependencies.add_argument("--allow-network", action="store_true", required=True, help="Explicitly permit HTTPS queries to api.osv.dev")
+    dependencies.add_argument("--output", type=Path, default=Path("scopeguard-dependencies.json"), help="Local JSON report path")
+    dependencies.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
+    dependencies.add_argument("--sarif-output", type=Path, help="Optional local SARIF 2.1.0 report path")
+    dependencies.add_argument("--html-output", type=Path, help="Optional local HTML report path")
+    dependencies.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
+    dependencies.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
+
     return parser
 
 
@@ -83,6 +94,30 @@ def _execute(args: argparse.Namespace) -> int:
             return 2
         print(f"Scanned {report['scanned_files']} local file(s); active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
         print("No code was executed and no network requests were sent. Matched secret values were omitted.")
+        print(f"JSON report written to {args.output}")
+        if args.markdown_output:
+            print(f"Markdown report written to {args.markdown_output}")
+        if args.sarif_output:
+            print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
+        if args.html_output:
+            print(f"HTML report written to {args.html_output}")
+        return 1 if report["findings"] else 0
+
+    if args.command == "dependencies":
+        outputs = [args.output]
+        for candidate in (args.markdown_output, args.sarif_output, args.html_output):
+            if candidate is not None:
+                outputs.append(candidate)
+        try:
+            report = scan_dependencies(args.path, args.language)
+            apply_suppressions(report, args.suppressions)
+            write_local_reports(report, args.output, args.markdown_output, args.sarif_output, args.html_output)
+        except (ValidationError, OSError) as exc:
+            print(f"Dependency scan failed: {exc}", file=sys.stderr)
+            return 2
+        print(f"Queried {report['queries_sent']} pinned package version(s) in {report['scanned_files']} lockfile(s) against OSV.")
+        print(f"Active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
+        print("Package names and versions were sent to OSV over HTTPS; manifests and source files were not uploaded.")
         print(f"JSON report written to {args.output}")
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")

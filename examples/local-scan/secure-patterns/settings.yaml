@@ -1,0 +1,4 @@
+# Example of explicit, production-oriented settings.
+debug: false
+verify_ssl: true
+allow_origins: ["https://app.example.test"]

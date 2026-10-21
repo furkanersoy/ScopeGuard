@@ -433,7 +433,7 @@ def _kubernetes_findings(source: str, relative: str, findings: list[dict[str, An
             inspect_pod_spec(pod_spec)
 
     try:
-        documents = yaml.compose_all(source)
+        documents = yaml.compose_all(source, Loader=yaml.SafeLoader)
         for document in documents:
             if document is None:
                 continue

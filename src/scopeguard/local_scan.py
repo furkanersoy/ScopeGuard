@@ -537,17 +537,20 @@ def render_local_sarif(report: dict[str, Any]) -> str:
         })
 
     root = Path(report["scanned_path"])
-    base = root.parent if root.is_file() else root
-    base_uri = base.as_uri()
-    if not base_uri.endswith("/"):
-        base_uri += "/"
+    scan_base = root.parent if root.is_file() else root
+    try:
+        path_prefix = scan_base.relative_to(Path.cwd().absolute())
+    except ValueError:
+        path_prefix = Path(".")
 
     results: list[dict[str, Any]] = []
     for finding in report["findings"]:
         rule_id = finding["rule_id"]
         severity = finding["severity"]
         level = {"high": "error", "medium": "warning", "low": "note"}[severity]
-        uri = quote(finding["file"].replace("\\", "/"), safe="/-._~")
+        relative_path = Path(finding["file"])
+        artifact_path = relative_path if path_prefix == Path(".") else path_prefix / relative_path
+        uri = quote(artifact_path.as_posix(), safe="/-._~")
         results.append({
             "ruleId": rule_id,
             "ruleIndex": rule_indexes[rule_id],
@@ -555,7 +558,7 @@ def render_local_sarif(report: dict[str, Any]) -> str:
             "message": {"text": finding["description"]},
             "locations": [{
                 "physicalLocation": {
-                    "artifactLocation": {"uri": uri, "uriBaseId": "SCAN_ROOT"},
+                    "artifactLocation": {"uri": uri},
                     "region": {"startLine": finding["line"]},
                 },
             }],
@@ -577,7 +580,6 @@ def render_local_sarif(report: dict[str, Any]) -> str:
                     "rules": rules,
                 },
             },
-            "originalUriBaseIds": {"SCAN_ROOT": {"uri": base_uri}},
             "results": results,
             "properties": {
                 "mode": report["mode"],

@@ -145,7 +145,7 @@ scopeguard dependencies --path . --allow-network --output dependencies.json --ma
 `run`, `inspect` ve `dependencies` komutlarında `--html-output report.html` kullan. HTML tek dosyadır ve uzaktaki betik/stil yüklemez. Önceki ve güncel JSON raporlarını karşılaştır:
 
 ```powershell
-scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html
+scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html --open-report
 ```
 
 Karşılaştırma yeni, giderilmiş ve aynı kalan bulguları listeler. Yeni etkin bulgu varsa çıkış kodu `1` olur; karşılaştırma ağ kullanmaz.

@@ -259,7 +259,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
         }
         args = commands[choice] + ["--spec", spec, "--config", scenario]
         if choice == "5":
-            report = _json_output_answer(source, output, "JSON report path / JSON rapor yolu", "report.json")
+            report = _json_output_answer(source, output, "JSON report path (Markdown, SARIF, and HTML are saved beside it) / JSON rapor yolu (Markdown, SARIF ve HTML yanına kaydedilir)", "report.json")
             if report is None:
                 return False
             language = _language_answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
@@ -441,7 +441,7 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
     language = _language_answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
-    report = _json_output_answer(source, output, "JSON report path / JSON rapor yolu", "scopeguard-scan.json")
+    report = _json_output_answer(source, output, "JSON report path (other formats are saved beside it) / JSON rapor yolu (diğer biçimler yanına kaydedilir)", "scopeguard-scan.json")
     if report is None:
         return False
     open_report = _yes_no_answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
@@ -620,7 +620,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     if current_selection is None:
         return False
     current, _ = current_selection
-    destination = _json_output_answer(source, output, "Comparison JSON report / Karşılaştırma JSON raporu", "scopeguard-diff.json")
+    destination = _json_output_answer(source, output, "Comparison JSON report (Markdown and HTML are saved beside it) / Karşılaştırma JSON raporu (Markdown ve HTML yanına kaydedilir)", "scopeguard-diff.json")
     if destination is None:
         return False
     open_report = _yes_no_answer(source, output, "Open the HTML report after comparison? [y/e=yes, n/h=no] / Karşılaştırma sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")

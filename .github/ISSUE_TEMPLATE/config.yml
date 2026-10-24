@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security concerns / Güvenlik bildirimleri
+    url: https://github.com/furkanersoy/ScopeGuard/blob/master/SECURITY.md
+    about: Read the security policy before sharing vulnerability details. / Zafiyet ayrıntılarını paylaşmadan önce güvenlik politikasını okuyun.

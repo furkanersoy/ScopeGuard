@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -eu
-cd "$(dirname "$0")"
+SG_CALLER_DIR="$(pwd -P)"
+SG_SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+cd "$SG_SCRIPT_DIR"
 
 PYTHON=""
 for candidate in python3.11 python3; do
@@ -31,4 +33,5 @@ if [ "$SG_PROJECT_HASH" != "$SG_INSTALLED_HASH" ]; then
     printf "%s\n" "$SG_PROJECT_HASH" > .venv/.scopeguard-installed
 fi
 
-exec .venv/bin/scopeguard "$@"
+cd "$SG_CALLER_DIR"
+exec "$SG_SCRIPT_DIR/.venv/bin/scopeguard" "$@"

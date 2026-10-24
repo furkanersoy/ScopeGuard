@@ -18,6 +18,7 @@ from .planner import build_plan
 from .runner import run_scenarios
 from .wizard import run_init_wizard
 from .ignore_wizard import run_ignore_wizard
+from .profiles import PROFILE_CHECKS, load_scan_profile, run_profile_wizard
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -68,15 +69,19 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     inspect.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
     quick = subparsers.add_parser("quick-scan", help="Run a named offline local scan profile; defaults to the current directory.")
-    quick.add_argument("--path", type=Path, default=Path("."), help="File or directory to inspect (default: current directory)")
-    quick.add_argument("--profile", choices=("standard", "secrets", "application", "containers", "infrastructure"), default="standard", help="Preset checks: standard (all), secrets, application, containers, or infrastructure")
-    quick.add_argument("--output", type=Path, default=Path("scopeguard-scan.json"), help="Local JSON report path")
-    quick.add_argument("--markdown-output", type=Path, default=Path("scopeguard-scan.md"), help="Local Markdown report path")
-    quick.add_argument("--sarif-output", type=Path, default=Path("scopeguard-scan.sarif"), help="Local SARIF report path")
-    quick.add_argument("--html-output", type=Path, default=Path("scopeguard-scan.html"), help="Local HTML report path")
+    quick.add_argument("--config", type=Path, help="Reusable project scan profile created with `scopeguard configure`")
+    quick.add_argument("--path", type=Path, help="File or directory to inspect; defaults to the saved profile or current directory")
+    quick.add_argument("--profile", choices=tuple(PROFILE_CHECKS), help="Override the saved preset checks")
+    quick.add_argument("--output", type=Path, help="Local JSON report path; other report formats use the same filename prefix")
+    quick.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
+    quick.add_argument("--sarif-output", type=Path, help="Optional local SARIF report path")
+    quick.add_argument("--html-output", type=Path, help="Optional local HTML report path")
     quick.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
-    quick.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
-    quick.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI severity gate")
+    quick.add_argument("--language", choices=("tr", "en"), help="Report language; defaults to saved profile or English")
+    quick.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), help="CI severity gate; defaults to saved profile or any")
+    configure = subparsers.add_parser("configure", help="Create a reusable local scan profile without network access.")
+    configure.add_argument("--output", type=Path, default=Path(".scopeguard-profile.yaml"), help="Profile file to create (default: .scopeguard-profile.yaml)")
+    configure.add_argument("--force", action="store_true", help="Replace the profile file if it already exists")
     dependencies = subparsers.add_parser("dependencies", help="Check pinned lockfile versions against OSV; sends package names and versions over HTTPS only when --allow-network is supplied.")
     dependencies.add_argument("--path", required=True, type=Path, help="Lockfile or directory containing supported lockfiles")
     dependencies.add_argument("--allow-network", action="store_true", required=True, help="Explicitly permit HTTPS queries to api.osv.dev")
@@ -136,17 +141,55 @@ def _print_suppression_audit(report: dict) -> None:
         print(f"  Unused suppression: {item['rule_id']} at {item['path']} (expires {item['expires']})")
 
 
+def _profile_report_path(prefix: Path, extension: str) -> Path:
+    if prefix.suffix.lower() in {".json", ".md", ".sarif", ".html"}:
+        prefix = prefix.with_suffix("")
+    return Path(f"{prefix}{extension}")
+
+
 def _execute(args: argparse.Namespace) -> int:
+    if args.command == "configure":
+        try:
+            run_profile_wizard(args.output, force=args.force)
+        except (ValidationError, OSError) as exc:
+            print(f"Profile creation failed: {exc}", file=sys.stderr)
+            return 2
+        except (EOFError, KeyboardInterrupt):
+            print("\nProfile creation cancelled.", file=sys.stderr)
+            return 2
+        return 0
+
     if args.command == "quick-scan":
+        profile_data = {}
+        if args.config:
+            try:
+                profile_data = load_scan_profile(args.config)
+            except ValidationError as exc:
+                print(f"Cannot load scan profile: {exc}", file=sys.stderr)
+                return 2
+        profile_name = args.profile or profile_data.get("profile", "standard")
+        if profile_name not in PROFILE_CHECKS:
+            print(f"Cannot load scan profile: unknown profile {profile_name!r}", file=sys.stderr)
+            return 2
+        scan_path = args.path or profile_data.get("path") or Path(".")
+        report_prefix = profile_data.get("report_prefix", Path("scopeguard-scan"))
+        if args.output:
+            json_output = args.output
+            output_prefix = args.output.with_suffix("") if args.output.suffix.lower() in {".json", ".md", ".sarif", ".html"} else args.output
+        else:
+            json_output = _profile_report_path(Path(report_prefix), ".json")
+            output_prefix = Path(report_prefix)
         args.command = "inspect"
-        profiles = {
-            "standard": ["secrets", "python", "config", "docker", "kubernetes", "terraform"],
-            "secrets": ["secrets"],
-            "application": ["secrets", "python", "config"],
-            "containers": ["docker", "kubernetes"],
-            "infrastructure": ["config", "terraform"],
-        }
-        args.checks = profiles[args.profile]
+        args.path = scan_path
+        args.checks = PROFILE_CHECKS[profile_name]
+        args.output = json_output
+        args.markdown_output = args.markdown_output or _profile_report_path(output_prefix, ".md")
+        args.sarif_output = args.sarif_output or _profile_report_path(output_prefix, ".sarif")
+        args.html_output = args.html_output or _profile_report_path(output_prefix, ".html")
+        args.suppressions = args.suppressions or profile_data.get("suppressions")
+        args.language = args.language or profile_data.get("language", "en")
+        args.fail_on = args.fail_on or profile_data.get("fail_on", "any")
+        args.profile_file = args.config
 
     if args.command in {"ignore", "suppress"}:
         try:
@@ -170,6 +213,8 @@ def _execute(args: argparse.Namespace) -> int:
         if args.html_output:
             outputs.append(args.html_output)
         try:
+            if getattr(args, "profile_file", None) and args.profile_file.resolve() in {item.resolve() for item in outputs}:
+                raise ValidationError("report outputs must not overwrite the scan profile")
             if args.suppressions and args.suppressions.resolve() in {item.resolve() for item in outputs}:
                 raise ValidationError("report outputs must not overwrite the suppressions file")
             report = inspect_path(args.path, args.checks, args.language, output_paths=outputs)

@@ -2,11 +2,11 @@
 
 ## Check the installation first
 
-Once ScopeGuard starts, run `scopeguard doctor` (or `ScopeGuard.bat doctor` in a Windows source checkout) to check Python, PyYAML, and the packaged API demo files offline. It does not scan your project or make network requests. If the command is not found, follow the next section first.
+Once ScopeGuard starts, run `scopeguard doctor` (or `.\ScopeGuard.bat doctor` from PowerShell in a Windows source checkout) to check Python, PyYAML, and the packaged API demo files offline. It does not scan your project or make network requests. If the command is not found, follow the next section first.
 
 ## The `scopeguard` command is not found
 
-- If you are using the downloaded repository on Windows, run `ScopeGuard.bat` from the repository folder. You can pass commands to it, for example `.\ScopeGuard.bat quick-scan`.
+- If you are using the downloaded repository on Windows, run `.\ScopeGuard.bat` from PowerShell in the repository folder, or double-click `ScopeGuard.bat` in File Explorer. You can pass commands to it, for example `.\ScopeGuard.bat quick-scan`.
 - If you installed from PyPI with pipx, open a new terminal after installation. If needed, run `pipx ensurepath` and restart the terminal.
 - If you installed into an activated virtual environment, activate that same environment before running `scopeguard`.
 

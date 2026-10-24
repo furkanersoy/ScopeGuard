@@ -11,7 +11,7 @@ from typing import Sequence
 from . import __version__
 from .config import ValidationError, validate_inputs
 from .coverage import build_coverage, render_coverage_table
-from .console import colorize, run_console
+from .console import colorize, configure_console_encoding, run_console
 from .local_scan import apply_suppressions, inspect_path, write_local_reports
 from .dependency_scan import scan_dependencies, validate_dependency_outputs
 from .report_compare import compare_reports, write_comparison_reports
@@ -472,6 +472,7 @@ def _console_command(tokens: Sequence[str]) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    configure_console_encoding()
     arguments = list(sys.argv[1:] if argv is None else argv)
     parser = _parser()
     if not arguments:

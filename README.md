@@ -140,7 +140,7 @@ Pass it to either local or dependency scanning with `--suppressions scopeguard-i
 
 ### Dependency vulnerability checks
 
-Dependency scanning is a separate, online opt-in command. It reads exact versions from `requirements*.txt`, `poetry.lock`, `Pipfile.lock`, `package-lock.json`, `npm-shrinkwrap.json`, `Cargo.lock`, and `go.sum`, then queries OSV. It does not upload lockfiles or source code. The query sends package ecosystem, name, and version. Review your organization's data-sharing policy before using it on private projects.
+Dependency scanning is a separate, online opt-in command. It reads exact versions from `requirements*.txt`, `poetry.lock`, `Pipfile.lock`, `package-lock.json`, `npm-shrinkwrap.json`, `Cargo.lock`, and `go.sum`, then queries OSV. It does not upload lockfiles or source code. The query sends package ecosystem, name, and version. Review your organization's data-sharing policy before using it on private projects. A `pyproject.toml` or `package.json` without a supported lockfile is not enough; generate or commit the lockfile with your package manager first.
 
 ```powershell
 scopeguard dependencies --path . --allow-network --output dependencies.json --markdown-output dependencies.md --sarif-output dependencies.sarif --html-output dependencies.html --language en

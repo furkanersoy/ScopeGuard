@@ -130,7 +130,7 @@ Yerel veya bağımlılık taramasına `--suppressions scopeguard-ignore.yaml` ek
 
 ## Bağımlılık zafiyeti taraması
 
-Bu çevrimiçi komut yalnızca `--allow-network` açıkça verildiğinde OSV'ye sorgu gönderir. Desteklenen kilit dosyaları: `requirements*.txt`, `poetry.lock`, `Pipfile.lock`, `package-lock.json`, `npm-shrinkwrap.json`, `Cargo.lock` ve `go.sum`. Kilit dosyaları veya kaynak kod yüklenmez; OSV'ye paket ekosistemi, adı ve sürümü gider. Özel depolar için kurumunun veri paylaşım kurallarını kontrol et.
+Bu çevrimiçi komut yalnızca `--allow-network` açıkça verildiğinde OSV'ye sorgu gönderir. Desteklenen kilit dosyaları: `requirements*.txt`, `poetry.lock`, `Pipfile.lock`, `package-lock.json`, `npm-shrinkwrap.json`, `Cargo.lock` ve `go.sum`. Kilit dosyaları veya kaynak kod yüklenmez; OSV'ye paket ekosistemi, adı ve sürümü gider. Özel depolar için kurumunun veri paylaşım kurallarını kontrol et. Tek başına `pyproject.toml` veya `package.json` yeterli değildir; önce paket yöneticinle desteklenen bir kilit dosyası oluştur veya depoya ekle.
 
 ```powershell
 scopeguard dependencies --path . --allow-network --output dependencies.json --markdown-output dependencies.md --sarif-output dependencies.sarif --html-output dependencies.html --language tr

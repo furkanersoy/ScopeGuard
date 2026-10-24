@@ -11,7 +11,7 @@
 - `GET /records/{id}` enforces record ownership.
 - `GET /vulnerable/records/{id}` intentionally demonstrates a broken object-level authorization check.
 - `scopeguard validate` checks the OpenAPI and YAML scenario structure without network access.
-- `scopeguard run` executes only the configured, read-only `GET` checks and writes a redacted JSON report.
+- `scopeguard run` executes only the configured, read-only `GET`, `HEAD`, and `OPTIONS` checks and writes a redacted JSON report.
 - `scopeguard inspect` scans selected local source, configuration, Dockerfile, Kubernetes, and Terraform patterns without executing code, building containers, or using the network.
 - API, local, and dependency findings can be saved as JSON, Markdown, SARIF 2.1.0, and self-contained HTML files at user-selected local paths. Reports stay local by default.
 - Dependency checks query OSV only when `--allow-network` is explicitly provided; only package names, ecosystems, and pinned versions are sent.
@@ -24,7 +24,7 @@
 
 1. Install Python 3.11 or newer and download or clone the ScopeGuard repository.
 2. Double-click `ScopeGuard.bat`. On its first launch it creates a project-local `.venv` and installs ScopeGuard and its dependencies. Later launches reuse that setup.
-3. Choose a section from the startup menu: `1` opens API Security, `2` scans source/IaC/configuration, `3` scans for hard-coded secrets, `4` opens the advanced command console, and `5` starts the opt-in dependency check.
+3. Choose a section from the startup menu: `1` opens API Security, `2` selects local checks, `3` scans for hard-coded secrets, `4` opens the advanced command console, `5` starts the opt-in dependency check, `6` creates a temporary suppression from a report, and `7` guides a quick local scan.
 4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
 5. Run `exit` in the first window to leave the interactive console. To run a command directly from PowerShell, prefix it with `ScopeGuard.bat`, for example `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
@@ -36,16 +36,16 @@ To install without creating a project `.venv`, run `py -3 -m pip install --user 
 
 | Command | What it checks or does | Network use |
 | --- | --- | --- |
-| `init` | Creates scenarios for anonymous access, BOLA/IDOR, BFLA, or custom GET status checks. | None |
+| `init` | Creates scenarios for anonymous access, BOLA/IDOR, BFLA, or custom GET/HEAD/OPTIONS status checks. | None |
 | `inspect` | Scans local secrets, Python, configuration, Dockerfile, Kubernetes, and selected Terraform risks; writes local reports. | None; source code is not run |
 | `validate` | Validates the OpenAPI document and scenario configuration. | None |
 | `plan` | Shows the exact requests and identities in a scenario. | None; tokens are not read |
 | `coverage` | Shows configured identity/endpoint pairs; `--strict` enforces required coverage. | None; tokens are not read |
-| `run` | Sends configured read-only GET checks to the scoped target and writes local reports. | Yes, to the configured target only |
+| `run` | Sends configured read-only GET, HEAD, and OPTIONS checks to the scoped target and writes local reports. | Yes, to the configured target only |
 | `dependencies` | Checks pinned versions in supported lockfiles against OSV; requires `--allow-network`. | Yes; package names, ecosystems, and versions only |
 | `compare` | Compares two ScopeGuard JSON reports. | None |
 
-The `inspect` checks are static heuristics, not a complete scanner. They do not test a live web service. API scenarios test only explicitly configured GET operations and expected outcomes; they do not fuzz endpoints or infer the application's authorization policy.
+The `inspect` checks are static heuristics, not a complete scanner. They do not test a live web service. API scenarios test only explicitly configured safe GET, HEAD, and OPTIONS operations and expected outcomes; they do not fuzz endpoints or infer the application's authorization policy.
 
 ## Install and run
 
@@ -73,11 +73,13 @@ Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) fo
 
 Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows) to open the bilingual menu:
 
-1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run configured checks. Scenario creation asks for an OpenAPI file, selected GET operations, sample path values, identities, and expected status codes. API runs save JSON, Markdown, SARIF, and HTML reports locally. Start the included demo in a second terminal before running its checks.
+1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run configured checks. Scenario creation asks for an OpenAPI file, selected GET/HEAD/OPTIONS operations, sample path values, identities, and expected status codes. API runs save JSON, Markdown, SARIF, and HTML reports locally. Start the included demo in a second terminal before running its checks.
 2. **Select Local Security Checks** — choose one or more categories separated by commas: `secrets`, `python`, `config`, `docker`, `kubernetes`, and `terraform`. The default is `python,config,docker,kubernetes,terraform`; secret scanning remains a separate main-menu shortcut. The selected local file or folder is scanned offline, without executing code, building images, or connecting to a Kubernetes cluster. The menu asks for JSON, Markdown, SARIF, and HTML report paths and can load an optional suppression YAML.
 3. **Secret Detection** — scans a selected local file or folder for supported hard-coded secret patterns and saves local JSON, Markdown, SARIF, and HTML reports. It does not print matched secret values.
 4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `init`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.
 5. **Dependency Vulnerability Check** — selects a lockfile or folder and asks before sending exact package names and versions to OSV over HTTPS. It saves local JSON, Markdown, SARIF, and HTML reports.
+6. **Create suppression from a report** — selects a finding from a local JSON report and creates a reasoned, expiring suppression YAML.
+7. **Guided quick scan** — asks for a project path and scan profile, then saves JSON, Markdown, SARIF, and HTML reports without executing code or sending files over the network.
 
 The local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
 
@@ -167,7 +169,7 @@ Create a starter scenario interactively from an OpenAPI document:
 scopeguard init --spec examples/api/openapi.yaml --output examples/scenarios/my-scenario.yaml
 ```
 
-The wizard lets you select anonymous-access checks, BOLA/IDOR horizontal access checks, BFLA role checks, or custom GET status checks. It asks you to select GET operations and collect sample path values, test identities, and expected status codes. It performs no API requests. Review the generated scenario before running it; the wizard cannot infer your authorization policy or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
+The wizard lets you select anonymous-access checks, BOLA/IDOR horizontal access checks, BFLA role checks, or custom safe-method status checks. The custom profile lists GET, HEAD, and OPTIONS operations from the OpenAPI document. It asks for sample path values and expected status codes and performs no API requests. Review the generated scenario before running it; the wizard cannot infer your authorization policy or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
 
 To start the included synthetic demo API, open a second terminal:
 
@@ -298,7 +300,7 @@ Remote targets must use HTTPS, the exact base hostname must be the only allowlis
 
 ## Safety
 
-This is a deliberately vulnerable teaching fixture. Keep it bound to loopback and use only the synthetic data included here. Do not expose it to a network or use real credentials or data. The runner uses loopback by default; a remote target needs config and command-line opt-in, an exact hostname and port allowlist, HTTPS, and an authorized test scope. It sends only explicitly configured `GET` requests, does not follow redirects, limits request count and rate, and does not save response bodies.
+This is a deliberately vulnerable teaching fixture. Keep it bound to loopback and use only the synthetic data included here. Do not expose it to a network or use real credentials or data. The runner uses loopback by default; a remote target needs config and command-line opt-in, an exact hostname and port allowlist, HTTPS, and an authorized test scope. It sends only explicitly configured `GET`, `HEAD`, and `OPTIONS` requests, does not follow redirects, limits request count and rate, and does not save response bodies.
 
 ## Project plan
 
@@ -316,7 +318,7 @@ No license has been selected yet. Until one is added, the source is not granted 
 
 The path defaults to the current directory, so `scopeguard quick-scan` is enough to start. Choose a preset with `--profile standard|secrets|application|containers|infrastructure`; for example, `scopeguard quick-scan --profile containers --language en`. The startup menu's **7. Guided quick scan** asks for the project folder, profile, report language, and JSON report name, then creates the other report formats automatically.
 
-API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. In `scopeguard init`, select **Custom GET status check** to choose any listed GET, HEAD, or OPTIONS operation. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
+API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. In `scopeguard init`, select **Custom safe-method status check** to choose any listed GET, HEAD, or OPTIONS operation. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
 
 
 ## Create suppressions from a report

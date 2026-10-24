@@ -11,7 +11,7 @@
 - `GET /records/{id}` kayıt sahipliğini denetler.
 - `GET /vulnerable/records/{id}` nesne düzeyinde yetkilendirme hatasını göstermek için bilerek savunmasız bırakılmıştır.
 - `scopeguard validate` OpenAPI belgesini ve YAML senaryosunu ağ erişimi olmadan doğrular.
-- `scopeguard run` yalnızca senaryoda açıkça tanımlanan salt okunur `GET` isteklerini gönderir ve yerel rapor oluşturur.
+- `scopeguard run` yalnızca senaryoda açıkça tanımlanan salt okunur `GET`, `HEAD` ve `OPTIONS` isteklerini gönderir ve yerel rapor oluşturur.
 - `scopeguard inspect` seçilen kaynak kodu, yapılandırma, Dockerfile, Kubernetes manifesti ve Terraform kalıplarını kod çalıştırmadan, imaj oluşturmadan ve ağa bağlanmadan tarar; bulguları JSON, Markdown, SARIF 2.1.0 ve HTML olarak kaydedebilir.
 - API, yerel tarama ve bağımlılık bulguları JSON, Markdown, SARIF 2.1.0 ve tek dosyalı HTML olarak kaydedilebilir.
 - Bağımlılık kontrolü yalnızca açıkça `--allow-network` verildiğinde OSV'ye bağlanır; yalnızca paket adı, ekosistem ve sabitlenmiş sürüm gönderilir.
@@ -23,7 +23,7 @@
 
 1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir veya klonla.
 2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta proje klasöründe `.venv` oluşturup ScopeGuard ve bağımlılıklarını kurar. Sonraki açılışlarda bu kurulumu tekrar kullanır.
-3. Başlangıç menüsünden bir bölüm seç: `1` API Güvenliği, `2` kaynak/IaC/yapılandırma taraması, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolüdür.
+3. Başlangıç menüsünden bölüm seç: `1` API Güvenliği, `2` yerel kontroller, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolü, `6` rapordan geçici istisna oluşturma, `7` hızlı tarama sihirbazıdır.
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
 5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
@@ -44,16 +44,16 @@ Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı 
 
 | Komut | Ne yapar? | Ağ kullanımı |
 | --- | --- | --- |
-| `init` | Anonim erişim, BOLA/IDOR, BFLA veya özel GET durum kodu kontrolleri için senaryo oluşturur. | Yok |
+| `init` | Anonim erişim, BOLA/IDOR, BFLA veya özel GET/HEAD/OPTIONS durum kodu kontrolleri için senaryo oluşturur. | Yok |
 | `inspect` | Sabit sır, Python, yapılandırma, Dockerfile, Kubernetes ve seçili Terraform risklerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
 | `validate` | OpenAPI belgesini ve senaryo yapılandırmasını doğrular. | Yok |
 | `plan` | Senaryodaki istekleri ve kimlikleri önizler. | Yok; token okunmaz |
 | `coverage` | Kimlik/uç nokta kontrollerini matriste gösterir; `--strict` zorunlu kapsamı uygular. | Yok; token okunmaz |
-| `run` | Tanımlı salt okunur GET kontrollerini kapsam içindeki hedefte çalıştırır ve yerel rapor yazar. | Evet, yalnızca yapılandırılmış hedefe |
+| `run` | Tanımlı salt okunur GET, HEAD ve OPTIONS kontrollerini kapsam içindeki hedefte çalıştırır ve yerel rapor yazar. | Evet, yalnızca yapılandırılmış hedefe |
 | `dependencies` | Sabitlenmiş paket sürümlerini OSV ile karşılaştırır; `--allow-network` gerekir. | Evet; yalnızca paket adı, ekosistem ve sürümler |
 | `compare` | İki ScopeGuard JSON raporunu karşılaştırır. | Yok |
 
-`inspect` sezgisel statik kontroller kullanır; kapsamlı bir güvenlik tarayıcısı değildir ve çalışan web servisini test etmez. API senaryoları yalnızca açıkça tanımlanmış GET uç noktalarını ve beklenen sonuçları denetler; uç noktalara fuzzing uygulamaz ve uygulamanın yetkilendirme politikasını kendiliğinden çıkarmaz.
+`inspect` sezgisel statik kontroller kullanır; kapsamlı bir güvenlik tarayıcısı değildir ve çalışan web servisini test etmez. API senaryoları yalnızca açıkça tanımlanmış güvenli GET, HEAD ve OPTIONS uç noktalarını ve beklenen sonuçları denetler; uç noktalara fuzzing uygulamaz ve uygulamanın yetkilendirme politikasını kendiliğinden çıkarmaz.
 
 ## Kurulum ve çalıştırma
 
@@ -83,11 +83,13 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 
 `scopeguard` komutunu argümansız çalıştır veya Windows'ta `ScopeGuard.bat` dosyasına çift tıklayarak iki dilli başlangıç menüsünü aç:
 
-1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı GET işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen kodları sorar. API çalıştırması yerel JSON, Markdown, SARIF ve HTML raporları oluşturur. Dahil edilen demo üzerinde çalıştırmak için önce başka bir terminalde demo API'yi başlat.
+1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı GET/HEAD/OPTIONS işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen kodları sorar. API çalıştırması yerel JSON, Markdown, SARIF ve HTML raporları oluşturur. Dahil edilen demo üzerinde çalıştırmak için önce başka bir terminalde demo API'yi başlat.
 2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker`, `kubernetes` ve `terraform` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes,terraform` olur; sır taraması ana menüde ayrıca kısayoldur. Tarama çevrimdışıdır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. JSON, Markdown, SARIF ve HTML rapor yollarını ve isteğe bağlı istisna YAML dosyasını belirleyebilirsin.
 3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit sır kalıplarını arar ve JSON, Markdown, SARIF ve HTML raporları kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
 4. **Gelişmiş komut konsolu** — `help`, `version`, `init`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage` ve `run` komutlarını kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz.
 5. **Bağımlılık Zafiyeti Taraması** — kilit dosyası veya klasör seçer; paket adı ve sürümlerini HTTPS ile OSV'ye göndermeden önce onay ister. JSON, Markdown, SARIF ve HTML raporları yerel kaydeder.
+6. **Rapordan geçici istisna oluştur** — yerel JSON raporundan bulgu seçip gerekçeli ve bitiş tarihli bir YAML istisnası oluşturur.
+7. **Hızlı tarama sihirbazı** — proje yolunu ve tarama profilini sorar; kod çalıştırmadan ve dosyaları ağa göndermeden JSON, Markdown, SARIF ve HTML raporları kaydeder.
 
 Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
 
@@ -160,7 +162,7 @@ Bir OpenAPI belgesinden başlangıç senaryosu oluşturmak için sihirbazı çal
 scopeguard init --spec examples/api/openapi.yaml --output examples/scenarios/my-scenario.yaml
 ```
 
-Sihirbaz anonim erişim, BOLA/IDOR yatay erişim, BFLA rol/yetki ve özel GET durum kodu kontrollerinden seçim yaptırır. GET işlemlerini, örnek yol değerlerini, test kimliklerini ve beklenen HTTP durum kodlarını sorar. API isteği göndermez. Oluşan senaryodaki kimlikleri ve beklenen sonuçları gözden geçir; sihirbaz uygulamanın politikasını tahmin edemez. Var olan dosya `--force` verilmediği sürece korunur.
+Sihirbaz anonim erişim, BOLA/IDOR yatay erişim, BFLA rol/yetki ve özel güvenli yöntem durum kodu kontrollerinden seçim yaptırır. Özel profilde OpenAPI belgesinde tanımlı GET, HEAD ve OPTIONS işlemlerini listeler; örnek yol değerlerini ve beklenen HTTP durum kodlarını sorar. API isteği göndermez. Oluşan senaryodaki kimlikleri ve beklenen sonuçları gözden geçir; sihirbaz uygulamanın politikasını tahmin edemez. Var olan dosya `--force` verilmediği sürece korunur.
 
 ## Demo API'yi başlatma
 
@@ -277,7 +279,7 @@ Uzak hedef HTTPS kullanmalı, tam sunucu adı ve izinli port ile eşleşmelidir.
 
 ## Güvenlik
 
-Bu depo bilerek savunmasız bir eğitim API'si içerir. Demo API'yi yalnızca loopback üzerinde ve sentetik verilerle çalıştır. Ağa açma; gerçek kimlik bilgisi veya veri kullanma. API çalıştırıcısı sadece açıkça tanımlanmış `GET` isteklerini gönderir, yönlendirmeleri izlemez, istek sayısını ve hızını sınırlar ve yanıt gövdelerini kaydetmez. Uzak hedef yalnızca açık izin, tam sunucu/port listesi, HTTPS ve yetkili test kapsamıyla kullanılmalıdır.
+Bu depo bilerek savunmasız bir eğitim API'si içerir. Demo API'yi yalnızca loopback üzerinde ve sentetik verilerle çalıştır. Ağa açma; gerçek kimlik bilgisi veya veri kullanma. API çalıştırıcısı sadece açıkça tanımlanmış `GET`, `HEAD` ve `OPTIONS` isteklerini gönderir, yönlendirmeleri izlemez, istek sayısını ve hızını sınırlar ve yanıt gövdelerini kaydetmez. Uzak hedef yalnızca açık izin, tam sunucu/port listesi, HTTPS ve yetkili test kapsamıyla kullanılmalıdır.
 
 ## Testleri çalıştırma
 
@@ -305,7 +307,7 @@ Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yen
 
 Yol varsayılan olarak geçerli klasördür; taramayı başlatmak için `scopeguard quick-scan` yeterlidir. `--profile standard|secrets|application|containers|infrastructure` ile hazır profillerden birini seç. Örneğin `scopeguard quick-scan --profile containers --language tr` yalnızca Docker ve Kubernetes kontrollerini çalıştırır. Başlangıç menüsündeki **7. Hızlı tarama sihirbazı** proje klasörünü, profili, rapor dilini ve JSON rapor adını sorar; diğer rapor biçimlerini otomatik oluşturur.
 
-API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. `scopeguard init` içinde **Özel GET durum kodu kontrolü** profilini seçerek OpenAPI belgesinde tanımlı GET, HEAD veya OPTIONS işlemlerinden seçim yapabilirsin. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
+API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. `scopeguard init` içinde **Özel güvenli yöntem durum kodu kontrolü** profilini seçerek OpenAPI belgesinde tanımlı GET, HEAD veya OPTIONS işlemlerinden seçim yapabilirsin. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
 
 
 ## Rapor üzerinden istisna oluşturma

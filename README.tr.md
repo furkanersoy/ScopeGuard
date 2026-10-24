@@ -92,7 +92,9 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 8. **Yeniden kullanılabilir proje profili oluştur** — proje yolunu, tarama profilini, rapor dilini/adını, isteğe bağlı istisna dosyasını ve CI eşiğini `.scopeguard-profile.yaml` dosyasına kaydeder. Ayarları 7. seçenekten veya `scopeguard quick-scan --config .scopeguard-profile.yaml` ile yeniden kullanabilirsin.
 9. **Kaydedilmiş raporları karşılaştır** — geçerli klasördeki numaralı ScopeGuard JSON raporlarından seçim yap veya dosya yollarını gir. İlk raporu seçince menü yalnızca aynı türdeki raporları listeler; elle girilen yolları da denetler. JSON, Markdown ve HTML karşılaştırma dosyaları oluşturulur, HTML raporu açılabilir.
 
-Varsayılan rapor adı zaten varsa menü kullanılmayan bir numaralı ad seçer. Var olan rapor adını kendin girersen ScopeGuard üzerine yazmadan önce onay ister.\n\nYerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
+Varsayılan rapor adı zaten varsa menü kullanılmayan bir numaralı ad seçer. Var olan rapor adını kendin girersen ScopeGuard üzerine yazmadan önce onay ister. Varsayılan raporlar ve `.scopeguard-profile.yaml` Git tarafından yok sayılır; böylece yerel bulgular ve makineye özgü yollar commit'lere eklenmez. Gerekirse özel rapor adlarını kendi `.gitignore` dosyana ekle.
+
+Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
 
 ## Yerel kaynak kodu ve yapılandırma taraması
 

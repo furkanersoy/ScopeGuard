@@ -136,6 +136,36 @@ def _answer(source: TextIO, output: TextIO, prompt: str, default: str = "") -> s
     return value or default
 
 
+def _language_answer(source: TextIO, output: TextIO, prompt: str, default: str = "tr") -> str | None:
+    """Ask for a supported report language and accept localized names."""
+    while True:
+        value = _answer(source, output, prompt, default)
+        if value is None:
+            return None
+        normalized = value.casefold()
+        if normalized in {"tr", "turkish", "türkçe", "turkce"}:
+            return "tr"
+        if normalized in {"en", "english", "ingilizce"}:
+            return "en"
+        output.write("Enter tr (Turkish) or en (English) / tr (Türkçe) veya en (İngilizce) yazın.\n")
+
+
+def _yes_no_answer(source: TextIO, output: TextIO, prompt: str, default: str = "n") -> bool | None:
+    """Ask a yes/no question and accept Turkish or English answers."""
+    yes_values = {"y", "yes", "e", "evet"}
+    no_values = {"n", "no", "h", "hayır", "hayir"}
+    while True:
+        value = _answer(source, output, prompt, default)
+        if value is None:
+            return None
+        normalized = value.casefold()
+        if normalized in yes_values:
+            return True
+        if normalized in no_values:
+            return False
+        output.write("Answer yes/no or evet/hayır / yes/no veya evet/hayır yazın.\n")
+
+
 def _dispatch(command_handler: Callable[[Sequence[str]], int], args: list[str], output: TextIO) -> None:
     try:
         code = command_handler(args)
@@ -195,17 +225,17 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
             report = _answer(source, output, "JSON report / JSON raporu", "report.json")
             if report is None:
                 return False
-            language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
+            language = _language_answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
             if language is None:
                 return False
             markdown = _report_sidecar(report, ".md")
             sarif = _report_sidecar(report, ".sarif")
             html_report = _report_sidecar(report, ".html")
-            open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+            open_report = _yes_no_answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
             if open_report is None:
                 return False
             args.extend(["--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language])
-            if open_report.lower() in {"y", "yes", "e", "evet"}:
+            if open_report:
                 args.append("--open-report")
         _dispatch(command_handler, args, output)
 
@@ -229,10 +259,10 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     suppressions = _answer(source, output, "Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter)", "")
     if suppressions is None:
         return False
-    language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
+    language = _language_answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
-    open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    open_report = _yes_no_answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
     if open_report is None:
         return False
     if secrets_only:
@@ -257,7 +287,7 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     ]
     if suppressions:
         args.extend(["--suppressions", suppressions])
-    if open_report.lower() in {"y", "yes", "e", "evet"}:
+    if open_report:
         args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
@@ -270,10 +300,10 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     path = _answer(source, output, "Lockfile or folder / Kilit dosyası veya klasör", ".")
     if path is None:
         return False
-    consent = _answer(source, output, "Send package names and versions to OSV? [y/N] / Paket adı ve sürümleri OSV'ye gönderilsin mi? [e/H]", "n")
+    consent = _yes_no_answer(source, output, "Send package names and versions to OSV? [y/N] / Paket adı ve sürümleri OSV'ye gönderilsin mi? [e/H]", "n")
     if consent is None:
         return False
-    if consent.lower() not in {"y", "yes", "e", "evet"}:
+    if not consent:
         output.write("Online dependency check skipped / Çevrimiçi bağımlılık kontrolü atlandı.\n")
         return True
     report = _answer(
@@ -286,10 +316,10 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     suppressions = _answer(source, output, "Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter)", "")
     if suppressions is None:
         return False
-    language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
+    language = _language_answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
-    open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    open_report = _yes_no_answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
     if open_report is None:
         return False
     args = [
@@ -301,7 +331,7 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     ]
     if suppressions:
         args.extend(["--suppressions", suppressions])
-    if open_report.lower() in {"y", "yes", "e", "evet"}:
+    if open_report:
         args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
@@ -363,20 +393,20 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
         if profile is not None:
             break
         output.write("Choose one of the listed profile numbers / Listelenen profil numaralarından birini seçin.\n")
-    language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
+    language = _language_answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
     report = _answer(source, output, "JSON report path / JSON rapor yolu", "scopeguard-scan.json")
     if report is None:
         return False
-    open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    open_report = _yes_no_answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
     if open_report is None:
         return False
     args = ["quick-scan", "--path", path, "--profile", profile, "--language", language,
             "--output", report, "--markdown-output", _report_sidecar(report, ".md"),
             "--sarif-output", _report_sidecar(report, ".sarif"),
             "--html-output", _report_sidecar(report, ".html")]
-    if open_report.lower() in {"y", "yes", "e", "evet"}:
+    if open_report:
         args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
@@ -548,7 +578,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     destination = _answer(source, output, "Comparison JSON report / Karşılaştırma JSON raporu", "scopeguard-diff.json")
     if destination is None:
         return False
-    open_report = _answer(source, output, "Open the HTML report after comparison? [y/e=yes, n/h=no] / Karşılaştırma sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    open_report = _yes_no_answer(source, output, "Open the HTML report after comparison? [y/e=yes, n/h=no] / Karşılaştırma sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
     if open_report is None:
         return False
     args = [
@@ -557,7 +587,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
         "--markdown-output", _report_sidecar(destination, ".md"),
         "--html-output", _report_sidecar(destination, ".html"),
     ]
-    if open_report.lower() in {"y", "yes", "e", "evet"}:
+    if open_report:
         args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True

@@ -104,6 +104,7 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--output", type=Path, default=Path("scopeguard-diff.json"), help="Local JSON comparison path")
     compare.add_argument("--markdown-output", type=Path, help="Optional local Markdown comparison path")
     compare.add_argument("--html-output", type=Path, help="Optional local HTML comparison path")
+    compare.add_argument("--open-report", action="store_true", help="Open the local HTML comparison in your default browser after writing it")
 
     ignore = subparsers.add_parser("ignore", aliases=["suppress"], help="Create a reasoned, expiring suppression from a saved local report.")
     ignore.add_argument("--report", required=True, type=Path, help="Local JSON report containing the finding")
@@ -333,6 +334,8 @@ def _execute(args: argparse.Namespace) -> int:
         return 1 if _findings_trigger_gate(report["findings"], args.fail_on) else 0
 
     if args.command == "compare":
+        if args.open_report and args.html_output is None:
+            args.html_output = _profile_report_path(args.output, ".html")
         try:
             outputs = [args.output, *[item for item in (args.markdown_output, args.html_output) if item is not None]]
             resolved_outputs = [item.resolve() for item in outputs]
@@ -353,6 +356,8 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Comparison Markdown written to {args.markdown_output}")
         if args.html_output:
             print(f"Comparison HTML written to {args.html_output}")
+        if args.open_report:
+            _open_html_report(args.html_output)
         return 1 if summary["added"] else 0
 
     if args.command == "init":

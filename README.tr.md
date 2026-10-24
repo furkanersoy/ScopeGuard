@@ -90,7 +90,7 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 6. **Rapordan geçici istisna oluştur** — yerel JSON raporundan bulgu seçip gerekçeli ve bitiş tarihli bir YAML istisnası oluşturur.
 7. **Hızlı tarama sihirbazı** — proje yolunu ve tarama profilini sorar; kod çalıştırmadan ve dosyaları ağa göndermeden JSON, Markdown, SARIF ve HTML raporları kaydeder.
 8. **Yeniden kullanılabilir proje profili oluştur** — proje yolunu, tarama profilini, rapor dilini/adını, isteğe bağlı istisna dosyasını ve CI eşiğini `.scopeguard-profile.yaml` dosyasına kaydeder. Ayarları 7. seçenekten veya `scopeguard quick-scan --config .scopeguard-profile.yaml` ile yeniden kullanabilirsin.
-9. **Kaydedilmiş raporları karşılaştır** — geçerli klasörde bulunan numaralı ScopeGuard JSON raporlarından seçim yap veya dosya yollarını gir; JSON, Markdown ve HTML karşılaştırma dosyaları oluşturulur, HTML raporu açılabilir.
+9. **Kaydedilmiş raporları karşılaştır** — geçerli klasördeki numaralı ScopeGuard JSON raporlarından seçim yap veya dosya yollarını gir. İlk raporu seçince menü yalnızca aynı türdeki raporları listeler; elle girilen yolları da denetler. JSON, Markdown ve HTML karşılaştırma dosyaları oluşturulur, HTML raporu açılabilir.
 
 Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
 

@@ -14,6 +14,7 @@ report.json
 /report.sarif
 /report.html
 /scopeguard-source.*
+/scopeguard-inspect.*
 /scopeguard-secrets.*
 /scopeguard-dependencies.*
 /scopeguard-scan*.*

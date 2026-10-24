@@ -58,6 +58,8 @@ API kontrollerini denemek için dahil edilen demo API'yi ikinci bir terminalde b
 
 ## Kurulum ve çalıştırma
 
+Bir sorunla karşılaşırsan [sorun giderme rehberine](docs/troubleshooting.tr.md) bak.
+
 Python 3.11 veya üzeri gerekir.
 
 ```powershell

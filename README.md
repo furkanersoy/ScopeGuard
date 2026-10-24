@@ -59,6 +59,8 @@ The `inspect` checks are static heuristics, not a complete scanner. They do not 
 
 ## Install and run
 
+If something goes wrong, see the [troubleshooting guide](docs/troubleshooting.md).
+
 Requires Python 3.11 or newer.
 
 ```powershell

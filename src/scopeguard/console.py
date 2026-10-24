@@ -149,9 +149,9 @@ def _existing_path_answer(
         if valid:
             return str(candidate)
         if file_only:
-            output.write(f"File not found / Dosya bulunamadı: {value}\\n")
+            output.write(f"File not found / Dosya bulunamadı: {value}\n")
         else:
-            output.write(f"Path not found / Yol bulunamadı: {value}\\n")
+            output.write(f"Path not found / Yol bulunamadı: {value}\n")
 
 
 def _language_answer(source: TextIO, output: TextIO, prompt: str, default: str = "tr") -> str | None:

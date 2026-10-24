@@ -20,10 +20,15 @@ if [ ! -x .venv/bin/python ]; then
     "$PYTHON" -m venv .venv
 fi
 
-if [ ! -f .venv/.scopeguard-installed ]; then
-    echo "Installing ScopeGuard and its dependencies..."
+SG_PROJECT_HASH="$(.venv/bin/python -c 'import hashlib; from pathlib import Path; print(hashlib.sha256(Path("pyproject.toml").read_bytes()).hexdigest())')"
+SG_INSTALLED_HASH=""
+if [ -f .venv/.scopeguard-installed ]; then
+    IFS= read -r SG_INSTALLED_HASH < .venv/.scopeguard-installed || true
+fi
+if [ "$SG_PROJECT_HASH" != "$SG_INSTALLED_HASH" ]; then
+    echo "Installing or updating ScopeGuard and its dependencies..."
     .venv/bin/python -m pip install --disable-pip-version-check -e "$(pwd)"
-    : > .venv/.scopeguard-installed
+    printf "%s\\n" "$SG_PROJECT_HASH" > .venv/.scopeguard-installed
 fi
 
 exec .venv/bin/scopeguard "$@"

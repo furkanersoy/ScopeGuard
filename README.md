@@ -315,3 +315,20 @@ No license has been selected yet. Until one is added, the source is not granted 
 `scopeguard quick-scan --path . --language en` runs the standard offline checks for secrets, Python, configuration, Docker, Kubernetes, and Terraform. It writes JSON, Markdown, SARIF, and HTML reports to the current directory. Add `--suppressions scopeguard-ignore.yaml` for reviewed exceptions or `--fail-on high` to set a CI threshold.
 
 API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. The interactive scenario wizard currently creates GET scenarios. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
+
+
+## Create suppressions from a report
+
+After a local scan, create a temporary suppression from the numbered active findings in its JSON report:
+
+```powershell
+scopeguard ignore --report inspect.json
+```
+
+ScopeGuard lists the active findings and asks for the finding number, a reason, and an expiry date. The default expiry is 90 days. The command creates or updates `scopeguard-ignore.yaml`; review it, then pass it to the next local scan with `--suppressions scopeguard-ignore.yaml`. You can provide all values directly for scripted use:
+
+```powershell
+scopeguard ignore --report inspect.json --finding 2 --reason "Reviewed; fix is scheduled" --expires 2026-12-31 --output scopeguard-ignore.yaml
+```
+
+From the startup menu, choose **6. Create suppression from a report**. Suppressed findings remain visible in reports with their reason and expiry.

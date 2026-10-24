@@ -171,7 +171,7 @@ Sihirbaz anonim erişim, BOLA/IDOR yatay erişim, BFLA rol/yetki ve özel güven
 
 ## Demo API'yi başlatma
 
-PyPI'dan kurduktan sonra demo API'yi ikinci bir terminalde `scopeguard-demo` komutuyla çalıştır. Kaynak depoyu kullanıyorsan:
+PyPI'dan kurduktan sonra demo API'yi ikinci bir terminalde `scopeguard-demo` komutuyla çalıştır. Kaynak depoda `py -m scopeguard_demo` kullan. Depo başlatıcısını kullandıysan Windows'ta `& .\.venv\Scripts\python.exe -m scopeguard_demo`, Linux/macOS'ta `./.venv/bin/python -m scopeguard_demo` çalıştır:
 
 ```powershell
 py -m scopeguard_demo

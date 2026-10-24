@@ -6,6 +6,8 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
+from . import __version__
+
 HOST = "127.0.0.1"
 PORT = 8000
 
@@ -22,7 +24,7 @@ RECORDS = {
 
 
 class DemoHandler(BaseHTTPRequestHandler):
-    server_version = "ScopeGuardDemo/0.1"
+    server_version = f"ScopeGuardDemo/{__version__}"
 
     def _send_json(self, status: int, payload: dict[str, str]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")

@@ -1,0 +1,71 @@
+name: Bug report / Hata bildirimi
+description: Report a reproducible problem / Tekrarlanabilir bir sorunu bildirin
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include tokens, passwords, personal data, private URLs, or unredacted reports. Review [SECURITY.md](https://github.com/furkanersoy/ScopeGuard/blob/master/SECURITY.md) before reporting a security concern.
+        Token, parola, kişisel veri, özel URL veya sansürlenmemiş rapor paylaşmayın. Güvenlik bildirimi için önce [SECURITY.md](https://github.com/furkanersoy/ScopeGuard/blob/master/SECURITY.md) dosyasını inceleyin.
+  - type: input
+    id: version
+    attributes:
+      label: ScopeGuard version / ScopeGuard sürümü
+      description: Run `scopeguard --version`; use "not available" if startup fails.
+      placeholder: "ScopeGuard 0.2.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Installation method / Kurulum yöntemi
+      options:
+        - GitHub with pipx / GitHub üzerinden pipx
+        - Windows launcher / Windows başlatıcısı
+        - Source checkout / Kaynak depo
+        - PyPI
+        - Other / Diğer
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system and Python / İşletim sistemi ve Python
+      description: Include the OS version and Python version, if available. / İşletim sistemi ve varsa Python sürümünü yazın.
+      placeholder: "Windows 11, Python 3.13"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Yeniden oluşturma adımları
+      description: List the commands and inputs needed to reproduce the issue. Remove private paths and target details. / Sorunu oluşturmak için gereken komutları ve girdileri yazın. Özel yolları ve hedef bilgilerini kaldırın.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior / Beklenen ve gerçekleşen davranış
+      description: What did you expect, and what happened instead? / Ne olmasını bekliyordunuz, ne oldu?
+    validations:
+      required: true
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Sanitized error output / Sansürlenmiş hata çıktısı
+      description: Paste only the relevant error lines. Do not attach full configuration or scan reports. / Yalnızca ilgili hata satırlarını ekleyin. Tam yapılandırma veya tarama raporu eklemeyin.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check / Gizlilik kontrolü
+      options:
+        - label: I removed tokens, secrets, personal data, and private system details from this issue. / Bu kayıttan token, sır, kişisel veri ve özel sistem bilgilerini çıkardım.
+          required: true

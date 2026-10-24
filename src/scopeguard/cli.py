@@ -20,6 +20,7 @@ from .runner import run_scenarios
 from .wizard import run_init_wizard
 from .ignore_wizard import run_ignore_wizard
 from .profiles import PROFILE_CHECKS, load_scan_profile, run_profile_wizard
+from .doctor import run_doctor
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -30,6 +31,8 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"ScopeGuard {__version__}")
     subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("doctor", help="Check the installation and bundled demo files offline.")
 
     validate = subparsers.add_parser("validate", help="Validate an OpenAPI document and scenario YAML without sending requests.")
     validate.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
@@ -197,6 +200,9 @@ def _open_html_report(path: Path) -> None:
 
 
 def _execute(args: argparse.Namespace) -> int:
+    if args.command == "doctor":
+        return run_doctor()
+
     if args.command == "configure":
         try:
             run_profile_wizard(args.output, force=args.force)

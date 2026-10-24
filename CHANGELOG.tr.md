@@ -10,6 +10,7 @@
 - Kullanıcı ağ erişimini açıkça etkinleştirdiğinde OSV üzerinden isteğe bağlı bağımlılık duyurusu sorgusu.
 - Yerel JSON, Markdown, SARIF 2.1.0 ve tek dosyalı HTML raporları; gerekçe ve bitiş tarihi olan bulgu istisnaları; kayıtlı rapor karşılaştırması.
 - Türkçe ve İngilizce bulgular, yardım, README ve raporlama seçenekleri.
+- Python ortamını, PyYAML'ı ve paketlenmiş demo girdilerini kontrol eden çevrimdışı `scopeguard doctor` komutu.
 - Doğrulanmış paket oluşturma ve PyPI Trusted Publishing için GitHub Release iş akışı.
 
 ### Kapsam ve sınırlamalar

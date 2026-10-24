@@ -1,5 +1,9 @@
 # ScopeGuard Sorun Giderme
 
+## Önce kurulumu kontrol et
+
+ScopeGuard açılıyorsa Python, PyYAML ve paketlenmiş API demo dosyalarını çevrimdışı kontrol etmek için `scopeguard doctor` (Windows kaynak deposunda `ScopeGuard.bat doctor`) çalıştır. Projeni taramaz ve ağa bağlanmaz. Komut bulunamıyorsa önce sonraki bölümü uygula.
+
 ## `scopeguard` komutu bulunamıyor
 
 - Windows'ta indirilen depoyu kullanıyorsan, depo klasöründeki `ScopeGuard.bat` dosyasını çalıştır. Komutları dosyaya da verebilirsin; örneğin `.\ScopeGuard.bat quick-scan`.

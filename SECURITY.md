@@ -1,5 +1,13 @@
 # Security policy
 
-ScopeGuard's demo API intentionally contains an insecure endpoint. It is a local teaching fixture, not a production service. Keep it bound to `127.0.0.1`; do not expose it to a network or use real credentials/data.
+ScopeGuard is a beta project. Security fixes are provided for the latest source on the `master` branch.
 
-ScopeGuard is a beta project and does not yet accept vulnerability reports through a dedicated private channel. Do not include real secrets, personal data, or details of systems you are not authorized to test in public issues. For urgent concerns, contact the repository owner through the contact information on their GitHub profile without sending sensitive exploit details in public.
+[Read the Turkish security policy / Türkçe güvenlik politikası](SECURITY.tr.md).
+
+## Reporting a vulnerability
+
+Use GitHub's [private vulnerability reporting page](https://github.com/furkanersoy/ScopeGuard/security/advisories/new) when it is available. The repository owner must first enable private vulnerability reporting in **Settings → Security and quality → Advanced Security**.
+
+If the private report option is unavailable, do not post exploit details in a public issue. Contact the repository owner through the contact information on their GitHub profile and request a private channel without including sensitive details.
+
+Do not include real credentials, secrets, personal data, or information about systems you are not authorized to test. ScopeGuard's demo API intentionally includes a vulnerable endpoint for local training; it uses synthetic records and must remain bound to `127.0.0.1`. That intentional fixture is not a vulnerability report.

@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "scopeguard"
 version = "0.2.0"
-description = "Local-first API authorization regression testing"
+description = "Local-first API, source code, and dependency security checks"
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-keywords = ["api-security", "authorization", "bola", "idor", "security-testing"]
+keywords = ["api-security", "authorization-testing", "bola", "idor", "source-code-scanning", "secrets-detection", "dependency-auditing", "docker", "kubernetes", "terraform"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",

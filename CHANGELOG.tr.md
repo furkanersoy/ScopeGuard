@@ -13,6 +13,8 @@
 - Python ortamını, PyYAML'ı ve paketlenmiş demo girdilerini kontrol eden çevrimdışı `scopeguard doctor` komutu.
 - Doğrulanmış paket oluşturma ve PyPI Trusted Publishing için GitHub Release iş akışı.
 - Windows ve Linux/macOS başlatıcıları, tarama ve yerel raporların seçilen proje klasörünü kullanması için çağıran klasörü korur.
+- Windows konsol çıktısı, Türkçe ve diğer ASCII dışı karakterlerin doğru görünmesi için UTF-8 kullanır.
+- CI; Ubuntu, Windows ve macOS üzerinde Python 3.11–3.14 sürümlerini doğrular.
 - İlk PyPI yayını beklenirken GitHub'dan pipx ile kurulum yolu; bunun beta geliştirme sürümü olduğu açıkça belirtilir.
 - Gizlilik hatırlatmaları içeren iki dilli GitHub hata bildirimi ve özellik isteği formları.
 

@@ -89,7 +89,7 @@ Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows)
 6. **Create suppression from a report** — selects a finding from a local JSON report and creates a reasoned, expiring suppression YAML.
 7. **Guided quick scan** — asks for a project path and scan profile, then saves JSON, Markdown, SARIF, and HTML reports without executing code or sending files over the network.
 8. **Configure reusable project profile** — saves the project path, scan preset, report language/name, optional suppression file, and CI threshold in `.scopeguard-profile.yaml`. Reuse these settings from option 7 or with `scopeguard quick-scan --config .scopeguard-profile.yaml`.
-9. **Compare saved reports** — select numbered ScopeGuard JSON reports found in the current folder or enter paths; ScopeGuard writes JSON, Markdown, and HTML comparison files and can open the HTML report.
+9. **Compare saved reports** — select numbered ScopeGuard JSON reports found in the current folder or enter paths. After choosing the earlier report, the menu lists only matching report types; manual paths are checked too. ScopeGuard writes JSON, Markdown, and HTML comparison files and can open the HTML report.
 
 The local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
 

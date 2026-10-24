@@ -19,6 +19,7 @@ _PROFILES = {
     "3": "bfla",
     "4": "custom",
 }
+_SAFE_HTTP_METHODS = ("GET", "HEAD", "OPTIONS")
 
 
 def _ask(prompt: str, default: str | None = None) -> str:
@@ -47,6 +48,29 @@ def _select_operations(spec: dict[str, Any], label: str) -> list[str]:
     if not indexes or len(indexes) > 10 or len(set(indexes)) != len(indexes) or any(i < 1 or i > len(choices) for i in indexes):
         raise ValidationError("select between 1 and 10 distinct operation numbers from the list")
     return [choices[index - 1][0] for index in indexes]
+
+
+def _select_safe_operations(spec: dict[str, Any], label: str) -> list[tuple[str, str]]:
+    choices = [
+        (method, path)
+        for path, item in spec["paths"].items()
+        if isinstance(item, dict)
+        for method in _SAFE_HTTP_METHODS
+        if isinstance(item.get(method.lower()), dict)
+    ]
+    if not choices:
+        raise ValidationError("OpenAPI document does not define GET, HEAD, or OPTIONS operations")
+    print(f"\n{label}")
+    for index, (method, path) in enumerate(choices, 1):
+        print(f"  {index}. {method} {path}")
+    selection = _ask("Select operation numbers, comma-separated (max 10) / İşlem numaralarını virgülle seçin (en fazla 10)")
+    try:
+        indexes = [int(value.strip()) for value in selection.split(",")]
+    except ValueError:
+        raise ValidationError("operation selection must contain comma-separated numbers") from None
+    if not indexes or len(indexes) > 10 or len(set(indexes)) != len(indexes) or any(i < 1 or i > len(choices) for i in indexes):
+        raise ValidationError("select between 1 and 10 distinct operation numbers from the list")
+    return [choices[index - 1] for index in indexes]
 
 
 def _path_values(path: str, *, prefix: str = "") -> dict[str, str]:
@@ -84,10 +108,10 @@ def _add_bearer_identity(identities: dict[str, Any], name: str, default_env: str
     identities[name] = {"auth": "bearer", "token_env": env_name}
 
 
-def _check(check_id: str, operation: str, identity: str, values: dict[str, str], statuses: list[int], assertions: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def _check(check_id: str, operation: str, identity: str, values: dict[str, str], statuses: list[int], assertions: list[dict[str, Any]] | None = None, *, method: str = "GET") -> dict[str, Any]:
     check: dict[str, Any] = {
         "id": check_id,
-        "operation": f"GET {operation}",
+        "operation": f"{method} {operation}",
         "identity": identity,
         "path": values,
         "expected_status": statuses,
@@ -102,7 +126,7 @@ def _profiles() -> list[str]:
     print("  1. Anonymous access control / Anonim erişim kontrolü (authentication bypass)")
     print("  2. BOLA / IDOR horizontal access / Kullanıcılar arası nesne erişimi")
     print("  3. BFLA vertical access / Düşük yetkili kullanıcının ayrıcalıklı işleme erişimi")
-    print("  4. Custom GET status check / Özel GET durum kodu kontrolü")
+    print("  4. Custom safe-method status check / Özel güvenli yöntem durum kodu kontrolü")
     answer = _ask("Choose one or more numbers, comma-separated / Bir veya daha fazla numara seçin", "1")
     try:
         selected = [item.strip() for item in answer.split(",")]
@@ -161,13 +185,14 @@ def _make_profile_checks(profile: str, spec: dict[str, Any], identities: dict[st
             checks.append(_check(f"bfla-low-role-denied-{index:02d}-{_slug(path)}", path, "low_privilege", values, statuses))
         return checks
 
-    paths = _select_operations(spec, "Select GET operations for custom status checks / Özel durum kodu kontrolü yapılacak GET işlemlerini seçin")
+    operations = _select_safe_operations(spec, "Select safe GET, HEAD, or OPTIONS operations / Güvenli GET, HEAD veya OPTIONS işlemlerini seçin")
     identities.setdefault("anonymous", {"auth": "none"})
     statuses = _expected_status("Expected HTTP status codes / Beklenen HTTP durum kodları", "200")
     checks = []
-    for index, path in enumerate(paths, 1):
+    for index, (method, path) in enumerate(operations, 1):
         values = _path_values(path)
-        checks.append(_check(f"custom-get-{index:02d}-{_slug(path)}", path, "anonymous", values, statuses))
+        check_id = f"custom-{method.lower()}-{index:02d}-{_slug(path)}"
+        checks.append(_check(check_id, path, "anonymous", values, statuses, method=method))
     return checks
 
 

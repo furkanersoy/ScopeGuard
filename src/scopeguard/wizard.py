@@ -272,6 +272,9 @@ def run_init_wizard(spec_path: Path, output_path: Path, *, force: bool = False) 
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)
     print(f"Starter scenario written to {output_path}")
-    print("Review IDs and expected statuses, then run `scopeguard validate` and `scopeguard plan`.")
-    print("Kimlikleri ve beklenen durum kodlarını gözden geçirin; ardından validate ve plan komutlarını çalıştırın.")
+    print("Review IDs and expected statuses. Next, in the `sg>` console run:")
+    print(f'  validate --spec "{spec_path}" --config "{output_path}"')
+    print(f'  plan --spec "{spec_path}" --config "{output_path}"')
+    print("In a system terminal, prefix each command with `scopeguard` or use the ScopeGuard launcher.")
+    print("Kimlikleri ve beklenen durum kodlarını gözden geçirin. Sonra `sg>` konsolunda yukarıdaki komutları çalıştırın; sistem terminalinde başına `scopeguard` ekleyin veya başlatıcıyı kullanın.")
     return output_path

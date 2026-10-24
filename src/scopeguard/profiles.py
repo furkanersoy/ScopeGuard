@@ -140,8 +140,10 @@ def run_profile_wizard(path: Path, *, force: bool = False) -> Path:
         data["suppressions"] = _profile_relative_path(suppression_path, profile_root)
     _write_profile(path, data, force=force)
     print(f"Project scan profile written to {path}")
-    print(f"Run it with: scopeguard quick-scan --config \"{path}\"")
-    print(f"Çalıştırmak için: scopeguard quick-scan --config \"{path}\"")
+    print(f"In the `sg>` console, run: quick-scan --config \"{path}\"")
+    print(f"`sg>` konsolunda şu komutu çalıştır: quick-scan --config \"{path}\"")
+    print("From a system terminal, prefix the command with `scopeguard` or use the ScopeGuard launcher.")
+    print("Sistem terminalinde komutun başına `scopeguard` ekle veya ScopeGuard başlatıcısını kullan.")
     return path
 
 

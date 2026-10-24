@@ -18,6 +18,30 @@ PROFILE_CHECKS: dict[str, list[str]] = {
     "containers": ["docker", "kubernetes"],
     "infrastructure": ["config", "terraform"],
 }
+
+PROFILE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
+    "standard": (
+        "All local checks: secrets, Python, configuration, Docker, Kubernetes, and Terraform.",
+        "Tüm yerel kontroller: sırlar, Python, yapılandırma, Docker, Kubernetes ve Terraform.",
+    ),
+    "secrets": (
+        "Detect secret-like values only.",
+        "Yalnızca gizli bilgiye benzeyen değerleri tara.",
+    ),
+    "application": (
+        "Secrets, Python, and configuration checks.",
+        "Sırlar, Python ve yapılandırma kontrolleri.",
+    ),
+    "containers": (
+        "Dockerfile and Kubernetes manifest checks.",
+        "Dockerfile ve Kubernetes manifest kontrolleri.",
+    ),
+    "infrastructure": (
+        "Configuration and Terraform checks.",
+        "Yapılandırma ve Terraform kontrolleri.",
+    ),
+}
+
 _LANGUAGES = {"tr", "en"}
 _FAIL_LEVELS = {"any", "critical", "high", "medium", "low", "none"}
 
@@ -99,7 +123,9 @@ def run_profile_wizard(path: Path, *, force: bool = False) -> Path:
         print(f"Scan target not found / Tarama hedefi bulunamadı: {scan_target}")
     print("Profiles / Profiller:")
     for index, profile in enumerate(PROFILE_CHECKS, 1):
-        print(f"  {index}. {profile}")
+        english, turkish = PROFILE_DESCRIPTIONS[profile]
+        print(f"  {index}. {profile} — {english}")
+        print(f"     {turkish}")
     selected = _prompt_choice("Choose profile number / Profil numarasını seç", "1", {str(i) for i in range(1, len(PROFILE_CHECKS) + 1)}, "Choose one of the listed profile numbers / Listelenen profil numaralarından birini seçin")
     selected_index = int(selected)
     profile = list(PROFILE_CHECKS)[selected_index - 1]

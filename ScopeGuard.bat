@@ -15,11 +15,15 @@ if not exist ".venv\Scripts\python.exe" (
     if errorlevel 1 goto setup_failed
 )
 
-if not exist ".venv\.scopeguard-installed" (
-    echo Installing ScopeGuard and its dependencies...
+for /f "delims=" %%H in ('".venv\Scripts\python.exe" -c "import hashlib; from pathlib import Path; print(hashlib.sha256(Path(\'pyproject.toml\').read_bytes()).hexdigest())"') do set "SG_PROJECT_HASH=%%H"
+if not defined SG_PROJECT_HASH goto setup_failed
+set "SG_INSTALLED_HASH="
+if exist ".venv\.scopeguard-installed" set /p SG_INSTALLED_HASH=<".venv\.scopeguard-installed"
+if not "%SG_PROJECT_HASH%"=="%SG_INSTALLED_HASH%" (
+    echo Installing or updating ScopeGuard and its dependencies...
     ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -e .
     if errorlevel 1 goto setup_failed
-    type nul > ".venv\.scopeguard-installed"
+    > ".venv\.scopeguard-installed" echo %SG_PROJECT_HASH%
 )
 
 ".venv\Scripts\scopeguard.exe" %*

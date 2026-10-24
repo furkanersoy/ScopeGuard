@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import sys
@@ -442,20 +443,53 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     output.write("\nCompare saved reports / Kaydedilmiş raporları karşılaştır\n")
     output.write("Compares two local JSON reports and lists new, resolved, and unchanged findings.\n")
     output.write("İki yerel JSON raporunu karşılaştırıp yeni, giderilmiş ve değişmeyen bulguları listeler.\n")
-    def report_prompt(label: str) -> str | None:
+    reports: list[tuple[str, Path]] = []
+    for candidate in Path.cwd().glob("*.json"):
+        try:
+            if candidate.is_symlink() or candidate.stat().st_size > 25_000_000:
+                continue
+            data = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict) and data.get("tool") == "ScopeGuard" and isinstance(data.get("findings"), list):
+            reports.append((str(data.get("generated_at", "")), candidate))
+    reports.sort(key=lambda item: (item[0], item[1].name.lower()), reverse=True)
+    reports = reports[:20]
+    if reports:
+        output.write("ScopeGuard reports in the current folder / Geçerli klasördeki ScopeGuard raporları:\n")
+        for index, (_, path) in enumerate(reports, 1):
+            output.write(f"  {index}. {path.name}\n")
+        output.write("Choose a number or enter a report path / Numara seç veya rapor yolu gir.\n")
+    else:
+        output.write("No ScopeGuard JSON reports found in the current folder; enter a report path.\n")
+        output.write("Geçerli klasörde ScopeGuard JSON raporu bulunamadı; rapor yolunu gir.\n")
+
+    def report_prompt(label: str) -> Path | None:
         while True:
             value = _answer(source, output, label, "")
             if value is None:
                 return None
-            if Path(value).expanduser().is_file():
-                return value
+            if reports and value.isdigit():
+                index = int(value)
+                if 1 <= index <= len(reports):
+                    return reports[index - 1][1]
+                output.write("Choose a listed report number / Listelenen rapor numaralarından birini seç.\n")
+                continue
+            candidate = Path(value).expanduser()
+            if candidate.is_file():
+                return candidate
             output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\n")
-    previous = report_prompt("Earlier JSON report / Önceki JSON raporu")
+
+    previous = report_prompt("Earlier report number or path / Önceki rapor numarası veya yolu")
     if previous is None:
         return False
-    current = report_prompt("Current JSON report / Güncel JSON raporu")
-    if current is None:
-        return False
+    while True:
+        current = report_prompt("Current report number or path / Güncel rapor numarası veya yolu")
+        if current is None:
+            return False
+        if current.resolve() != previous.resolve():
+            break
+        output.write("Choose a different report for comparison / Karşılaştırma için farklı bir rapor seç.\n")
     destination = _answer(source, output, "Comparison JSON report / Karşılaştırma JSON raporu", "scopeguard-diff.json")
     if destination is None:
         return False
@@ -463,7 +497,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     if open_report is None:
         return False
     args = [
-        "compare", "--previous", previous, "--current", current,
+        "compare", "--previous", str(previous), "--current", str(current),
         "--output", destination,
         "--markdown-output", _report_sidecar(destination, ".md"),
         "--html-output", _report_sidecar(destination, ".html"),

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlsplit
 
-from .config import is_loopback_host, load_validated_inputs
+from .config import _parse_operation, is_loopback_host, load_validated_inputs
 
 
 def build_plan(spec_path: Path, config_path: Path) -> dict[str, Any]:
@@ -21,7 +21,7 @@ def build_plan(spec_path: Path, config_path: Path) -> dict[str, Any]:
     checks = []
 
     for check in config["checks"]:
-        path_template = check["operation"][4:]
+        method, path_template = _parse_operation(check["operation"], "scenario operation")
         path = re.sub(
             r"\{([^{}]+)\}",
             lambda match: quote(str(check.get("path", {})[match.group(1)]), safe=""),
@@ -31,7 +31,7 @@ def build_plan(spec_path: Path, config_path: Path) -> dict[str, Any]:
             {
                 "id": check["id"],
                 "identity": check["identity"],
-                "method": "GET",
+                "method": method,
                 "url": f"{base_url}{path}",
                 "expected_status": check["expected_status"],
                 "assertions": [

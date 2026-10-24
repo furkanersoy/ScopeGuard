@@ -154,24 +154,59 @@ def _existing_path_answer(
             output.write(f"Path not found / Yol bulunamadı: {value}\n")
 
 
-def _json_output_answer(source: TextIO, output: TextIO, prompt: str, default: str) -> str | None:
-    """Ask for a JSON filename and normalize or validate its extension."""
+def _json_output_answer(
+    source: TextIO, output: TextIO, prompt: str, default: str,
+    sidecars: tuple[str, ...] = (".md", ".sarif", ".html"),
+) -> str | None:
+    """Ask for a JSON filename and prevent accidental report overwrites."""
+    default_path = Path(default).expanduser()
+    if default_path.suffix.lower() != ".json":
+        default_path = default_path.with_suffix(".json")
+    if _report_outputs_exist(default_path, sidecars):
+        default_path = _unused_report_path(default_path, sidecars)
+
     while True:
-        value = _answer(source, output, prompt, default)
+        value = _answer(source, output, prompt, str(default_path))
         if value is None:
             return None
         candidate = Path(value).expanduser()
         if candidate.exists() and candidate.is_dir():
             output.write(f"Choose a file path, not a folder / Klasör değil, dosya yolu seçin: {value}\n")
             continue
-        if candidate.suffix.lower() == ".json":
-            return str(candidate)
-        if not candidate.suffix:
-            candidate = candidate.with_suffix(".json")
-            output.write(f"Added the .json extension / .json uzantısı eklendi: {candidate}\n")
-            return str(candidate)
-        output.write("Use a filename ending in .json / Sonu .json ile biten bir dosya adı kullanın.\n")
+        if candidate.suffix.lower() != ".json":
+            if not candidate.suffix:
+                candidate = candidate.with_suffix(".json")
+                output.write(f"Added the .json extension / .json uzantısı eklendi: {candidate}\n")
+            else:
+                output.write("Use a filename ending in .json / Sonu .json ile biten bir dosya adı kullanın.\n")
+                continue
+        if _report_outputs_exist(candidate, sidecars):
+            overwrite = _yes_no_answer(
+                source, output,
+                f"Report files already exist for {candidate}. Overwrite them? [y/N] / Bu rapor dosyaları zaten var. Üzerine yazılsın mı? [e/H]",
+                "n",
+            )
+            if overwrite is None:
+                return None
+            if overwrite:
+                return str(candidate)
+            output.write("Choose a different report filename / Farklı bir rapor dosya adı seçin.\n")
+            default_path = _unused_report_path(candidate, sidecars)
+            continue
+        return str(candidate)
 
+
+def _report_outputs_exist(json_path: Path, sidecars: tuple[str, ...]) -> bool:
+    return any(path.exists() for path in (json_path, *(_report_sidecar(json_path, suffix) for suffix in sidecars)))
+
+
+def _unused_report_path(json_path: Path, sidecars: tuple[str, ...]) -> Path:
+    index = 1
+    while True:
+        candidate = json_path.with_name(f"{json_path.stem}-{index}{json_path.suffix}")
+        if not _report_outputs_exist(candidate, sidecars):
+            return candidate
+        index += 1
 
 def _language_answer(source: TextIO, output: TextIO, prompt: str, default: str = "tr") -> str | None:
     """Ask for a supported report language and accept localized names."""
@@ -620,7 +655,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     if current_selection is None:
         return False
     current, _ = current_selection
-    destination = _json_output_answer(source, output, "Comparison JSON report (Markdown and HTML are saved beside it) / Karşılaştırma JSON raporu (Markdown ve HTML yanına kaydedilir)", "scopeguard-diff.json")
+    destination = _json_output_answer(source, output, "Comparison JSON report (Markdown and HTML are saved beside it) / Karşılaştırma JSON raporu (Markdown ve HTML yanına kaydedilir)", "scopeguard-diff.json", sidecars=(".md", ".html"))
     if destination is None:
         return False
     open_report = _yes_no_answer(source, output, "Open the HTML report after comparison? [y/e=yes, n/h=no] / Karşılaştırma sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")

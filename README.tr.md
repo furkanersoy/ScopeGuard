@@ -227,7 +227,7 @@ Bulgu açıklamalarını ve rapor dilini `--language tr` veya `--language en` il
 scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml --output report.json --sarif-output report.sarif --language tr
 ```
 
-ScopeGuard raporları GitHub'a veya başka bir servise yüklemez. API raporları yanıt gövdelerini, assertion değerlerini veya token değerlerini içermez. Etkileşimli `sg>` konsolunda komutları `scopeguard` öneki olmadan gir.
+ScopeGuard raporları GitHub'a veya başka bir servise yüklemez. API raporları yanıt gövdelerini, assertion değerlerini veya token değerlerini içermez. Etkileşimli `sg>` konsolunda komutları `run ...` veya `scopeguard run ...` biçiminde girebilirsin.
 
 Demo senaryosundaki korumalı uç nokta kontrolleri anonim erişimin reddedilmesini (`401`), iki kullanıcının kendi kayıtlarını okuyabilmesini (`200`) ve diğer kullanıcının kaydının reddedilmesini (`404`) denetler. Bilerek savunmasız olan uç nokta `200` döndürdüğü için beklenen `404` kontrolü bulgu verir. Böylece demo normalde altı başarılı kontrol ve bir beklenen başarısız kontrol raporlar; bulgu varsa `run` komutu `1` çıkış kodu verir.
 

@@ -110,8 +110,8 @@ def _show_help(output: TextIO) -> None:
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"
-        "Quote paths containing spaces. Commands run locally; no shell commands are executed.\n"
-        "Boşluk içeren yolları tırnak içine al. Komutlar yerelde çalışır; kabuk komutu çalıştırılmaz.\n"
+        "Quote paths containing spaces. In sg>, commands work with or without the scopeguard prefix. No shell commands are executed.\n"
+        "Boşluk içeren yolları tırnak içine al. sg> içinde komutları scopeguard önekiyle veya öneksiz yazabilirsin; kabuk komutu çalıştırılmaz.\n"
     )
 
 
@@ -417,6 +417,11 @@ def _command_console(command_handler: Callable[[Sequence[str]], int], source: Te
             continue
         if not tokens:
             continue
+        if tokens[0].lower() in {"scopeguard", "scopeguard.exe"}:
+            tokens = tokens[1:]
+            if not tokens:
+                _show_help(output)
+                continue
         command, *arguments = tokens
         normalized = command.lower()
         if normalized in {"exit", "quit"}:

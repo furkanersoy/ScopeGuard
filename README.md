@@ -237,7 +237,7 @@ scopeguard run --spec examples/api/openapi.yaml --config examples/scenarios/loca
 
 SARIF is written only to the path you specify. ScopeGuard does not upload reports or findings to GitHub or any other service.
 
-In the interactive `sg>` console, use the same options after `run`; do not prefix the command with `scopeguard` there.
+In the interactive `sg>` console, use the same options after `run`. Commands work both as `run ...` and `scopeguard run ...`.
 
 The protected route checks cover anonymous denial (`401`), both users reading their own records (`200`), and each user being denied the other user's record (`404`). Those six checks should pass. The deliberately vulnerable route is expected to fail because it returns `200` where the scenario expects `404` and its JSON `/owner` assertion indicates cross-user access. The local demo therefore reports six passes and one intentional failure; `scopeguard run` exits with status `1` to make the detected issue visible. Reports include a localized explanation, severity, evidence, potential impact, and remediation advice. They omit response bodies, assertion values, and token values.
 

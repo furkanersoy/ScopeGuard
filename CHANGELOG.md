@@ -13,6 +13,8 @@
 - An offline `scopeguard doctor` command to check the Python runtime, PyYAML, and bundled demo inputs.
 - A GitHub Release workflow for validated package builds and PyPI Trusted Publishing.
 - Cross-platform launchers preserve the caller's working directory so scans and local reports use the selected project folder.
+- Windows console output uses UTF-8 so Turkish and other non-ASCII text remains readable.
+- CI validates Python 3.11 through 3.14 on Ubuntu, Windows, and macOS.
 - A pipx installation route from GitHub while the first PyPI release is pending, clearly marked as a beta development version.
 - Bilingual GitHub bug-report and feature-request forms with privacy reminders.
 

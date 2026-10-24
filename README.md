@@ -77,6 +77,8 @@ python -m pip install .
 
 Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
 
+The PyPI release workflow is prepared but a release has not been published yet. See [PyPI publishing setup](docs/publishing.md). After the first release, install the CLI with `pipx install scopeguard` or `py -m pip install --user scopeguard`.
+
 ### Startup menu
 
 Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows) to open the bilingual menu:

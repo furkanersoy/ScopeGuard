@@ -171,14 +171,14 @@ def _json_output_answer(
             return None
         candidate = Path(value).expanduser()
         if candidate.exists() and candidate.is_dir():
-            output.write(f"Choose a file path, not a folder / Klasör değil, dosya yolu seçin: {value}\\n")
+            output.write(f"Choose a file path, not a folder / Klasör değil, dosya yolu seçin: {value}\n")
             continue
         if candidate.suffix.lower() != ".json":
             if not candidate.suffix:
                 candidate = candidate.with_suffix(".json")
-                output.write(f"Added the .json extension / .json uzantısı eklendi: {candidate}\\n")
+                output.write(f"Added the .json extension / .json uzantısı eklendi: {candidate}\n")
             else:
-                output.write("Use a filename ending in .json / Sonu .json ile biten bir dosya adı kullanın.\\n")
+                output.write("Use a filename ending in .json / Sonu .json ile biten bir dosya adı kullanın.\n")
                 continue
         if _report_outputs_exist(candidate, sidecars):
             overwrite = _yes_no_answer(
@@ -190,7 +190,7 @@ def _json_output_answer(
                 return None
             if overwrite:
                 return str(candidate)
-            output.write("Choose a different report filename / Farklı bir rapor dosya adı seçin.\\n")
+            output.write("Choose a different report filename / Farklı bir rapor dosya adı seçin.\n")
             default_path = _unused_report_path(candidate, sidecars)
             continue
         return str(candidate)

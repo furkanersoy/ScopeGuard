@@ -136,6 +136,24 @@ def _answer(source: TextIO, output: TextIO, prompt: str, default: str = "") -> s
     return value or default
 
 
+def _existing_path_answer(
+    source: TextIO, output: TextIO, prompt: str, default: str = "", *, file_only: bool = False
+) -> str | None:
+    """Keep prompting until an input path exists and has the expected shape."""
+    while True:
+        value = _answer(source, output, prompt, default)
+        if value is None:
+            return None
+        candidate = Path(value).expanduser()
+        valid = candidate.is_file() if file_only else candidate.exists()
+        if valid:
+            return str(candidate)
+        if file_only:
+            output.write(f"File not found / Dosya bulunamadı: {value}\n")
+        else:
+            output.write(f"Path not found / Yol bulunamadı: {value}\n")
+
+
 def _language_answer(source: TextIO, output: TextIO, prompt: str, default: str = "tr") -> str | None:
     """Ask for a supported report language and accept localized names."""
     while True:
@@ -202,7 +220,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
         if choice not in {"1", "2", "3", "4", "5"}:
             output.write("Choose one of the listed options / Listelenen seçeneklerden birini seçin.\n")
             continue
-        spec = _answer(source, output, "OpenAPI file / OpenAPI dosyası", "examples/api/openapi.yaml")
+        spec = _existing_path_answer(source, output, "OpenAPI file / OpenAPI dosyası", "examples/api/openapi.yaml", file_only=True)
         if spec is None:
             return False
         if choice == "1":
@@ -211,7 +229,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
                 return False
             _dispatch(command_handler, ["init", "--spec", spec, "--output", scenario], output)
             continue
-        scenario = _answer(source, output, "Scenario file / Senaryo dosyası", "examples/scenarios/local-demo.yaml")
+        scenario = _existing_path_answer(source, output, "Scenario file / Senaryo dosyası", "examples/scenarios/local-demo.yaml", file_only=True)
         if scenario is None:
             return False
         commands = {
@@ -245,7 +263,7 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     output.write(f"\n{section}\n")
     output.write("This scan is local and offline. It does not execute code, build images, or connect to a Kubernetes cluster.\n")
     output.write("Bu tarama yerel ve çevrimdışıdır. Kod çalıştırmaz, imaj oluşturmaz veya Kubernetes kümesine bağlanmaz.\n")
-    path = _answer(source, output, "File or folder to inspect / İncelenecek dosya veya klasör", ".")
+    path = _existing_path_answer(source, output, "File or folder to inspect / İncelenecek dosya veya klasör", ".")
     if path is None:
         return False
     default_report = "scopeguard-secrets.json" if secrets_only else "scopeguard-source.json"
@@ -297,7 +315,7 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     output.write("\nDependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n")
     output.write("This check sends exact package names and versions from supported lockfiles to OSV over HTTPS. No files or source code are uploaded.\n")
     output.write("Bu kontrol desteklenen kilit dosyalarındaki paket adı ve sürümlerini HTTPS ile OSV'ye gönderir. Dosyalar veya kaynak kod yüklenmez.\n")
-    path = _answer(source, output, "Lockfile or folder / Kilit dosyası veya klasör", ".")
+    path = _existing_path_answer(source, output, "Lockfile or folder / Kilit dosyası veya klasör", ".")
     if path is None:
         return False
     consent = _yes_no_answer(source, output, "Send package names and versions to OSV? [y/N] / Paket adı ve sürümleri OSV'ye gönderilsin mi? [e/H]", "n")
@@ -341,7 +359,7 @@ def _ignore_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO
     output.write("\nCreate suppression / Geçici istisna oluştur\n")
     output.write("Choose a local JSON scan report. ScopeGuard lists active findings, then asks for a reason and expiry date.\n")
     output.write("Yerel JSON raporunu seç. ScopeGuard etkin bulguları listeler, ardından gerekçe ve bitiş tarihi ister.\n")
-    report = _answer(source, output, "Local JSON report / Yerel JSON raporu", "scopeguard-source.json")
+    report = _existing_path_answer(source, output, "Local JSON report / Yerel JSON raporu", "scopeguard-source.json", file_only=True)
     if report is None:
         return False
     destination = _answer(source, output, "Suppression YAML / İstisna YAML dosyası", "scopeguard-ignore.yaml")
@@ -376,7 +394,7 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
     if saved_profile:
         _dispatch(command_handler, ["quick-scan", "--config", saved_profile], output)
         return True
-    path = _answer(source, output, "Project folder or file / Proje klasörü veya dosyası", ".")
+    path = _existing_path_answer(source, output, "Project folder or file / Proje klasörü veya dosyası", ".")
     if path is None:
         return False
     profile_options = {str(index): name for index, name in enumerate(PROFILE_CHECKS, 1)}

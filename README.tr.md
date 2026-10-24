@@ -78,6 +78,8 @@ Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez ç
 
 Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
 
+PyPI yayın workflow'u hazır; henüz bir sürüm yayımlanmadı. Kurulum adımları için [PyPI yayın rehberine](docs/publishing.tr.md) bak. İlk sürüm yayımlandıktan sonra komut satırı aracını `pipx install scopeguard` veya `py -m pip install --user scopeguard` ile kurabilirsin.
+
 ## Başlangıç menüsünü kullanma
 
 `scopeguard` komutunu argümansız çalıştır veya Windows'ta `ScopeGuard.bat` dosyasına çift tıklayarak iki dilli başlangıç menüsünü aç:

@@ -32,7 +32,7 @@ You can also start a standard offline scan directly from PowerShell in the Scope
 .\ScopeGuard.bat quick-scan
 ```
 
-This scans the current folder without executing code or sending files over the network. Reports use the `scopeguard-scan` filename prefix.
+This scans the current folder without executing code or sending files over the network. Reports use the `scopeguard-scan` filename prefix. If `.scopeguard-profile.yaml` exists here, it is detected automatically; use `--config <path>` to choose another profile.
 
 To open the interactive menu later, double-click `ScopeGuard.bat` or run `.\ScopeGuard.bat` with no arguments. For Linux/macOS, use `./scopeguard.sh quick-scan` or `./scopeguard.sh`.
 

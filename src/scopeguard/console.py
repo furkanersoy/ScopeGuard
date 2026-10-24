@@ -19,6 +19,21 @@ from .example_paths import default_example_path
 
 _COLORS = {"cyan": "36", "green": "32", "yellow": "33", "red": "31", "muted": "90"}
 
+def configure_console_encoding() -> None:
+    """Keep bilingual CLI output printable in Windows consoles and redirected logs."""
+    if os.name != "nt":
+        return
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (LookupError, OSError, ValueError):
+            # Custom or already-closed streams may not support reconfiguration.
+            continue
+
+
 
 def colorize(value: str, color: str, stream: TextIO | None = None) -> str:
     """Apply ANSI color only when the output is an interactive color terminal."""

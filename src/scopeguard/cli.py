@@ -141,6 +141,14 @@ def _print_suppression_audit(report: dict) -> None:
         print(f"  Unused suppression: {item['rule_id']} at {item['path']} (expires {item['expires']})")
 
 
+def _print_suppression_next_step(report_path: Path) -> None:
+    report = f'"{report_path}"'
+    print(f"Create a temporary exception: choose menu option 6, or in `sg>` run `ignore --report {report}`.")
+    print(f"In a system terminal, run `scopeguard ignore --report {report}`.")
+    print(f"Geçici istisna için menüde 6'yı seç veya `sg>` içinde `ignore --report {report}` çalıştır.")
+    print(f"Sistem terminalinde `scopeguard ignore --report {report}` komutunu kullan.")
+
+
 def _profile_report_path(prefix: Path, extension: str) -> Path:
     if prefix.suffix.lower() in {".json", ".md", ".sarif", ".html"}:
         prefix = prefix.with_suffix("")
@@ -228,7 +236,7 @@ def _execute(args: argparse.Namespace) -> int:
         print("No code was executed and no network requests were sent. Matched secret values were omitted.")
         print(f"JSON report written to {args.output}")
         if report["findings"]:
-            print(f'To create a temporary exception, run: scopeguard ignore --report "{args.output}"')
+            _print_suppression_next_step(args.output)
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
         if args.sarif_output:
@@ -258,7 +266,7 @@ def _execute(args: argparse.Namespace) -> int:
         print("Package names and versions were sent to OSV over HTTPS; manifests and source files were not uploaded.")
         print(f"JSON report written to {args.output}")
         if report["findings"]:
-            print(f'To create a temporary exception, run: scopeguard ignore --report "{args.output}"')
+            _print_suppression_next_step(args.output)
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
         if args.sarif_output:

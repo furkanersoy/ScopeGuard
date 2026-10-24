@@ -162,15 +162,15 @@ def _json_output_answer(source: TextIO, output: TextIO, prompt: str, default: st
             return None
         candidate = Path(value).expanduser()
         if candidate.exists() and candidate.is_dir():
-            output.write(f"Choose a file path, not a folder / Klasör değil, dosya yolu seçin: {value}\\n")
+            output.write(f"Choose a file path, not a folder / Klasör değil, dosya yolu seçin: {value}\n")
             continue
         if candidate.suffix.lower() == ".json":
             return str(candidate)
         if not candidate.suffix:
             candidate = candidate.with_suffix(".json")
-            output.write(f"Added the .json extension / .json uzantısı eklendi: {candidate}\\n")
+            output.write(f"Added the .json extension / .json uzantısı eklendi: {candidate}\n")
             return str(candidate)
-        output.write("Use a filename ending in .json / Sonu .json ile biten bir dosya adı kullanın.\\n")
+        output.write("Use a filename ending in .json / Sonu .json ile biten bir dosya adı kullanın.\n")
 
 
 def _language_answer(source: TextIO, output: TextIO, prompt: str, default: str = "tr") -> str | None:

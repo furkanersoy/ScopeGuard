@@ -175,13 +175,13 @@ scopeguard init --spec examples/api/openapi.yaml --output examples/scenarios/my-
 
 The wizard lets you select anonymous-access checks, BOLA/IDOR horizontal access checks, BFLA role checks, or custom safe-method status checks. The custom profile lists GET, HEAD, and OPTIONS operations from the OpenAPI document. It asks for sample path values and expected status codes and performs no API requests. Review the generated scenario before running it; the wizard cannot infer your authorization policy or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
 
-To start the included synthetic demo API, open a second terminal:
+To start the included synthetic demo API, open a second terminal and run `scopeguard-demo` after installing from PyPI. From a source checkout, use:
 
 ```powershell
 py -m scopeguard_demo
 ```
 
-The API listens on `http://127.0.0.1:8000`. Stop it with `Ctrl+C`.
+The API listens on `http://127.0.0.1:8000`. Stop it with `Ctrl+C`. The interactive API menu resolves its bundled OpenAPI and scenario defaults when installed from PyPI. The command examples below that use `examples/...` paths are for a cloned source checkout.
 
 In a second terminal, validate the example inputs:
 

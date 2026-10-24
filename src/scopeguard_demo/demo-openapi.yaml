@@ -1,0 +1,53 @@
+openapi: 3.0.3
+info:
+  title: ScopeGuard Synthetic API
+  version: 0.1.0
+  description: Local-only synthetic API used to demonstrate object-level authorization checks.
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Demo API is running.
+  /records/{record_id}:
+    get:
+      operationId: getOwnedRecord
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: record_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Record belongs to the authenticated identity.
+        '401':
+          description: Authentication is required.
+        '404':
+          description: Record does not exist or is not visible to this identity.
+  /vulnerable/records/{record_id}:
+    get:
+      operationId: getVulnerableRecord
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: record_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deliberately vulnerable demo behavior; ownership is not enforced.
+        '401':
+          description: Authentication is required.
+        '404':
+          description: Record does not exist.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

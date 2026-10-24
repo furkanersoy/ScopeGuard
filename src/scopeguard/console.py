@@ -15,6 +15,7 @@ from . import __version__
 from .config import ValidationError
 from .report_compare import report_kind
 from .profiles import PROFILE_CHECKS, PROFILE_DESCRIPTIONS
+from .example_paths import default_example_path
 
 _COLORS = {"cyan": "36", "green": "32", "yellow": "33", "red": "31", "muted": "90"}
 
@@ -274,7 +275,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
         if choice not in {"1", "2", "3", "4", "5"}:
             output.write("Choose one of the listed options / Listelenen seçeneklerden birini seçin.\n")
             continue
-        spec = _existing_path_answer(source, output, "OpenAPI file / OpenAPI dosyası", "examples/api/openapi.yaml", file_only=True)
+        spec = _existing_path_answer(source, output, "OpenAPI file / OpenAPI dosyası", default_example_path("examples/api/openapi.yaml"), file_only=True)
         if spec is None:
             return False
         if choice == "1":
@@ -283,7 +284,7 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
                 return False
             _dispatch(command_handler, ["init", "--spec", spec, "--output", scenario], output)
             continue
-        scenario = _existing_path_answer(source, output, "Scenario file / Senaryo dosyası", "examples/scenarios/local-demo.yaml", file_only=True)
+        scenario = _existing_path_answer(source, output, "Scenario file / Senaryo dosyası", default_example_path("examples/scenarios/local-demo.yaml"), file_only=True)
         if scenario is None:
             return False
         commands = {

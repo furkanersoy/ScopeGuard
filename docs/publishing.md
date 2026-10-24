@@ -22,6 +22,6 @@ Trusted Publishing uses GitHub's OIDC identity and short-lived credentials. No P
 2. Merge the version change into `master`.
 3. Create a GitHub Release from the matching tag, for example `v0.2.0`. The workflow rejects a tag that does not exactly match the package version.
 4. Wait for the release workflow. The build job runs `python -m build` and `twine check --strict`; the publish job starts only after these checks pass.
-5. After PyPI finishes processing the first publication, users can install the command-line app with `pipx install scopeguard` or `py -m pip install --user scopeguard`.
+5. After PyPI finishes processing the first publication, users can install the command-line app with `pipx install scopeguard` or `py -m pip install --user scopeguard`. The interactive API menu uses the demo OpenAPI and scenario files bundled in the installed wheel; start the demo server in another terminal with `scopeguard-demo`.
 
 Do not publish a version until its source, README, dependencies, and release notes have been reviewed. PyPI releases cannot be replaced with different files under the same version.

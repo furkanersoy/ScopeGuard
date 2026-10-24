@@ -22,6 +22,6 @@ Trusted Publishing, GitHub OIDC kimliğini ve kısa ömürlü erişim belirtecin
 2. Sürüm değişikliğini `master` dalına birleştir.
 3. Sürümle aynı etiketi kullanarak GitHub Release oluştur; örneğin `v0.2.0`. Etiket paket sürümüyle tam eşleşmezse workflow durur.
 4. Release workflow'unu bekle. Derleme işi `python -m build` ve `twine check --strict` çalıştırır; yayın işi yalnızca ikisi başarılı olursa başlar.
-5. PyPI ilk yayını işledikten sonra kullanıcılar komut satırı uygulamasını `pipx install scopeguard` veya `py -m pip install --user scopeguard` ile kurabilir.
+5. PyPI ilk yayını işledikten sonra kullanıcılar komut satırı uygulamasını `pipx install scopeguard` veya `py -m pip install --user scopeguard` ile kurabilir. Etkileşimli API menüsü, kurulu wheel içindeki demo OpenAPI ve senaryo dosyalarını kullanır; demo sunucusunu başka bir terminalde `scopeguard-demo` komutuyla başlat.
 
 Kaynak kod, README, bağımlılıklar ve sürüm notları gözden geçirilmeden bir sürümü yayımlama. PyPI'da aynı sürüm numarasındaki dosyalar farklı içerikle değiştirilemez.

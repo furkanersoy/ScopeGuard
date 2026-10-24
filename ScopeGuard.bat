@@ -1,5 +1,6 @@
 @echo off
 setlocal
+set "SG_CALLER_DIR=%CD%"
 cd /d "%~dp0"
 
 rem Prefer the Python launcher, then fall back to python on PATH.
@@ -27,7 +28,8 @@ if errorlevel 1 (
     del /q ".venv\.scopeguard-current" >nul 2>&1
 )
 
-".venv\Scripts\scopeguard.exe" %*
+cd /d "%SG_CALLER_DIR%"
+"%~dp0.venv\Scripts\scopeguard.exe" %*
 exit /b %errorlevel%
 
 :python_required

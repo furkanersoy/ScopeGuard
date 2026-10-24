@@ -43,10 +43,12 @@ def show_banner(stream: TextIO | None = None, *, animate: bool | None = None) ->
     output.write("  API runs use configured GET/HEAD/OPTIONS checks; local inspect is offline and never executes code.\n")
     output.write("  Loopback is the default. Remote testing needs an explicit allowlist and --allow-remote.\n")
     output.write("  API yetkilendirme açıklarını (BOLA/IDOR) sürüm öncesi bulur.\n")
-    output.write("  OpenAPI tabanlı kontrolleri çevrimdışı doğrular; yalnızca tanımlı GET isteklerini çalıştırır.\n")
+    output.write("  OpenAPI senaryoları yalnızca yapılandırılmış güvenli GET/HEAD/OPTIONS isteklerini çalıştırır.\n")
     output.write("  Varsayılan hedef yerel makinedir; uzak test için izin listesi ve --allow-remote gerekir.\n")
     output.write("  Choose a security section from the menu below.\n")
-    output.write("  Aşağıdaki menüden güvenlik bölümünü seçin.\n\n")
+    output.write("  Aşağıdaki menüden güvenlik bölümünü seçin.\n")
+    output.write("  First scan? Choose option 7 for a guided quick scan.\n")
+    output.write("  İlk taraman mı? Hızlı tarama sihirbazı için 7. seçeneği kullan.\n\n")
     output.flush()
 
 
@@ -65,8 +67,8 @@ def _show_help(output: TextIO) -> None:
     output.write(
         "Commands / Komutlar:\n"
         "  init --spec <openapi.yaml> [--output scenario.yaml] [--force]\n"
-        "      EN: Create a scenario; select anonymous, BOLA/IDOR, BFLA, or custom GET checks.\n"
-        "      TR: Senaryo oluşturur; anonim, BOLA/IDOR, BFLA veya özel GET kontrolleri seçilir.\n"
+        "      EN: Create a scenario; select anonymous, BOLA/IDOR, BFLA, or custom GET/HEAD/OPTIONS checks.\n"
+        "      TR: Anonim, BOLA/IDOR, BFLA veya özel GET/HEAD/OPTIONS kontrol senaryosu oluşturur.\n"
         "  validate --spec <openapi.yaml> --config <scenario.yaml>\n"
         "      EN: Validate the API spec and scenario offline.\n"
         "      TR: API tanımını ve senaryoyu çevrimdışı doğrular.\n"
@@ -78,8 +80,8 @@ def _show_help(output: TextIO) -> None:
         "      TR: Kimlik/uç nokta kontrollerini gösterir; --strict zorunlu kapsamı uygular.\n"
         "  run --spec <openapi.yaml> --config <scenario.yaml> --output <report.json>\n"
         "      [--markdown-output report.md] [--sarif-output report.sarif] [--html-output report.html] [--language tr|en]\n"
-        "      EN: Run configured read-only GET checks and save local reports.\n"
-        "      TR: Tanımlı salt okunur GET kontrollerini çalıştırıp yerel rapor yazar.\n"
+        "      EN: Run configured read-only GET, HEAD, and OPTIONS checks and save local reports.\n"
+        "      TR: Tanımlı salt okunur GET, HEAD ve OPTIONS kontrollerini çalıştırıp yerel rapor yazar.\n"
         "  inspect --path <file-or-folder> --checks secrets python config docker kubernetes terraform\n"
         "          [--output report.json] [--markdown-output report.md] [--sarif-output report.sarif] [--html-output report.html]\n"
         "          [--suppressions scopeguard-ignore.yaml]\n"
@@ -91,11 +93,13 @@ def _show_help(output: TextIO) -> None:
         "  compare --previous <report.json> --current <report.json> [--output diff.json] [--markdown-output diff.md] [--html-output diff.html]\n"
         "      EN: Compare API, local, or dependency findings; exit 1 if findings were added.\n"
         "      TR: API, yerel tarama veya bağımlılık bulgularını karşılaştırır; yeni bulgu varsa 1 ile çıkar.\n"
-        "  quick-scan --path <file-or-folder> [--language tr|en] [--fail-on high]\n"
+        "  quick-scan [--path <file-or-folder>] [--profile standard|secrets|application|containers|infrastructure] [--language tr|en]\n"
         "      EN: Run all standard offline checks and save local reports.\n"
-        "      TR: Standart Ã§evrimdÄ±ÅŸÄ± kontrolleri Ã§alÄ±ÅŸtÄ±rÄ±p yerel raporlar oluÅŸturur.\n"
+        "      TR: Seçilen çevrimdışı tarama profilini çalıştırıp yerel raporlar oluşturur.\n"
+        "      EN: Project-scoped profiles include standard, secrets, application, containers, and infrastructure.\n"
+        "      TR: Proje profilleri standard, secrets, application, containers ve infrastructure seçeneklerini içerir.\n"
         "      EN: inspect/dependencies accept --fail-on any|critical|high|medium|low|none for CI.\n"
-        "      TR: inspect/dependencies komutlarÄ± CI iÃ§in --fail-on Ã¶nem eÅŸiÄŸini destekler.\n"
+        "      TR: inspect/dependencies komutları CI için --fail-on önem eşiğini destekler.\n"
         "  ignore --report <scan.json> [--output scopeguard-ignore.yaml]\n"
         "      EN: Select a finding and create or update a reasoned, expiring suppression.\n"
         "      TR: Bulgu seçip gerekçeli ve süreli bir istisna oluşturur veya günceller.\n"
@@ -287,6 +291,37 @@ def _ignore_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO
     return True
 
 
+def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    output.write("\nQuick local scan / Hızlı yerel tarama\n")
+    output.write("Scans the selected project offline; it does not execute code or send files anywhere.\n")
+    output.write("Seçilen projeyi çevrimdışı tarar; kod çalıştırmaz ve dosyaları hiçbir yere göndermez.\n")
+    path = _answer(source, output, "Project folder or file / Proje klasörü veya dosyası", ".")
+    if path is None:
+        return False
+    output.write("Profiles: 1 standard, 2 application, 3 containers, 4 infrastructure, 5 secrets only\n")
+    output.write("Profiller: 1 standard, 2 application, 3 containers, 4 infrastructure, 5 yalnızca sırlar\n")
+    choice = _answer(source, output, "Choose a profile / Profil seçin", "1")
+    if choice is None:
+        return False
+    profiles = {"1": "standard", "2": "application", "3": "containers", "4": "infrastructure", "5": "secrets"}
+    profile = profiles.get(choice)
+    if profile is None:
+        output.write("Unknown profile / Bilinmeyen profil.\n")
+        return True
+    language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
+    if language is None:
+        return False
+    report = _answer(source, output, "JSON report path / JSON rapor yolu", "scopeguard-scan.json")
+    if report is None:
+        return False
+    args = ["quick-scan", "--path", path, "--profile", profile, "--language", language,
+            "--output", report, "--markdown-output", _report_sidecar(report, ".md"),
+            "--sarif-output", _report_sidecar(report, ".sarif"),
+            "--html-output", _report_sidecar(report, ".html")]
+    _dispatch(command_handler, args, output)
+    return True
+
+
 def _command_console(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, initial_line: str | None = None) -> bool:
     output.write("\nAdvanced command console / Gelişmiş komut konsolu. Type 'menu' to return.\n")
     while True:
@@ -341,6 +376,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             "  4. Advanced command console / Gelişmiş komut konsolu\n"
             "  5. Dependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n"
             "  6. Create suppression from a report / Rapordan geçici istisna oluştur\n"
+            "  7. Guided quick scan / Hızlı tarama sihirbazı\n"
             "  0. Exit / Çıkış\n"
         )
         choice = _answer(source, output, "Choose a section / Bölüm seçin", "0")
@@ -370,12 +406,16 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             if not _ignore_menu(command_handler, source, output):
                 output.write("ScopeGuard closed.\n")
                 return
+        elif choice == "7":
+            if not _quick_scan_menu(command_handler, source, output):
+                output.write("ScopeGuard closed.\n")
+                return
         elif choice.lower() in {"help", "?"}:
             _show_help(output)
         elif choice.lower() == "version":
             output.write(f"ScopeGuard {__version__}\n")
         elif choice.strip().isdigit():
-            output.write("Choose 1, 2, 3, 4, 5, 6, or 0 / 1, 2, 3, 4, 5, 6 veya 0 seçin.\n")
+            output.write("Choose 1, 2, 3, 4, 5, 6, 7, or 0 / 1, 2, 3, 4, 5, 6, 7 veya 0 seçin.\n")
         else:
             if not _command_console(command_handler, source, output, initial_line=choice):
                 return

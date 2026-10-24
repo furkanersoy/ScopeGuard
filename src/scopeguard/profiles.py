@@ -27,6 +27,21 @@ def _prompt(label: str, default: str) -> str:
     return value or default
 
 
+def _path_text(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        return value[1:-1]
+    return value
+
+
+def _prompt_choice(label: str, default: str, choices: set[str], hint: str) -> str:
+    while True:
+        value = _prompt(label, default).lower()
+        if value in choices:
+            return value
+        print(hint)
+
+
 def _write_profile(path: Path, data: dict[str, Any], *, force: bool) -> None:
     if path.exists() and not force:
         raise ValidationError(f"profile already exists: {path} (use --force to replace it)")
@@ -57,28 +72,46 @@ def run_profile_wizard(path: Path, *, force: bool = False) -> Path:
         raise ValidationError(f"profile already exists: {path} (use --force to replace it)")
     print("This profile stores local scan settings only. It does not contact APIs or save credentials.")
     print("Bu profil yalnızca yerel tarama ayarlarını saklar. API'ye bağlanmaz ve kimlik bilgisi kaydetmez.")
-    scan_path = _prompt("Project folder or file / Proje klasörü veya dosyası", ".")
+    profile_root = path.resolve().parent
+    try:
+        default_scan_path = os.path.relpath(Path.cwd().resolve(), profile_root)
+    except ValueError:
+        # Windows cannot make a relative path between different drives.
+        default_scan_path = str(Path.cwd().resolve())
+    while True:
+        scan_path = _path_text(_prompt("Project folder or file / Proje klasörü veya dosyası", default_scan_path))
+        scan_target = Path(scan_path).expanduser()
+        if not scan_target.is_absolute():
+            scan_target = profile_root / scan_target
+        if scan_target.exists():
+            break
+        print(f"Scan target not found / Tarama hedefi bulunamadı: {scan_target}")
     print("Profiles / Profiller:")
     for index, profile in enumerate(PROFILE_CHECKS, 1):
         print(f"  {index}. {profile}")
-    selected = _prompt("Choose profile number / Profil numarasını seç", "1")
-    try:
-        selected_index = int(selected)
-    except (ValueError, IndexError):
-        raise ValidationError("choose a profile number from the list") from None
-    if not 1 <= selected_index <= len(PROFILE_CHECKS):
-        raise ValidationError("choose a profile number from the list")
+    selected = _prompt_choice("Choose profile number / Profil numarasını seç", "1", {str(i) for i in range(1, len(PROFILE_CHECKS) + 1)}, "Choose one of the listed profile numbers / Listelenen profil numaralarından birini seçin")
+    selected_index = int(selected)
     profile = list(PROFILE_CHECKS)[selected_index - 1]
-    language = _prompt("Report language tr/en / Rapor dili tr/en", "tr").lower()
-    if language not in _LANGUAGES:
-        raise ValidationError("report language must be tr or en")
-    report_prefix = _prompt("Report filename prefix / Rapor dosya adı öneki", "scopeguard-scan")
-    if not report_prefix or Path(report_prefix).name in {"", ".", ".."}:
-        raise ValidationError("report filename prefix must not be empty")
-    suppressions = input("Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter): ").strip()
-    fail_on = _prompt("Fail threshold any/critical/high/medium/low/none / Bulgu eşiği", "any").lower()
-    if fail_on not in _FAIL_LEVELS:
-        raise ValidationError("fail threshold must be any, critical, high, medium, low, or none")
+    language = _prompt_choice("Report language tr/en / Rapor dili tr/en", "tr", _LANGUAGES, "Enter tr or en / tr veya en yazın")
+    while True:
+        report_prefix = _path_text(_prompt("Report filename prefix / Rapor dosya adı öneki", "scopeguard-scan"))
+        if Path(report_prefix).name not in {"", ".", ".."}:
+            break
+        print("Enter a file name or relative path prefix / Dosya adı veya göreli yol öneki girin")
+    while True:
+        suppressions = _path_text(input("Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter): "))
+        if not suppressions:
+            break
+        suppression_path = Path(suppressions).expanduser()
+        if not suppression_path.is_absolute():
+            suppression_path = profile_root / suppression_path
+        if suppression_path.is_file():
+            break
+        print(f"Suppression file not found / İstisna dosyası bulunamadı: {suppression_path}")
+    fail_on = _prompt_choice(
+        "Fail threshold any/critical/high/medium/low/none / Bulgu eşiği", "any", _FAIL_LEVELS,
+        "Enter any, critical, high, medium, low, or none / any, critical, high, medium, low veya none yazın",
+    )
     data: dict[str, Any] = {
         "version": 1,
         "path": scan_path,
@@ -102,6 +135,8 @@ def load_scan_profile(path: Path) -> dict[str, Any]:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except OSError as exc:
         raise ValidationError(f"cannot read scan profile '{path}': {exc.strerror or 'I/O error'}") from None
+    except UnicodeError:
+        raise ValidationError(f"scan profile '{path}' must be UTF-8 text") from None
     except yaml.YAMLError as exc:
         raise ValidationError(f"invalid YAML in scan profile '{path}'") from None
     required = {"version", "path", "profile", "language", "report_prefix", "fail_on"}

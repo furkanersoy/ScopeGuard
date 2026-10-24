@@ -7,6 +7,7 @@ import shlex
 import sys
 import time
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import TextIO
 
 from . import __version__
@@ -125,7 +126,10 @@ def _answer(source: TextIO, output: TextIO, prompt: str, default: str = "") -> s
         return None
     if not value:
         return None
-    return value.strip() or default
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    return value or default
 
 
 def _dispatch(command_handler: Callable[[Sequence[str]], int], args: list[str], output: TextIO) -> None:
@@ -341,7 +345,16 @@ def _configure_profile_menu(command_handler: Callable[[Sequence[str]], int], sou
     destination = _answer(source, output, "Profile YAML path / Profil YAML yolu", ".scopeguard-profile.yaml")
     if destination is None:
         return False
-    _dispatch(command_handler, ["configure", "--output", destination], output)
+    args = ["configure", "--output", destination]
+    if Path(destination).exists():
+        replace = _answer(source, output, "Replace the existing profile? [y/N] / Var olan profil değiştirilsin mi? [e/H]", "n")
+        if replace is None:
+            return False
+        if replace.lower() not in {"y", "yes", "e", "evet"}:
+            output.write("Existing profile kept / Var olan profil korundu.\n")
+            return True
+        args.append("--force")
+    _dispatch(command_handler, args, output)
     return True
 
 

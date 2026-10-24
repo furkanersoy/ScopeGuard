@@ -476,15 +476,15 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             and (excluded_path is None or item[1].resolve() != excluded_path.resolve())
         ]
         if available:
-            output.write("Available reports / Kullanılabilir raporlar:\\n")
+            output.write("Available reports / Kullanılabilir raporlar:\n")
             for index, (_, report_path, kind) in enumerate(available, 1):
-                output.write(f"  {index}. {report_path.name} ({kind_labels[kind]})\\n")
+                output.write(f"  {index}. {report_path.name} ({kind_labels[kind]})\n")
         elif expected_kind:
-            output.write("No other report of this type was found; enter its path manually.\\n")
-            output.write("Bu türde başka rapor bulunamadı; dosya yolunu elle girin.\\n")
+            output.write("No other report of this type was found; enter its path manually.\n")
+            output.write("Bu türde başka rapor bulunamadı; dosya yolunu elle girin.\n")
         elif not reports:
-            output.write("No ScopeGuard JSON reports found in the current folder; enter a report path.\\n")
-            output.write("Geçerli klasörde ScopeGuard JSON raporu bulunamadı; rapor yolunu girin.\\n")
+            output.write("No ScopeGuard JSON reports found in the current folder; enter a report path.\n")
+            output.write("Geçerli klasörde ScopeGuard JSON raporu bulunamadı; rapor yolunu girin.\n")
         while True:
             value = _answer(source, output, label, "")
             if value is None:
@@ -494,14 +494,14 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
                 if 1 <= index <= len(available):
                     _, report_path, kind = available[index - 1]
                     return report_path, kind
-                output.write("Choose a listed report number / Listelenen rapor numaralarından birini seç.\\n")
+                output.write("Choose a listed report number / Listelenen rapor numaralarından birini seç.\n")
                 continue
             candidate = Path(value).expanduser()
             if not candidate.is_file():
-                output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\\n")
+                output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\n")
                 continue
             if excluded_path is not None and candidate.resolve() == excluded_path.resolve():
-                output.write("Choose a different report / Farklı bir rapor seçin.\\n")
+                output.write("Choose a different report / Farklı bir rapor seçin.\n")
                 continue
             try:
                 if candidate.is_symlink() or candidate.stat().st_size > 25_000_000:
@@ -511,13 +511,13 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
                     raise ValidationError("not a supported ScopeGuard report")
                 kind = report_kind(data)
             except (OSError, UnicodeError, json.JSONDecodeError, ValidationError) as exc:
-                output.write(f"Not a supported ScopeGuard report / Desteklenen bir ScopeGuard raporu değil: {exc}\\n")
+                output.write(f"Not a supported ScopeGuard report / Desteklenen bir ScopeGuard raporu değil: {exc}\n")
                 continue
             if expected_kind is not None and kind != expected_kind:
                 expected_label = kind_labels[expected_kind]
                 output.write(
                     f"Choose a report of the same type as the earlier report ({expected_label}) / "
-                    f"Önceki raporla aynı türde bir rapor seçin ({expected_label}).\\n"
+                    f"Önceki raporla aynı türde bir rapor seçin ({expected_label}).\n"
                 )
                 continue
             return candidate, kind

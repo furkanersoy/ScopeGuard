@@ -2,11 +2,11 @@
 
 ## Önce kurulumu kontrol et
 
-ScopeGuard açılıyorsa Python, PyYAML ve paketlenmiş API demo dosyalarını çevrimdışı kontrol etmek için `scopeguard doctor` (Windows kaynak deposunda `ScopeGuard.bat doctor`) çalıştır. Projeni taramaz ve ağa bağlanmaz. Komut bulunamıyorsa önce sonraki bölümü uygula.
+ScopeGuard açılıyorsa Python, PyYAML ve paketlenmiş API demo dosyalarını çevrimdışı kontrol etmek için `scopeguard doctor` (Windows kaynak deposunda PowerShell'den `.\ScopeGuard.bat doctor`) çalıştır. Projeni taramaz ve ağa bağlanmaz. Komut bulunamıyorsa önce sonraki bölümü uygula.
 
 ## `scopeguard` komutu bulunamıyor
 
-- Windows'ta indirilen depoyu kullanıyorsan, depo klasöründeki `ScopeGuard.bat` dosyasını çalıştır. Komutları dosyaya da verebilirsin; örneğin `.\ScopeGuard.bat quick-scan`.
+- Windows'ta indirilen depoyu kullanıyorsan, PowerShell'i depo klasöründe açıp `.\ScopeGuard.bat` çalıştır veya Dosya Gezgini'nde `ScopeGuard.bat` dosyasına çift tıkla. Komutları dosyaya verebilirsin; örneğin `.\ScopeGuard.bat quick-scan`.
 - PyPI'dan pipx ile kurduysan kurulumdan sonra yeni bir terminal aç. Gerekirse `pipx ensurepath` çalıştırıp terminali yeniden başlat.
 - Sanal ortama kurduysan `scopeguard` komutunu çalıştırmadan önce aynı ortamı etkinleştir.
 

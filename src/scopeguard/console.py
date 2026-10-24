@@ -197,7 +197,12 @@ def _api_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, o
             markdown = _report_sidecar(report, ".md")
             sarif = _report_sidecar(report, ".sarif")
             html_report = _report_sidecar(report, ".html")
+            open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+            if open_report is None:
+                return False
             args.extend(["--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language])
+            if open_report.lower() in {"y", "yes", "e", "evet"}:
+                args.append("--open-report")
         _dispatch(command_handler, args, output)
 
 
@@ -228,6 +233,9 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
+    open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    if open_report is None:
+        return False
     if secrets_only:
         checks = ["secrets"]
     else:
@@ -243,6 +251,8 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     args = ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language]
     if suppressions:
         args.extend(["--suppressions", suppressions])
+    if open_report.lower() in {"y", "yes", "e", "evet"}:
+        args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
 
@@ -278,11 +288,16 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False
+    open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    if open_report is None:
+        return False
     args = ["dependencies", "--path", path, "--allow-network", "--output", report,
             "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report,
             "--language", language]
     if suppressions:
         args.extend(["--suppressions", suppressions])
+    if open_report.lower() in {"y", "yes", "e", "evet"}:
+        args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
 
@@ -345,10 +360,15 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
     report = _answer(source, output, "JSON report path / JSON rapor yolu", "scopeguard-scan.json")
     if report is None:
         return False
+    open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    if open_report is None:
+        return False
     args = ["quick-scan", "--path", path, "--profile", profile, "--language", language,
             "--output", report, "--markdown-output", _report_sidecar(report, ".md"),
             "--sarif-output", _report_sidecar(report, ".sarif"),
             "--html-output", _report_sidecar(report, ".html")]
+    if open_report.lower() in {"y", "yes", "e", "evet"}:
+        args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
 

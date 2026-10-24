@@ -175,7 +175,7 @@ scopeguard init --spec examples/api/openapi.yaml --output examples/scenarios/my-
 
 The wizard lets you select anonymous-access checks, BOLA/IDOR horizontal access checks, BFLA role checks, or custom safe-method status checks. The custom profile lists GET, HEAD, and OPTIONS operations from the OpenAPI document. It asks for sample path values and expected status codes and performs no API requests. Review the generated scenario before running it; the wizard cannot infer your authorization policy or prove that your expected responses are correct. Existing files are preserved unless you pass `--force`.
 
-To start the included synthetic demo API, open a second terminal and run `scopeguard-demo` after installing from PyPI. From a source checkout, use:
+To start the included synthetic demo API, open a second terminal and run `scopeguard-demo` after installing from PyPI. From a source checkout, run `py -m scopeguard_demo`. If you started the repository launcher, use `& .\.venv\Scripts\python.exe -m scopeguard_demo` on Windows or `./.venv/bin/python -m scopeguard_demo` on Linux/macOS:
 
 ```powershell
 py -m scopeguard_demo

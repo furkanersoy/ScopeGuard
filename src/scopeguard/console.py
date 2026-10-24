@@ -392,7 +392,15 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
         if saved_profile is None:
             return False
     if saved_profile:
-        _dispatch(command_handler, ["quick-scan", "--config", saved_profile], output)
+        profile_path = _existing_path_answer(
+            source, output,
+            "Saved profile file / Kayıtlı profil dosyası",
+            saved_profile,
+            file_only=True,
+        )
+        if profile_path is None:
+            return False
+        _dispatch(command_handler, ["quick-scan", "--config", profile_path], output)
         return True
     path = _existing_path_answer(source, output, "Project folder or file / Proje klasörü veya dosyası", ".")
     if path is None:

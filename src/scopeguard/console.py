@@ -131,7 +131,10 @@ def _answer(source: TextIO, output: TextIO, prompt: str, default: str = "") -> s
 def _dispatch(command_handler: Callable[[Sequence[str]], int], args: list[str], output: TextIO) -> None:
     try:
         code = command_handler(args)
-        if code:
+        if code == 1:
+            output.write("Findings or missing required coverage were reported; review the output and report.\n")
+            output.write("Bulgular veya eksik zorunlu kapsam bildirildi; çıktıyı ve raporu inceleyin.\n")
+        elif code not in {0, 2}:
             output.write(f"Command finished with exit code {code}.\n")
     except KeyboardInterrupt:
         output.write("\nCommand cancelled.\n")

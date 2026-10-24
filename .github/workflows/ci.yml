@@ -26,6 +26,9 @@ jobs:
       - name: Install ScopeGuard
         run: python -m pip install .
 
+      - name: Gate high severity source findings
+        run: scopeguard inspect --path src --checks secrets python --fail-on high --output "$RUNNER_TEMP/scopeguard-inspect.json"
+
       - name: Smoke-test installed CLI
         run: |
           scopeguard --version

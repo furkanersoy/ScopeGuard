@@ -19,26 +19,23 @@
 - `scopeguard compare` kaydedilmiş JSON raporlarındaki yeni, giderilmiş ve değişmeden kalan bulguları karşılaştırır.
 - İsteğe bağlı GitHub Actions iş akışı kaynağı tarar; SARIF yüklemesi yalnızca elle başlatılan çalıştırmada açılabilir.
 
-## Hızlı başlangıç (Windows)
+## İlk tarama (Windows)
 
-1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir veya klonla.
-2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta proje klasöründe `.venv` oluşturup ScopeGuard ve bağımlılıklarını kurar. Sonraki açılışlarda bu kurulumu tekrar kullanır.
-3. Başlangıç menüsünden bölüm seç: `1` API Güvenliği, `2` yerel kontroller, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolü, `6` rapordan geçici istisna oluşturma, `7` hızlı tarama sihirbazı, `8` yeniden kullanılabilir proje profili kaydetmedir.
-4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
-5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
+1. Python 3.11 veya üzerini kur, ardından bu depoyu indir veya klonla.
+2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta izole bir `.venv` oluşturup bağımlılıkları kurar; sonraki açılışlarda bu kurulumu kullanır.
+3. İlk tarama için menüden **7. Hızlı tarama sihirbazı** seçeneğini seç, proje klasörünü gir ve bir profil belirle. JSON, Markdown, SARIF ve HTML raporları bilgisayarına kaydedilir.
 
-Yerel kaynak kodunu doğrudan taramak için `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --language tr` komutunu kullan. Gerçek servisleri yalnızca açıkça yetkilendirildiğin test kapsamlarında çalıştır.
-
-### Sanal ortam oluşturmadan çalıştırma
-
-Windows'ta depo klasöründe şu komutları çalıştırarak ScopeGuard'u kullanıcı Python kurulumuna yükleyebilirsin:
+PowerShell'den doğrudan standart çevrimdışı tarama başlatmak için ScopeGuard klasöründe:
 
 ```powershell
-py -3 -m pip install --user .
-py -3 -m scopeguard
+.\ScopeGuard.bat quick-scan
 ```
 
-Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı Python kurulumuna yükler. Diğer Python araçlarının bağımlılıklarıyla çakışma olasılığı nedeniyle `ScopeGuard.bat` ile otomatik kurulum önerilir.
+Bu komut geçerli klasörü tarar; kod çalıştırmaz ve dosyaları ağa göndermez. Rapor dosyalarının adı `scopeguard-scan` önekiyle başlar.
+
+Menüyü daha sonra açmak için `ScopeGuard.bat` dosyasına çift tıkla veya `.\ScopeGuard.bat` komutunu argümansız çalıştır. Linux/macOS'ta `./scopeguard.sh quick-scan` ya da `./scopeguard.sh` kullan.
+
+API kontrollerini denemek için dahil edilen demo API'yi ikinci bir terminalde başlat ve aşağıdaki API adımlarını izle. Gerçek servisleri yalnızca açıkça yetkilendirildiğin testlerde kontrol et.
 
 ## Kontroller ve komutlar
 
@@ -137,11 +134,11 @@ Bu çevrimiçi komut yalnızca `--allow-network` açıkça verildiğinde OSV'ye 
 
 ```powershell
 scopeguard dependencies --path . --allow-network --output dependencies.json --markdown-output dependencies.md --sarif-output dependencies.sarif --html-output dependencies.html --language tr
+```
 
 ### CI önem eşikleri
 
 `inspect` ve `dependencies` komutları `--fail-on any|critical|high|medium|low|none` seçeneğini destekler. Varsayılan `any`, etkin bulgu varsa komutu mevcut davranışta olduğu gibi `1` koduyla bitirir. Bir eşik, o önem düzeyindeki veya daha yüksek önem derecesindeki etkin bulgular bulunduğunda başarısız olur; bastırılmış bulgular kapıyı başarısız kılmaz. Örneğin `scopeguard inspect --path src --checks secrets python --fail-on high` derlemeyi yüksek veya kritik kaynak kod bulgularına göre durdurur. Yalnızca yeni bulguları engellemek için önceki JSON raporunu saklayıp `scopeguard compare --previous baseline.json --current current.json` çalıştır; yeni bulgu varsa komut `1` döndürür.
-```
 
 ## HTML raporları ve rapor karşılaştırma
 
@@ -303,37 +300,3 @@ Mimari ve yol haritası için [docs/architecture.md](docs/architecture.md) dosya
 Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yeniden kullanım izni vermez.
 
 
-
-## Hızlı tarama ve güvenli HTTP yöntemleri
-
-`scopeguard quick-scan --path . --language tr` sır, Python, yapılandırma, Docker, Kubernetes ve Terraform için standart çevrimdışı kontrolleri çalıştırır. JSON, Markdown, SARIF ve HTML raporlarını geçerli klasöre kaydeder. İncelenmiş istisnalar için `--suppressions scopeguard-ignore.yaml`, CI önem eşiği için `--fail-on high` ekleyebilirsin.
-
-Yol varsayılan olarak geçerli klasördür; taramayı başlatmak için `scopeguard quick-scan` yeterlidir. `--profile standard|secrets|application|containers|infrastructure` ile hazır profillerden birini seç. Örneğin `scopeguard quick-scan --profile containers --language tr` yalnızca Docker ve Kubernetes kontrollerini çalıştırır. Başlangıç menüsündeki **7. Hızlı tarama sihirbazı** proje klasörünü, profili, rapor dilini ve JSON rapor adını sorar; diğer rapor biçimlerini otomatik oluşturur.
-
-Tekrarlanan taramalar için proje profilini bir kez oluştur:
-
-```powershell
-scopeguard configure --output .scopeguard-profile.yaml
-scopeguard quick-scan --config .scopeguard-profile.yaml
-```
-
-Profil yalnızca yerel tarama ayarlarını saklar; kimlik bilgisi veya API hedefi içermez. Sihirbaz yolları mümkün olduğunda profil klasörüne göreli kaydeder; böylece profil taşınabilir olur ve yerel kullanıcı adının dosyada görünmesi önlenir. Paylaşmadan veya depoya eklemeden önce mutlak yolları gözden geçir. Göreli proje, rapor ve istisna yolları profil dosyasının bulunduğu klasöre göre çözülür. Var olan profili değiştirmek için `scopeguard configure --force` kullan. Komut satırındaki `--path`, `--profile`, `--language` ve `--fail-on` seçenekleri kayıtlı değerleri geçersiz kılar.
-
-API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. `scopeguard init` içinde **Özel güvenli yöntem durum kodu kontrolü** profilini seçerek OpenAPI belgesinde tanımlı GET, HEAD veya OPTIONS işlemlerinden seçim yapabilirsin. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
-
-
-## Rapor üzerinden istisna oluşturma
-
-Yerel taramadan sonra JSON raporundaki etkin bulguları listeleyip geçici istisna oluştur:
-
-```powershell
-scopeguard ignore --report inspect.json
-```
-
-ScopeGuard etkin bulguları listeler; bulgu numarasını, gerekçeyi ve bitiş tarihini sorar. Varsayılan bitiş tarihi 90 gün sonradır. Komut `scopeguard-ignore.yaml` dosyasını oluşturur veya günceller. Dosyayı gözden geçir, ardından sonraki yerel taramada `--suppressions scopeguard-ignore.yaml` seçeneğiyle kullan. Betik kullanımında tüm değerleri komutta verebilirsin:
-
-```powershell
-scopeguard ignore --report inspect.json --finding 2 --reason "İncelendi; düzeltme planlandı" --expires 2026-12-31 --output scopeguard-ignore.yaml
-```
-
-Başlangıç menüsünde **6. Rapordan istisna oluştur** seçeneğini kullan. Bastırılan bulgular gerekçesi ve bitiş tarihiyle raporlarda görünmeye devam eder.

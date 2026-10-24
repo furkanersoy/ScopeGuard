@@ -67,8 +67,9 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     inspect.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
-    quick = subparsers.add_parser("quick-scan", help="Run the standard offline local checks with short options.")
-    quick.add_argument("--path", required=True, type=Path, help="File or directory to inspect")
+    quick = subparsers.add_parser("quick-scan", help="Run a named offline local scan profile; defaults to the current directory.")
+    quick.add_argument("--path", type=Path, default=Path("."), help="File or directory to inspect (default: current directory)")
+    quick.add_argument("--profile", choices=("standard", "secrets", "application", "containers", "infrastructure"), default="standard", help="Preset checks: standard (all), secrets, application, containers, or infrastructure")
     quick.add_argument("--output", type=Path, default=Path("scopeguard-scan.json"), help="Local JSON report path")
     quick.add_argument("--markdown-output", type=Path, default=Path("scopeguard-scan.md"), help="Local Markdown report path")
     quick.add_argument("--sarif-output", type=Path, default=Path("scopeguard-scan.sarif"), help="Local SARIF report path")
@@ -138,7 +139,14 @@ def _print_suppression_audit(report: dict) -> None:
 def _execute(args: argparse.Namespace) -> int:
     if args.command == "quick-scan":
         args.command = "inspect"
-        args.checks = ["secrets", "python", "config", "docker", "kubernetes", "terraform"]
+        profiles = {
+            "standard": ["secrets", "python", "config", "docker", "kubernetes", "terraform"],
+            "secrets": ["secrets"],
+            "application": ["secrets", "python", "config"],
+            "containers": ["docker", "kubernetes"],
+            "infrastructure": ["config", "terraform"],
+        }
+        args.checks = profiles[args.profile]
 
     if args.command in {"ignore", "suppress"}:
         try:

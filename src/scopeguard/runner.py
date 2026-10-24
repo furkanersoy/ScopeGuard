@@ -28,7 +28,7 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 
 def _request_url(base_url: str, operation: str, path_params: dict[str, Any]) -> str:
-    path = operation[4:]
+    _, path = operation.split(" ", 1)
 
     def replace(match: re.Match[str]) -> str:
         return quote(str(path_params[match.group(1)]), safe="")
@@ -54,8 +54,8 @@ def _identity_headers(identity: dict[str, Any]) -> tuple[dict[str, str] | None, 
     return {"Authorization": f"Bearer {token}"}, None
 
 
-def _send_get(opener: urllib.request.OpenerDirector, url: str, headers: dict[str, str], timeout: float) -> tuple[int, bytes, bool]:
-    request = urllib.request.Request(url, headers={"User-Agent": f"ScopeGuard/{__version__}", **headers}, method="GET")
+def _send_get(opener: urllib.request.OpenerDirector, url: str, headers: dict[str, str], timeout: float, method: str = "GET") -> tuple[int, bytes, bool]:
+    request = urllib.request.Request(url, headers={"User-Agent": f"ScopeGuard/{__version__}", **headers}, method=method)
     try:
         with opener.open(request, timeout=timeout) as response:
             body = response.read(MAX_RESPONSE_BYTES + 1)
@@ -157,7 +157,7 @@ def run_scenarios(
     html_output_path: Path | None = None,
     language: str = "en",
 ) -> dict[str, Any]:
-    """Execute the configured GET checks and write localized redacted reports."""
+    """Execute configured safe-method checks and write localized redacted reports."""
     if language not in SUPPORTED_LANGUAGES:
         raise ValidationError(f"unsupported language '{language}'; choose one of: {', '.join(SUPPORTED_LANGUAGES)}")
     protected_paths = {spec_path.resolve(), config_path.resolve()}
@@ -211,7 +211,8 @@ def run_scenarios(
             if last_request_at and elapsed < MIN_REQUEST_INTERVAL_SECONDS:
                 time.sleep(MIN_REQUEST_INTERVAL_SECONDS - elapsed)
             last_request_at = time.monotonic()
-            actual_status, response_body, truncated = _send_get(opener, url, headers or {}, float(target["timeout_seconds"]))
+            method = check["operation"].split(" ", 1)[0]
+            actual_status, response_body, truncated = _send_get(opener, url, headers or {}, float(target["timeout_seconds"]), method)
             result["actual_status"] = actual_status
             assertion_results, assertion_error = _evaluate_json_assertions(check.get("assert_json", []), response_body, truncated)
             if assertion_results:

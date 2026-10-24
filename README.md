@@ -82,7 +82,15 @@ python -m pip install .
 
 Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
 
-The PyPI release workflow is prepared but a release has not been published yet. See [PyPI publishing setup](docs/publishing.md). After the first release, install the CLI with `pipx install scopeguard` or `py -m pip install --user scopeguard`.
+The first PyPI release is not published yet. Until then, you can install the current GitHub version in an isolated environment with pipx (Git must also be installed):
+
+```powershell
+pipx install git+https://github.com/furkanersoy/ScopeGuard.git
+```
+
+This installs the current `master` branch, which is a beta development version rather than a versioned PyPI release. To refresh it later, run `pipx install --force git+https://github.com/furkanersoy/ScopeGuard.git`. On Windows, if pipx is not installed, run `py -m pip install --user pipx`, then `py -m pipx ensurepath` and restart the terminal. See the [official pipx installation guide](https://pipx.pypa.io/latest/how-to/install-pipx.html) for other systems.
+
+After the first PyPI release, the stable install command will be `pipx install scopeguard` or `py -m pip install --user scopeguard`. See [PyPI publishing setup](docs/publishing.md).
 
 ### Startup menu
 

@@ -254,6 +254,34 @@ _RULES = {
     "dependency.osv": ("dependency", "unknown"),
 }
 
+# Standards references are guidance for triage; static pattern matches still need review.
+_RULE_METADATA = {
+    "secret.hardcoded": ("CWE-798", "A07:2021", "high"),
+    "python.dynamic-eval": ("CWE-95", "A03:2021", "medium"),
+    "python.unsafe-pickle": ("CWE-502", "A08:2021", "medium"),
+    "python.unsafe-yaml": ("CWE-502", "A08:2021", "medium"),
+    "python.subprocess-shell": ("CWE-78", "A03:2021", "medium"),
+    "python.tls-verify-disabled": ("CWE-295", "A02:2021", "high"),
+    "config.tls-verify-disabled": ("CWE-295", "A02:2021", "high"),
+    "python.tempfile-mktemp": ("CWE-377", "A05:2021", "medium"),
+    "config.debug-enabled": ("CWE-489", "A05:2021", "high"),
+    "config.cors-wildcard": ("CWE-942", "A05:2021", "medium"),
+    "docker.root-user": ("CWE-250", "A05:2021", "medium"),
+    "docker.mutable-base-image": ("CWE-829", "A08:2021", "medium"),
+    "docker.build-arg-secret": ("CWE-798", "A07:2021", "high"),
+    "kubernetes.privileged": ("CWE-250", "A05:2021", "high"),
+    "kubernetes.privilege-escalation": ("CWE-269", "A05:2021", "medium"),
+    "kubernetes.run-as-root": ("CWE-250", "A05:2021", "high"),
+    "kubernetes.host-namespace": ("CWE-668", "A05:2021", "medium"),
+    "kubernetes.host-path": ("CWE-668", "A05:2021", "medium"),
+    "kubernetes.capabilities-all": ("CWE-250", "A05:2021", "high"),
+    "terraform.public-ingress": ("CWE-668", "A05:2021", "medium"),
+    "terraform.public-s3-acl": ("CWE-732", "A05:2021", "high"),
+    "terraform.s3-public-access-disabled": ("CWE-732", "A05:2021", "medium"),
+    "terraform.database-publicly-accessible": ("CWE-668", "A05:2021", "medium"),
+    "terraform.storage-unencrypted": ("CWE-311", "A02:2021", "medium"),
+}
+
 _SECRET_ASSIGNMENT = re.compile(
     r"(?i)\b(api[_-]?key|access[_-]?token|auth[_-]?token|secret(?:[_-]?key)?|password|passwd|client[_-]?secret)\b\s*[:=]\s*(['\"])([^'\"\r\n]{8,})\2"
 )
@@ -309,10 +337,14 @@ def _add_finding(findings: list[dict[str, Any]], seen: set[tuple[str, str, int]]
         return
     seen.add(key)
     category, severity = _RULES[rule_id]
+    cwe, owasp, confidence = _RULE_METADATA.get(rule_id, ("", "", "medium"))
     findings.append({
         "rule_id": rule_id,
         "category": category,
         "severity": severity,
+        "confidence": confidence,
+        "cwe": cwe,
+        "owasp_top_10": owasp,
         "file": relative.replace("\\", "/"),
         "line": line,
     })
@@ -617,12 +649,12 @@ def render_local_markdown(report: dict[str, Any]) -> str:
         f"- Scanned files: {report['scanned_files']}",
         f"- {text['findings']}: {len(active)}",
         f"- {text['suppressed']}: {len(suppressed)}", "",
-        f"| {text['severity']} | {text['rule']} | {text['file']} | {text['line']} |", "| --- | --- | --- | ---: |",
+        f"| {text['severity']} | Confidence | CWE | OWASP Top 10 | {text['rule']} | {text['file']} | {text['line']} |", "| --- | --- | --- | --- | --- | --- | ---: |",
     ]
     for finding in active:
         category = _RULES[finding["rule_id"]][0]
         title = finding.get("title", text[f"{category}.title"])
-        lines.append(f"| {finding['severity'].title()} | {title} | {finding['file']} | {finding['line']} |")
+        lines.append(f"| {finding['severity'].title()} | {finding.get('confidence', 'medium').title()} | {finding.get('cwe') or '—'} | {finding.get('owasp_top_10') or '—'} | {title} | {finding['file']} | {finding['line']} |")
         lines.extend(["", f"**{text[f'{category}.description']}**", "", f"**{text[f'{category}.fix']}**", ""])
     if not active:
         lines.extend(["", text["no_findings"], ""])
@@ -679,6 +711,9 @@ def render_local_html(report: dict[str, Any]) -> str:
         expires = finding.get("suppression_expires", "")
         cells = [
             finding["severity"].title(),
+            finding.get("confidence", "medium").title(),
+            finding.get("cwe", "") or "—",
+            finding.get("owasp_top_10", "") or "—",
             finding["rule_id"],
             finding["file"],
             str(finding.get("line") or ""),
@@ -694,7 +729,7 @@ def render_local_html(report: dict[str, Any]) -> str:
             + "".join(f"<td>{html.escape(cell)}</td>" for cell in cells)
             + "</tr>"
         )
-    body = "\n".join(rows) or f'<tr><td colspan="8">{html.escape(text["no_findings"])}</td></tr>'
+    body = "\n".join(rows) or f'<tr><td colspan="11">{html.escape(text["no_findings"])}</td></tr>'
     title = html.escape(text["summary"])
     source_name = html.escape(Path(report["scanned_path"]).name)
     empty = html.escape(text["html.empty"])
@@ -742,7 +777,7 @@ tr[data-status="suppressed"]{{opacity:.68}}.note{{margin-top:1rem;opacity:.8}}
 <select id="status"><option value="">All</option><option value="active">{active_status_label}</option><option value="suppressed">{suppressed_status_label}</option></select></label>
 </div>
 <div class="table-wrap"><table>
-<thead><tr><th>{severity_label}</th><th>{rule_label}</th><th>{file_label}</th><th>{line_label}</th><th>Finding</th><th>{description_label}</th><th>{remediation_label}</th><th>{status_header_label}</th></tr></thead>
+<thead><tr><th>{severity_label}</th><th>Confidence</th><th>CWE</th><th>OWASP Top 10</th><th>{rule_label}</th><th>{file_label}</th><th>{line_label}</th><th>Finding</th><th>{description_label}</th><th>{remediation_label}</th><th>{status_header_label}</th></tr></thead>
 <tbody id="findings">{body}</tbody></table></div>
 <p id="empty" hidden>{empty}</p>
 <p class="note">{redaction_label}</p>
@@ -815,6 +850,9 @@ def render_local_sarif(report: dict[str, Any]) -> str:
             "properties": {
                 "category": finding["category"],
                 "severity": severity,
+                "confidence": finding.get("confidence", "medium"),
+                "cwe": finding.get("cwe", ""),
+                "owaspTop10": finding.get("owasp_top_10", ""),
                 "remediation": finding["remediation"],
                 **({"vulnerabilityId": finding["vulnerability_id"]} if finding.get("vulnerability_id") else {}),
                 **({"package": finding["package"], "version": finding["version"], "ecosystem": finding["ecosystem"]} if finding.get("package") else {}),
@@ -911,6 +949,7 @@ def inspect_path(path: Path, checks: list[str], language: str = "en", *, output_
 def apply_suppressions(report: dict[str, Any], suppressions_path: Path | None) -> None:
     """Move active findings covered by dated, reasoned suppressions into a visible list."""
     report["suppressed_findings"] = []
+    report["suppression_audit"] = {"entries": 0, "used_entries": 0, "unused_entries": []}
     if suppressions_path is None:
         return
     try:
@@ -946,6 +985,7 @@ def apply_suppressions(report: dict[str, Any], suppressions_path: Path | None) -
         entries.append({"rule_id": rule_pattern, "path": path_pattern, "reason": reason, "expires": expires_text})
 
     active: list[dict[str, Any]] = []
+    used_entries: set[int] = set()
     for finding in report["findings"]:
         relative = finding["file"].replace("\\", "/")
         match = next((
@@ -956,12 +996,21 @@ def apply_suppressions(report: dict[str, Any], suppressions_path: Path | None) -
         if match is None:
             active.append(finding)
         else:
+            used_entries.add(id(match))
             suppressed = dict(finding)
             suppressed["suppression_reason"] = match["reason"]
             suppressed["suppression_expires"] = match["expires"]
             suppressed["suppression_path"] = match["path"]
             report["suppressed_findings"].append(suppressed)
     report["findings"] = active
+    report["suppression_audit"] = {
+        "entries": len(entries),
+        "used_entries": len(used_entries),
+        "unused_entries": [
+            {"rule_id": item["rule_id"], "path": item["path"], "expires": item["expires"]}
+            for item in entries if id(item) not in used_entries
+        ],
+    }
 
 
 def write_local_reports(

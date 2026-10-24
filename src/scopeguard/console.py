@@ -14,6 +14,7 @@ from typing import TextIO
 from . import __version__
 from .config import ValidationError
 from .report_compare import report_kind
+from .profiles import PROFILE_CHECKS, PROFILE_DESCRIPTIONS
 
 _COLORS = {"cyan": "36", "green": "32", "yellow": "33", "red": "31", "muted": "90"}
 
@@ -348,16 +349,20 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
     path = _answer(source, output, "Project folder or file / Proje klasörü veya dosyası", ".")
     if path is None:
         return False
-    output.write("Profiles: 1 standard, 2 application, 3 containers, 4 infrastructure, 5 secrets only\n")
-    output.write("Profiller: 1 standard, 2 application, 3 containers, 4 infrastructure, 5 yalnızca sırlar\n")
-    choice = _answer(source, output, "Choose a profile / Profil seçin", "1")
-    if choice is None:
-        return False
-    profiles = {"1": "standard", "2": "application", "3": "containers", "4": "infrastructure", "5": "secrets"}
-    profile = profiles.get(choice)
-    if profile is None:
-        output.write("Unknown profile / Bilinmeyen profil.\n")
-        return True
+    profile_options = {str(index): name for index, name in enumerate(PROFILE_CHECKS, 1)}
+    output.write("Profiles / Profiller:\n")
+    for index, profile_name in enumerate(PROFILE_CHECKS, 1):
+        english, turkish = PROFILE_DESCRIPTIONS[profile_name]
+        output.write(f"  {index}. {profile_name} — {english}\n")
+        output.write(f"     {turkish}\n")
+    while True:
+        choice = _answer(source, output, "Choose a profile number / Profil numarası seçin", "1")
+        if choice is None:
+            return False
+        profile = profile_options.get(choice)
+        if profile is not None:
+            break
+        output.write("Choose one of the listed profile numbers / Listelenen profil numaralarından birini seçin.\n")
     language = _answer(source, output, "Report language tr/en / Rapor dili tr/en", "tr")
     if language is None:
         return False

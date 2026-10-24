@@ -438,6 +438,42 @@ def _command_console(command_handler: Callable[[Sequence[str]], int], source: Te
         _dispatch(command_handler, [command, *arguments], output)
 
 
+def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    output.write("\\nCompare saved reports / Kaydedilmiş raporları karşılaştır\\n")
+    output.write("Compares two local JSON reports and lists new, resolved, and unchanged findings.\\n")
+    output.write("İki yerel JSON raporunu karşılaştırıp yeni, giderilmiş ve değişmeyen bulguları listeler.\\n")
+    def report_prompt(label: str) -> str | None:
+        while True:
+            value = _answer(source, output, label, "")
+            if value is None:
+                return None
+            if Path(value).expanduser().is_file():
+                return value
+            output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\\n")
+    previous = report_prompt("Earlier JSON report / Önceki JSON raporu")
+    if previous is None:
+        return False
+    current = report_prompt("Current JSON report / Güncel JSON raporu")
+    if current is None:
+        return False
+    destination = _answer(source, output, "Comparison JSON report / Karşılaştırma JSON raporu", "scopeguard-diff.json")
+    if destination is None:
+        return False
+    open_report = _answer(source, output, "Open the HTML report after comparison? [y/e=yes, n/h=no] / Karşılaştırma sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
+    if open_report is None:
+        return False
+    args = [
+        "compare", "--previous", previous, "--current", current,
+        "--output", destination,
+        "--markdown-output", _report_sidecar(destination, ".md"),
+        "--html-output", _report_sidecar(destination, ".html"),
+    ]
+    if open_report.lower() in {"y", "yes", "e", "evet"}:
+        args.append("--open-report")
+    _dispatch(command_handler, args, output)
+    return True
+
+
 def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream: TextIO | None = None, output_stream: TextIO | None = None) -> None:
     """Show the security-section menu, then dispatch to the selected local workflow."""
     source = input_stream or sys.stdin
@@ -454,6 +490,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             "  6. Create suppression from a report / Rapordan geçici istisna oluştur\n"
             "  7. Guided quick scan / Hızlı tarama sihirbazı\n"
             "  8. Configure reusable project profile / Yeniden kullanılabilir proje profili oluştur\n"
+            "  9. Compare saved reports / Kaydedilmiş raporları karşılaştır\n"
             "  0. Exit / Çıkış\n"
         )
         choice = _answer(source, output, "Choose a section / Bölüm seçin", "0")
@@ -491,12 +528,16 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             if not _configure_profile_menu(command_handler, source, output):
                 output.write("ScopeGuard closed.\n")
                 return
+        elif choice == "9":
+            if not _compare_menu(command_handler, source, output):
+                output.write("ScopeGuard closed.\n")
+                return
         elif choice.lower() in {"help", "?"}:
             _show_help(output)
         elif choice.lower() == "version":
             output.write(f"ScopeGuard {__version__}\n")
         elif choice.strip().isdigit():
-            output.write("Choose 1, 2, 3, 4, 5, 6, 7, 8, or 0 / 1, 2, 3, 4, 5, 6, 7, 8 veya 0 seçin.\n")
+            output.write("Choose 1, 2, 3, 4, 5, 6, 7, 8, 9, or 0 / 1, 2, 3, 4, 5, 6, 7, 8, 9 veya 0 seçin.\n")
         else:
             if not _command_console(command_handler, source, output, initial_line=choice):
                 return

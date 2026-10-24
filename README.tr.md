@@ -171,13 +171,13 @@ Sihirbaz anonim erişim, BOLA/IDOR yatay erişim, BFLA rol/yetki ve özel güven
 
 ## Demo API'yi başlatma
 
-İkinci bir terminalde demo API'yi çalıştır:
+PyPI'dan kurduktan sonra demo API'yi ikinci bir terminalde `scopeguard-demo` komutuyla çalıştır. Kaynak depoyu kullanıyorsan:
 
 ```powershell
 py -m scopeguard_demo
 ```
 
-API `http://127.0.0.1:8000` adresinde açılır. Durdurmak için `Ctrl+C` kullan. Otomatik başlatıcıyla kurduysan Windows'ta `& .\.venv\Scripts\python.exe -m scopeguard_demo`, Linux/macOS'ta `./.venv/bin/python -m scopeguard_demo` komutunu çalıştır.
+API `http://127.0.0.1:8000` adresinde açılır. Durdurmak için `Ctrl+C` kullan. PyPI kurulumundaki etkileşimli API menüsü, paketle gelen OpenAPI ve senaryo dosyalarını varsayılan olarak bulur. Aşağıdaki `examples/...` yollarını kullanan komut örnekleri kaynak depoyu klonlayanlar içindir.
 
 ## Senaryoyu doğrulama ve önizleme
 

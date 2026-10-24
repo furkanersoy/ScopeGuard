@@ -439,9 +439,9 @@ def _command_console(command_handler: Callable[[Sequence[str]], int], source: Te
 
 
 def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
-    output.write("\\nCompare saved reports / Kaydedilmiş raporları karşılaştır\\n")
-    output.write("Compares two local JSON reports and lists new, resolved, and unchanged findings.\\n")
-    output.write("İki yerel JSON raporunu karşılaştırıp yeni, giderilmiş ve değişmeyen bulguları listeler.\\n")
+    output.write("\nCompare saved reports / Kaydedilmiş raporları karşılaştır\n")
+    output.write("Compares two local JSON reports and lists new, resolved, and unchanged findings.\n")
+    output.write("İki yerel JSON raporunu karşılaştırıp yeni, giderilmiş ve değişmeyen bulguları listeler.\n")
     def report_prompt(label: str) -> str | None:
         while True:
             value = _answer(source, output, label, "")
@@ -449,7 +449,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
                 return None
             if Path(value).expanduser().is_file():
                 return value
-            output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\\n")
+            output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\n")
     previous = report_prompt("Earlier JSON report / Önceki JSON raporu")
     if previous is None:
         return False

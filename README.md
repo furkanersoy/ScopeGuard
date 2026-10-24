@@ -22,7 +22,7 @@
 
 ## Quick start (Windows)
 
-1. Install Python 3.11 or newer and make either `py -3` or `python` available in Command Prompt, then download or clone the ScopeGuard repository.
+1. Install Python 3.11 or newer and download or clone the ScopeGuard repository.
 2. Double-click `ScopeGuard.bat`. On its first launch it creates a project-local `.venv` and installs ScopeGuard and its dependencies. Later launches reuse that setup.
 3. Choose a section from the startup menu: `1` opens API Security, `2` selects local checks, `3` scans for hard-coded secrets, `4` opens the advanced command console, `5` starts the opt-in dependency check, `6` creates a temporary suppression from a report, `7` guides a quick local scan, and `8` saves a reusable project profile.
 4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
@@ -30,7 +30,7 @@
 
 To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
 
-To install without creating a project `.venv`, run `py -3 -m pip install --user .` (or use `python -m pip install --user .` if the Python launcher is unavailable), then start ScopeGuard with `py -3 -m scopeguard` (or `python -m scopeguard`). This installs dependencies into your user Python account. The launcher is recommended when you want to keep ScopeGuard dependencies isolated from other Python tools.
+To install without creating a project `.venv`, run `py -3 -m pip install --user .` from the repository folder, then start ScopeGuard with `py -3 -m scopeguard`. This installs dependencies into your user Python account. The launcher is recommended when you want to keep ScopeGuard dependencies isolated from other Python tools.
 
 ## Security checks and commands
 
@@ -328,7 +328,7 @@ scopeguard configure --output .scopeguard-profile.yaml
 scopeguard quick-scan --config .scopeguard-profile.yaml
 ```
 
-The profile stores local scan settings only; it contains no credentials or API targets. Relative project, report, and suppression paths are resolved from the profile file's folder. Use `scopeguard configure --force` to replace an existing profile. Command-line options such as `--path`, `--profile`, `--language`, and `--fail-on` override saved values.
+The profile stores local scan settings only; it contains no credentials or API targets. The wizard saves paths relative to the profile folder when possible, which helps keep profiles portable and avoids putting local usernames in the file. Review any absolute paths before sharing or committing a profile. Relative project, report, and suppression paths are resolved from the profile file's folder. Use `scopeguard configure --force` to replace an existing profile. Command-line options such as `--path`, `--profile`, `--language`, and `--fail-on` override saved values.
 
 API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. In `scopeguard init`, select **Custom safe-method status check** to choose any listed GET, HEAD, or OPTIONS operation. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
 

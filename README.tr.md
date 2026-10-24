@@ -21,7 +21,7 @@
 
 ## Hızlı başlangıç (Windows)
 
-1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir veya klonla.
+1. Python 3.11 veya üzerini kur; Komut İstemi'nde `py -3` veya `python` komutlarından birinin çalıştığını doğrula, ardından ScopeGuard deposunu indir veya klonla.
 2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta proje klasöründe `.venv` oluşturup ScopeGuard ve bağımlılıklarını kurar. Sonraki açılışlarda bu kurulumu tekrar kullanır.
 3. Başlangıç menüsünden bölüm seç: `1` API Güvenliği, `2` yerel kontroller, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolü, `6` rapordan geçici istisna oluşturma, `7` hızlı tarama sihirbazı, `8` yeniden kullanılabilir proje profili kaydetmedir.
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
@@ -36,6 +36,8 @@ Windows'ta depo klasöründe şu komutları çalıştırarak ScopeGuard'u kullan
 ```powershell
 py -3 -m pip install --user .
 py -3 -m scopeguard
+
+# `py` başlatıcısı yoksa `py -3` yerine `python` yaz
 ```
 
 Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı Python kurulumuna yükler. Diğer Python araçlarının bağımlılıklarıyla çakışma olasılığı nedeniyle `ScopeGuard.bat` ile otomatik kurulum önerilir.

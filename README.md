@@ -314,7 +314,9 @@ No license has been selected yet. Until one is added, the source is not granted 
 
 `scopeguard quick-scan --path . --language en` runs the standard offline checks for secrets, Python, configuration, Docker, Kubernetes, and Terraform. It writes JSON, Markdown, SARIF, and HTML reports to the current directory. Add `--suppressions scopeguard-ignore.yaml` for reviewed exceptions or `--fail-on high` to set a CI threshold.
 
-API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. The interactive scenario wizard currently creates GET scenarios. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
+The path defaults to the current directory, so `scopeguard quick-scan` is enough to start. Choose a preset with `--profile standard|secrets|application|containers|infrastructure`; for example, `scopeguard quick-scan --profile containers --language en`. The startup menu's **7. Guided quick scan** asks for the project folder, profile, report language, and JSON report name, then creates the other report formats automatically.
+
+API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. In `scopeguard init`, select **Custom GET status check** to choose any listed GET, HEAD, or OPTIONS operation. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
 
 
 ## Create suppressions from a report

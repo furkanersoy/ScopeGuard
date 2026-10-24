@@ -2,6 +2,8 @@
 
 [English](README.md) | [Turkish version](README.tr.md)
 
+[Changelog](CHANGELOG.md) | [Turkish release notes](CHANGELOG.tr.md)
+
 **Status: beta.** ScopeGuard is a local-first security checking tool. It checks API authorization behavior and selected risks in source code, configuration, Dockerfiles, Kubernetes manifests, and Terraform files. It includes an offline request planner and coverage matrix, a read-only API scenario runner, offline source and Terraform checks, optional OSV dependency lookups, reasoned expiring suppressions, bilingual findings, and local JSON, Markdown, SARIF, and HTML reports with comparison support.
 
 ## Current milestone

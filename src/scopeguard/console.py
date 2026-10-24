@@ -443,7 +443,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     output.write("\nCompare saved reports / Kaydedilmiş raporları karşılaştır\n")
     output.write("Compares two local JSON reports and lists new, resolved, and unchanged findings.\n")
     output.write("İki yerel JSON raporunu karşılaştırıp yeni, giderilmiş ve değişmeyen bulguları listeler.\n")
-    reports: list[Path] = []
+    reports: list[tuple[str, Path]] = []
     for candidate in Path.cwd().glob("*.json"):
         try:
             if candidate.is_symlink() or candidate.stat().st_size > 25_000_000:
@@ -452,18 +452,12 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if isinstance(data, dict) and data.get("tool") == "ScopeGuard" and isinstance(data.get("findings"), list):
-            reports.append(candidate)
-    reports.sort(
-        key=lambda item: (
-            str(json.loads(item.read_text(encoding="utf-8")).get("generated_at", "")),
-            item.name.lower(),
-        ),
-        reverse=True,
-    )
+            reports.append((str(data.get("generated_at", "")), candidate))
+    reports.sort(key=lambda item: (item[0], item[1].name.lower()), reverse=True)
     reports = reports[:20]
     if reports:
         output.write("ScopeGuard reports in the current folder / Geçerli klasördeki ScopeGuard raporları:\n")
-        for index, path in enumerate(reports, 1):
+        for index, (_, path) in enumerate(reports, 1):
             output.write(f"  {index}. {path.name}\n")
         output.write("Choose a number or enter a report path / Numara seç veya rapor yolu gir.\n")
     else:
@@ -478,7 +472,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             if reports and value.isdigit():
                 index = int(value)
                 if 1 <= index <= len(reports):
-                    return reports[index - 1]
+                    return reports[index - 1][1]
                 output.write("Choose a listed report number / Listelenen rapor numaralarından birini seç.\n")
                 continue
             candidate = Path(value).expanduser()

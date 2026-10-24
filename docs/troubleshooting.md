@@ -1,5 +1,9 @@
 # Troubleshooting ScopeGuard
 
+## Check the installation first
+
+Run `scopeguard doctor` for an offline check of Python, PyYAML, and the packaged API demo files. It does not scan your project or make network requests.
+
 ## The `scopeguard` command is not found
 
 - If you are using the downloaded repository on Windows, run `ScopeGuard.bat` from the repository folder. You can pass commands to it, for example `.\ScopeGuard.bat quick-scan`.

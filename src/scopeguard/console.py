@@ -1,4 +1,4 @@
-"""Small dependency-free terminal UI for ScopeGuard."""
+﻿"""Small dependency-free terminal UI for ScopeGuard."""
 
 from __future__ import annotations
 
@@ -96,6 +96,9 @@ def _show_help(output: TextIO) -> None:
         "      TR: Standart Ã§evrimdÄ±ÅŸÄ± kontrolleri Ã§alÄ±ÅŸtÄ±rÄ±p yerel raporlar oluÅŸturur.\n"
         "      EN: inspect/dependencies accept --fail-on any|critical|high|medium|low|none for CI.\n"
         "      TR: inspect/dependencies komutlarÄ± CI iÃ§in --fail-on Ã¶nem eÅŸiÄŸini destekler.\n"
+        "  ignore --report <scan.json> [--output scopeguard-ignore.yaml]\n"
+        "      EN: Select a finding and create or update a reasoned, expiring suppression.\n"
+        "      TR: Bulgu seçip gerekçeli ve süreli bir istisna oluşturur veya günceller.\n"
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"
@@ -270,6 +273,20 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     return True
 
 
+def _ignore_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    output.write("\nCreate suppression / Geçici istisna oluştur\n")
+    output.write("Choose a local JSON scan report. ScopeGuard lists active findings, then asks for a reason and expiry date.\n")
+    output.write("Yerel JSON raporunu seç. ScopeGuard etkin bulguları listeler, ardından gerekçe ve bitiş tarihi ister.\n")
+    report = _answer(source, output, "Local JSON report / Yerel JSON raporu", "scopeguard-source.json")
+    if report is None:
+        return False
+    destination = _answer(source, output, "Suppression YAML / İstisna YAML dosyası", "scopeguard-ignore.yaml")
+    if destination is None:
+        return False
+    _dispatch(command_handler, ["ignore", "--report", report, "--output", destination], output)
+    return True
+
+
 def _command_console(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO, *, initial_line: str | None = None) -> bool:
     output.write("\nAdvanced command console / Gelişmiş komut konsolu. Type 'menu' to return.\n")
     while True:
@@ -323,6 +340,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             "  3. Secret Detection / Gizli Bilgi Taraması\n"
             "  4. Advanced command console / Gelişmiş komut konsolu\n"
             "  5. Dependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n"
+            "  6. Create suppression from a report / Rapordan geçici istisna oluştur\n"
             "  0. Exit / Çıkış\n"
         )
         choice = _answer(source, output, "Choose a section / Bölüm seçin", "0")
@@ -348,12 +366,16 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             if not _dependencies_menu(command_handler, source, output):
                 output.write("ScopeGuard closed.\n")
                 return
+        elif choice == "6":
+            if not _ignore_menu(command_handler, source, output):
+                output.write("ScopeGuard closed.\n")
+                return
         elif choice.lower() in {"help", "?"}:
             _show_help(output)
         elif choice.lower() == "version":
             output.write(f"ScopeGuard {__version__}\n")
         elif choice.strip().isdigit():
-            output.write("Choose 1, 2, 3, 4, 5, or 0 / 1, 2, 3, 4, 5 veya 0 seçin.\n")
+            output.write("Choose 1, 2, 3, 4, 5, 6, or 0 / 1, 2, 3, 4, 5, 6 veya 0 seçin.\n")
         else:
             if not _command_console(command_handler, source, output, initial_line=choice):
                 return

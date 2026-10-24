@@ -91,7 +91,7 @@ Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows)
 8. **Configure reusable project profile** — saves the project path, scan preset, report language/name, optional suppression file, and CI threshold in `.scopeguard-profile.yaml`. Reuse these settings from option 7 or with `scopeguard quick-scan --config .scopeguard-profile.yaml`.
 9. **Compare saved reports** — select numbered ScopeGuard JSON reports found in the current folder or enter paths. After choosing the earlier report, the menu lists only matching report types; manual paths are checked too. ScopeGuard writes JSON, Markdown, and HTML comparison files and can open the HTML report.
 
-The local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
+When a default report filename already exists, the menu picks the next available numbered name. If you enter an existing report name yourself, ScopeGuard asks before overwriting it.\n\nThe local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
 
 ### Run without a virtual environment
 

@@ -5,16 +5,18 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .config import load_validated_inputs
+from .config import SAFE_HTTP_METHODS, load_validated_inputs
 
 
 def build_coverage(spec_path: Path, config_path: Path) -> dict[str, Any]:
-    """Describe configured identity/GET-operation pairs; do not infer policy gaps."""
+    """Describe configured identity/safe-operation pairs; do not infer policy gaps."""
     spec, config = load_validated_inputs(spec_path, config_path)
     operations = [
-        f"GET {path}"
+        f"{method.upper()} {path}"
         for path, path_item in spec["paths"].items()
-        if isinstance(path_item, dict) and isinstance(path_item.get("get"), dict)
+        if isinstance(path_item, dict)
+        for method in sorted(SAFE_HTTP_METHODS)
+        if isinstance(path_item.get(method.lower()), dict)
     ]
     identities = list(config["identities"])
     cells: dict[tuple[str, str], list[dict[str, Any]]] = {
@@ -54,7 +56,7 @@ def build_coverage(spec_path: Path, config_path: Path) -> dict[str, Any]:
 def render_coverage_table(coverage: dict[str, Any]) -> str:
     """Render a compact Markdown matrix for terminals and issue descriptions."""
     identities = coverage["identities"]
-    header = ["GET operation", *identities]
+    header = ["Safe HTTP operation", *identities]
     rows = [header]
     for operation in coverage["operations"]:
         row = [operation]

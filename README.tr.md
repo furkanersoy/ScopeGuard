@@ -83,7 +83,15 @@ Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez ç
 
 Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
 
-PyPI yayın workflow'u hazır; henüz bir sürüm yayımlanmadı. Kurulum adımları için [PyPI yayın rehberine](docs/publishing.tr.md) bak. İlk sürüm yayımlandıktan sonra komut satırı aracını `pipx install scopeguard` veya `py -m pip install --user scopeguard` ile kurabilirsin.
+İlk PyPI sürümü henüz yayımlanmadı. O zamana kadar GitHub'daki güncel sürümü pipx ile yalıtılmış bir ortama kurabilirsin (Git de kurulu olmalı):
+
+```powershell
+pipx install git+https://github.com/furkanersoy/ScopeGuard.git
+```
+
+Bu komut sürümlenmiş bir PyPI paketi yerine beta geliştirme sürümü olan güncel `master` dalını kurar. Daha sonra güncellemek için `pipx install --force git+https://github.com/furkanersoy/ScopeGuard.git` çalıştır. Windows'ta pipx kurulu değilse `py -m pip install --user pipx`, ardından `py -m pipx ensurepath` çalıştırıp terminali yeniden aç. Diğer sistemlerde kurulum için [resmî pipx rehberine](https://pipx.pypa.io/latest/how-to/install-pipx.html) bak.
+
+İlk PyPI sürümü yayımlandıktan sonra kararlı kurulum komutu `pipx install scopeguard` veya `py -m pip install --user scopeguard` olacak. Ayrıntılar için [PyPI yayın rehberine](docs/publishing.tr.md) bak.
 
 ## Başlangıç menüsünü kullanma
 

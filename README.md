@@ -20,17 +20,23 @@
 - An optional GitHub Actions workflow scans source and uploads SARIF only after a manually dispatched run with the upload option enabled.
 - Remote targets require an exact HTTPS host/port allowlist in the config and an explicit `--allow-remote` flag at run time.
 
-## Quick start (Windows)
+## First scan (Windows)
 
-1. Install Python 3.11 or newer and download or clone the ScopeGuard repository.
-2. Double-click `ScopeGuard.bat`. On its first launch it creates a project-local `.venv` and installs ScopeGuard and its dependencies. Later launches reuse that setup.
-3. Choose a section from the startup menu: `1` opens API Security, `2` selects local checks, `3` scans for hard-coded secrets, `4` opens the advanced command console, `5` starts the opt-in dependency check, `6` creates a temporary suppression from a report, `7` guides a quick local scan, and `8` saves a reusable project profile.
-4. To start the demo API, open a second PowerShell window and run `& .\.venv\Scripts\python.exe -m scopeguard_demo` from the repository folder. It listens on `127.0.0.1:8000`.
-5. Run `exit` in the first window to leave the interactive console. To run a command directly from PowerShell, prefix it with `ScopeGuard.bat`, for example `.\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
+1. Install Python 3.11 or newer, then clone or download this repository.
+2. Double-click `ScopeGuard.bat`. On first launch it creates an isolated `.venv` and installs the dependencies; later launches reuse them.
+3. For the easiest first scan, choose **7. Guided quick scan** in the menu, enter the project folder, and select a profile. The JSON, Markdown, SARIF, and HTML reports are saved locally.
 
-To inspect local files directly, run `.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --output inspect.json --markdown-output inspect.md --language tr`. For API checks, follow the steps below. Only test real services when you have explicit authorization.
+You can also start a standard offline scan directly from PowerShell in the ScopeGuard folder:
 
-To install without creating a project `.venv`, run `py -3 -m pip install --user .` from the repository folder, then start ScopeGuard with `py -3 -m scopeguard`. This installs dependencies into your user Python account. The launcher is recommended when you want to keep ScopeGuard dependencies isolated from other Python tools.
+```powershell
+.\ScopeGuard.bat quick-scan
+```
+
+This scans the current folder without executing code or sending files over the network. Reports use the `scopeguard-scan` filename prefix.
+
+To open the interactive menu later, double-click `ScopeGuard.bat` or run `.\ScopeGuard.bat` with no arguments. For Linux/macOS, use `./scopeguard.sh quick-scan` or `./scopeguard.sh`.
+
+To try API checks, start the included demo API in a second terminal and follow the API steps below. Only test real services when you have explicit authorization.
 
 ## Security checks and commands
 
@@ -85,16 +91,6 @@ Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows)
 8. **Configure reusable project profile** — saves the project path, scan preset, report language/name, optional suppression file, and CI threshold in `.scopeguard-profile.yaml`. Reuse these settings from option 7 or with `scopeguard quick-scan --config .scopeguard-profile.yaml`.
 
 The local inspection checks are heuristic and need human review. Use quoted paths containing spaces. The `--version` and `--help` options are also available from the normal command line.
-
-### Quick start on Windows
-
-After cloning or downloading the project, double-click `ScopeGuard.bat`. On its first launch it creates a private `.venv` folder and installs ScopeGuard and its dependencies. Later launches reuse that setup. You do not need to activate the environment or type setup commands yourself. Python 3.11 or newer and an internet connection are needed for the first setup. You can pass normal ScopeGuard arguments to the launcher from PowerShell, too:
-
-```powershell
-.\ScopeGuard.bat inspect --path . --checks secrets python config docker kubernetes terraform --language tr
-```
-
-On Linux or macOS, make the launcher executable once with `chmod +x scopeguard.sh`, then run `./scopeguard.sh`. It performs the same first-run setup and opens the interactive console. Arguments can be passed after the script name.
 
 ### Run without a virtual environment
 
@@ -314,37 +310,3 @@ See [the architecture and roadmap](docs/architecture.md).
 No license has been selected yet. Until one is added, the source is not granted an open-source reuse license.
 
 
-
-## Quick scan and safe HTTP methods
-
-`scopeguard quick-scan --path . --language en` runs the standard offline checks for secrets, Python, configuration, Docker, Kubernetes, and Terraform. It writes JSON, Markdown, SARIF, and HTML reports to the current directory. Add `--suppressions scopeguard-ignore.yaml` for reviewed exceptions or `--fail-on high` to set a CI threshold.
-
-The path defaults to the current directory, so `scopeguard quick-scan` is enough to start. Choose a preset with `--profile standard|secrets|application|containers|infrastructure`; for example, `scopeguard quick-scan --profile containers --language en`. The startup menu's **7. Guided quick scan** asks for the project folder, profile, report language, and JSON report name, then creates the other report formats automatically.
-
-For repeated scans, create a reusable project profile once:
-
-```powershell
-scopeguard configure --output .scopeguard-profile.yaml
-scopeguard quick-scan --config .scopeguard-profile.yaml
-```
-
-The profile stores local scan settings only; it contains no credentials or API targets. The wizard saves paths relative to the profile folder when possible, which helps keep profiles portable and avoids putting local usernames in the file. Review any absolute paths before sharing or committing a profile. Relative project, report, and suppression paths are resolved from the profile file's folder. Use `scopeguard configure --force` to replace an existing profile. Command-line options such as `--path`, `--profile`, `--language`, and `--fail-on` override saved values.
-
-API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. In `scopeguard init`, select **Custom safe-method status check** to choose any listed GET, HEAD, or OPTIONS operation. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.
-
-
-## Create suppressions from a report
-
-After a local scan, create a temporary suppression from the numbered active findings in its JSON report:
-
-```powershell
-scopeguard ignore --report inspect.json
-```
-
-ScopeGuard lists the active findings and asks for the finding number, a reason, and an expiry date. The default expiry is 90 days. The command creates or updates `scopeguard-ignore.yaml`; review it, then pass it to the next local scan with `--suppressions scopeguard-ignore.yaml`. You can provide all values directly for scripted use:
-
-```powershell
-scopeguard ignore --report inspect.json --finding 2 --reason "Reviewed; fix is scheduled" --expires 2026-12-31 --output scopeguard-ignore.yaml
-```
-
-From the startup menu, choose **6. Create suppression from a report**. Suppressed findings remain visible in reports with their reason and expiry.

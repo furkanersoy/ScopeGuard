@@ -5,11 +5,9 @@ cd /d "%~dp0"
 rem Prefer the Python launcher, then fall back to python on PATH.
 set "SG_PYTHON=py -3"
 %SG_PYTHON% -c "import sys; raise SystemExit(sys.version_info < (3, 11))" >nul 2>&1
-if errorlevel 1 (
-    set "SG_PYTHON=python"
-    %SG_PYTHON% -c "import sys; raise SystemExit(sys.version_info < (3, 11))" >nul 2>&1
-    if errorlevel 1 goto python_required
-)
+if errorlevel 1 set "SG_PYTHON=python"
+%SG_PYTHON% -c "import sys; raise SystemExit(sys.version_info < (3, 11))" >nul 2>&1
+if errorlevel 1 goto python_required
 
 if not exist ".venv\Scripts\python.exe" (
     echo Setting up ScopeGuard on first launch...

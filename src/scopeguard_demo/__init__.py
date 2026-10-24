@@ -1,3 +1,3 @@
 """Synthetic local API used to develop and demonstrate ScopeGuard."""
 
-__version__ = "0.1.0"
+from scopeguard import __version__ as __version__

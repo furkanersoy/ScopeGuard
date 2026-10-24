@@ -506,6 +506,8 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
         args.append("--open-report")
     _dispatch(command_handler, args, output)
     return True
+
+
 def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream: TextIO | None = None, output_stream: TextIO | None = None) -> None:
     """Show the security-section menu, then dispatch to the selected local workflow."""
     source = input_stream or sys.stdin

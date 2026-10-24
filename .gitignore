@@ -8,3 +8,18 @@ build/
 .pytest_cache/
 report.json
 .env
+
+# Local ScopeGuard reports and machine-specific project profile
+/report.md
+/report.sarif
+/report.html
+/scopeguard-source.*
+/scopeguard-secrets.*
+/scopeguard-dependencies.*
+/scopeguard-scan*.*
+/scopeguard-diff.*
+/local-scan.*
+/inspect.*
+/dependencies.*
+/diff.*
+/.scopeguard-profile.yaml

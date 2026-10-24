@@ -2,7 +2,7 @@
 
 ## Check the installation first
 
-Run `scopeguard doctor` for an offline check of Python, PyYAML, and the packaged API demo files. It does not scan your project or make network requests.
+Once ScopeGuard starts, run `scopeguard doctor` (or `ScopeGuard.bat doctor` in a Windows source checkout) to check Python, PyYAML, and the packaged API demo files offline. It does not scan your project or make network requests. If the command is not found, follow the next section first.
 
 ## The `scopeguard` command is not found
 

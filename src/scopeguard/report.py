@@ -127,6 +127,14 @@ def build_findings(results: list[dict[str, Any]], language: str = "en") -> list[
             "check_id": str(result.get("id", "")), "identity": identity,
             "operation": operation, "evidence": "; ".join(evidence),
         })
+        metadata = {
+            "scopeguard.bola": ("CWE-639", "API1:2023", "medium"),
+            "scopeguard.bfla": ("CWE-862", "API5:2023", "medium"),
+            "scopeguard.missing-authentication": ("CWE-306", "API2:2023", "medium"),
+            "scopeguard.authorization-check-failed": ("CWE-863", "API5:2023", "medium"),
+        }
+        cwe, owasp_api, confidence = metadata[finding["rule_id"]]
+        finding.update({"cwe": cwe, "owasp_api_top_10": owasp_api, "confidence": confidence})
         findings.append(finding)
     return findings
 
@@ -163,6 +171,9 @@ def render_sarif_report(report: dict[str, Any]) -> str:
                 },
                 "properties": {
                     "severity": finding["severity"],
+                    "confidence": finding["confidence"],
+                    "cwe": finding["cwe"],
+                    "owaspApiTop10": finding["owasp_api_top_10"],
                     "checkId": finding["check_id"],
                     "identity": finding["identity"],
                     "operation": finding["operation"],
@@ -232,6 +243,8 @@ def render_markdown_report(report: dict[str, Any]) -> str:
             lines.extend([
                 f"### {index}. {finding['title']}", "",
                 f"- {text['severity']}: {finding['severity']}",
+                f"- Confidence: {finding['confidence']}",
+                f"- CWE: {finding['cwe']} · OWASP API Top 10: {finding['owasp_api_top_10']}",
                 f"- {text['check']}: {finding['check_id']}",
                 f"- {text['evidence']}: {_cell(finding['evidence'])}", "",
                 finding["description"], "",
@@ -266,12 +279,12 @@ def render_html_report(report: dict[str, Any]) -> str:
     finding_rows = []
     for finding in report.get("findings", []):
         cells = (
-            finding["severity"], finding["title"], finding["check_id"], finding["evidence"],
+            finding["severity"], finding["confidence"], finding["cwe"], finding["owasp_api_top_10"], finding["title"], finding["check_id"], finding["evidence"],
             finding["description"], finding["impact"], finding["remediation"],
         )
         finding_rows.append("<tr>" + "".join(f"<td>{html.escape(str(value))}</td>" for value in cells) + "</tr>")
     checks_body = "\n".join(check_rows) or '<tr><td colspan="7">—</td></tr>'
-    findings_body = "\n".join(finding_rows) or f'<tr><td colspan="7">{html.escape(text["findings"])}: 0</td></tr>'
+    findings_body = "\n".join(finding_rows) or f'<tr><td colspan="10">{html.escape(text["findings"])}: 0</td></tr>'
     labels = {
         "title": text["report_title"], "generated": text["generated"], "version": text["version"],
         "openapi": text["openapi"], "scenario": text["scenario"], "summary": text["summary"],
@@ -304,7 +317,7 @@ th{{position:sticky;top:0;background:#263342}}td{{overflow-wrap:anywhere}}.note{
 <th>{labels['status']}</th><th>{labels['check']}</th><th>{labels['identity']}</th><th>{labels['operation']}</th>
 <th>{labels['expected']}</th><th>{labels['actual']}</th><th>{labels['assertions']}</th></tr></thead><tbody>{checks_body}</tbody></table></div>
 <h2>{labels['findings']}</h2><div class="wrap"><table><thead><tr>
-<th>{labels['severity']}</th><th>{labels['findings']}</th><th>{labels['check']}</th><th>{labels['evidence']}</th>
+<th>{labels['severity']}</th><th>Confidence</th><th>CWE</th><th>OWASP API Top 10</th><th>{labels['findings']}</th><th>{labels['check']}</th><th>{labels['evidence']}</th>
 <th>{labels['description']}</th><th>{labels['impact']}</th><th>{labels['remediation']}</th></tr></thead><tbody>{findings_body}</tbody></table></div>
 <p class="note">{labels['redaction']}</p></body></html>
 """

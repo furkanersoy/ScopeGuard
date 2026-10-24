@@ -12,6 +12,9 @@
 - English and Turkish findings, help, README, and reporting options.
 - An offline `scopeguard doctor` command to check the Python runtime, PyYAML, and bundled demo inputs.
 - A GitHub Release workflow for validated package builds and PyPI Trusted Publishing.
+- Cross-platform launchers preserve the caller's working directory so scans and local reports use the selected project folder.
+- A pipx installation route from GitHub while the first PyPI release is pending, clearly marked as a beta development version.
+- Bilingual GitHub bug-report and feature-request forms with privacy reminders.
 
 ### Scope and limitations
 

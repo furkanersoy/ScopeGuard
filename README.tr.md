@@ -2,6 +2,8 @@
 
 [English version](README.md) | Türkçe
 
+[English changelog](CHANGELOG.md) | [Türkçe sürüm notları](CHANGELOG.tr.md)
+
 **Durum: beta.** ScopeGuard, API yetkilendirme davranışlarını; kaynak kodu, yapılandırma, Dockerfile, Kubernetes ve Terraform dosyalarındaki seçili risk kalıplarını denetleyen, önce yerelde çalışan bir güvenlik aracıdır. Çevrimdışı istek planı ve kapsam matrisi, salt okunur API senaryo çalıştırıcısı, yerel kaynak ve Terraform kontrolleri, isteğe bağlı OSV bağımlılık sorgusu, gerekçeli ve süreli istisnalar, Türkçe/İngilizce bulgular ve yerel JSON, Markdown, SARIF ve HTML raporları sunar.
 
 ## Güncel özellikler

@@ -308,6 +308,4 @@ See [the architecture and roadmap](docs/architecture.md).
 
 ## License
 
-No license has been selected yet. Until one is added, the source is not granted an open-source reuse license.
-
-
+This project is licensed under the MIT License. See [LICENSE](LICENSE).

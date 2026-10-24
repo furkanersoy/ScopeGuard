@@ -298,6 +298,4 @@ Mimari ve yol haritası için [docs/architecture.md](docs/architecture.md) dosya
 
 ## Lisans
 
-Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yeniden kullanım izni vermez.
-
-
+Bu proje MIT Lisansı ile lisanslanmıştır. Ayrıntılar için [LICENSE](LICENSE) dosyasına bakın.

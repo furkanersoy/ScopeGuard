@@ -470,6 +470,11 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     def report_prompt(
         label: str, expected_kind: str | None = None, excluded_path: Path | None = None
     ) -> tuple[Path, str] | None:
+        if expected_kind is not None:
+            output.write(
+                f"Only {kind_labels[expected_kind]} reports match the earlier report / "
+                f"Yalnızca önceki raporla aynı türdeki raporlar seçilebilir ({kind_labels[expected_kind]}).\n"
+            )
         available = [
             item for item in reports
             if (expected_kind is None or item[2] == expected_kind)

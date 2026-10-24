@@ -33,7 +33,7 @@ PowerShell'den doğrudan standart çevrimdışı tarama başlatmak için ScopeGu
 .\ScopeGuard.bat quick-scan
 ```
 
-Bu komut geçerli klasörü tarar; kod çalıştırmaz ve dosyaları ağa göndermez. Rapor dosyalarının adı `scopeguard-scan` önekiyle başlar. Bu klasörde `.scopeguard-profile.yaml` varsa otomatik bulunur; başka bir profil için `--config <yol>` kullan. Tarama önem derecelerinin özetini gösterir; yerel HTML raporunu tarayıcıda açmak için `--open-report` ekle.
+Başlatıcı, komutu çalıştırdığın klasörü korur; böylece geçerli proje klasörünü kod çalıştırmadan ve dosyaları ağa göndermeden tarar. Rapor dosyalarının adı `scopeguard-scan` önekiyle başlar. ScopeGuard'ı başka bir klasörden başlatmak için PowerShell'i proje klasöründe açıp başlatıcının tam yolunu çalıştır; örneğin `& "C:\Tools\ScopeGuard\ScopeGuard.bat" quick-scan`. Raporlar o proje klasörüne yazılır. Bu klasörde `.scopeguard-profile.yaml` varsa otomatik bulunur; başka bir profil için `--config <yol>` kullan. Tarama önem derecelerinin özetini gösterir; yerel HTML raporunu tarayıcıda açmak için `--open-report` ekle.
 
 Menüyü daha sonra açmak için `ScopeGuard.bat` dosyasına çift tıkla veya `.\ScopeGuard.bat` komutunu argümansız çalıştır. Linux/macOS'ta `./scopeguard.sh quick-scan` ya da `./scopeguard.sh` kullan. Başlatıcılar bağımlılıkları yalnızca `pyproject.toml` değiştiğinde yeniden kurar; klonlanan klasördeki kod güncellemeleri doğrudan kullanılır.
 

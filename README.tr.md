@@ -303,7 +303,9 @@ Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yen
 
 `scopeguard quick-scan --path . --language tr` sır, Python, yapılandırma, Docker, Kubernetes ve Terraform için standart çevrimdışı kontrolleri çalıştırır. JSON, Markdown, SARIF ve HTML raporlarını geçerli klasöre kaydeder. İncelenmiş istisnalar için `--suppressions scopeguard-ignore.yaml`, CI önem eşiği için `--fail-on high` ekleyebilirsin.
 
-API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. Etkileşimli senaryo sihirbazı şimdilik GET senaryoları oluşturur. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
+Yol varsayılan olarak geçerli klasördür; taramayı başlatmak için `scopeguard quick-scan` yeterlidir. `--profile standard|secrets|application|containers|infrastructure` ile hazır profillerden birini seç. Örneğin `scopeguard quick-scan --profile containers --language tr` yalnızca Docker ve Kubernetes kontrollerini çalıştırır. Başlangıç menüsündeki **7. Hızlı tarama sihirbazı** proje klasörünü, profili, rapor dilini ve JSON rapor adını sorar; diğer rapor biçimlerini otomatik oluşturur.
+
+API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. `scopeguard init` içinde **Özel GET durum kodu kontrolü** profilini seçerek OpenAPI belgesinde tanımlı GET, HEAD veya OPTIONS işlemlerinden seçim yapabilirsin. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
 
 
 ## Rapor üzerinden istisna oluşturma

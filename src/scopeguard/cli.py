@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import webbrowser
 from pathlib import Path
 from typing import Sequence
 
@@ -50,6 +51,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--markdown-output", type=Path, help="Optional path for a redacted Markdown summary")
     run.add_argument("--sarif-output", type=Path, help="Optional local path for a SARIF 2.1.0 findings file; no upload is performed")
     run.add_argument("--html-output", type=Path, help="Optional local path for a self-contained HTML report")
+    run.add_argument("--open-report", action="store_true", help="Open the local HTML report in your default browser after writing it")
     run.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     run.add_argument("--allow-remote", action="store_true", help="Allow the HTTPS target only when its exact host and port are allowlisted in the config")
 
@@ -65,6 +67,7 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
     inspect.add_argument("--sarif-output", type=Path, help="Optional local SARIF 2.1.0 report path; no upload is performed")
     inspect.add_argument("--html-output", type=Path, help="Optional local self-contained HTML report path")
+    inspect.add_argument("--open-report", action="store_true", help="Open the local HTML report in your default browser after writing it")
     inspect.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     inspect.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
@@ -76,6 +79,7 @@ def _parser() -> argparse.ArgumentParser:
     quick.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
     quick.add_argument("--sarif-output", type=Path, help="Optional local SARIF report path")
     quick.add_argument("--html-output", type=Path, help="Optional local HTML report path")
+    quick.add_argument("--open-report", action="store_true", help="Open the local HTML report in your default browser after writing it")
     quick.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     quick.add_argument("--language", choices=("tr", "en"), help="Report language; defaults to saved profile or English")
     quick.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), help="CI severity gate; defaults to saved profile or any")
@@ -89,6 +93,7 @@ def _parser() -> argparse.ArgumentParser:
     dependencies.add_argument("--markdown-output", type=Path, help="Optional local Markdown report path")
     dependencies.add_argument("--sarif-output", type=Path, help="Optional local SARIF 2.1.0 report path")
     dependencies.add_argument("--html-output", type=Path, help="Optional local HTML report path")
+    dependencies.add_argument("--open-report", action="store_true", help="Open the local HTML report in your default browser after writing it")
     dependencies.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     dependencies.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     dependencies.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
@@ -153,6 +158,41 @@ def _profile_report_path(prefix: Path, extension: str) -> Path:
     if prefix.suffix.lower() in {".json", ".md", ".sarif", ".html"}:
         prefix = prefix.with_suffix("")
     return Path(f"{prefix}{extension}")
+
+
+def _print_findings_summary(findings: list[dict], language: str) -> None:
+    counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "unknown": 0}
+    for finding in findings:
+        severity = str(finding.get("severity", "unknown")).strip().lower()
+        if severity == "moderate":
+            severity = "medium"
+        if severity not in counts:
+            severity = "unknown"
+        counts[severity] += 1
+    labels = (
+        {"critical": "Kritik", "high": "Yüksek", "medium": "Orta", "low": "Düşük", "unknown": "Bilinmiyor"}
+        if language == "tr"
+        else {"critical": "Critical", "high": "High", "medium": "Medium", "low": "Low", "unknown": "Unknown"}
+    )
+    items = [f"{labels[level]} {count}" for level, count in counts.items() if count]
+    if items:
+        title = "Önem özeti" if language == "tr" else "Severity summary"
+        print(f"{title}: {', '.join(items)}.")
+    else:
+        print("Etkin bulgu yok." if language == "tr" else "No active findings.")
+
+
+def _open_html_report(path: Path) -> None:
+    try:
+        opened = webbrowser.open(path.resolve().as_uri())
+    except (OSError, webbrowser.Error):
+        opened = False
+    if opened:
+        print(f"HTML report opened in your browser: {path}")
+        print(f"HTML raporu tarayıcıda açıldı: {path}")
+    else:
+        print(f"Could not open the browser automatically. Open this local report: {path}")
+        print(f"Tarayıcı otomatik açılamadı. Bu yerel raporu aç: {path}")
 
 
 def _execute(args: argparse.Namespace) -> int:
@@ -220,6 +260,8 @@ def _execute(args: argparse.Namespace) -> int:
         return 0
 
     if args.command == "inspect":
+        if args.open_report and args.html_output is None:
+            args.html_output = _profile_report_path(args.output, ".html")
         outputs = [args.output]
         if args.markdown_output:
             outputs.append(args.markdown_output)
@@ -239,6 +281,7 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Inspection failed: {exc}", file=sys.stderr)
             return 2
         print(f"Scanned {report['scanned_files']} local file(s); active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
+        _print_findings_summary(report["findings"], args.language)
         _print_suppression_audit(report)
         print("No code was executed and no network requests were sent. Matched secret values were omitted.")
         print(f"JSON report written to {args.output}")
@@ -250,9 +293,13 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
         if args.html_output:
             print(f"HTML report written to {args.html_output}")
+        if args.open_report:
+            _open_html_report(args.html_output)
         return 1 if _findings_trigger_gate(report["findings"], args.fail_on) else 0
 
     if args.command == "dependencies":
+        if args.open_report and args.html_output is None:
+            args.html_output = _profile_report_path(args.output, ".html")
         outputs = [args.output]
         for candidate in (args.markdown_output, args.sarif_output, args.html_output):
             if candidate is not None:
@@ -269,6 +316,7 @@ def _execute(args: argparse.Namespace) -> int:
             return 2
         print(f"Queried {report['queries_sent']} pinned package version(s) in {report['scanned_files']} lockfile(s) against OSV.")
         print(f"Active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
+        _print_findings_summary(report["findings"], args.language)
         _print_suppression_audit(report)
         print("Package names and versions were sent to OSV over HTTPS; manifests and source files were not uploaded.")
         print(f"JSON report written to {args.output}")
@@ -280,6 +328,8 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
         if args.html_output:
             print(f"HTML report written to {args.html_output}")
+        if args.open_report:
+            _open_html_report(args.html_output)
         return 1 if _findings_trigger_gate(report["findings"], args.fail_on) else 0
 
     if args.command == "compare":
@@ -357,6 +407,9 @@ def _execute(args: argparse.Namespace) -> int:
         return 0
 
     if args.command == "run":
+        html_output = args.html_output
+        if args.open_report and html_output is None:
+            html_output = _profile_report_path(args.output, ".html")
         try:
             report = run_scenarios(
                 args.spec,
@@ -365,7 +418,7 @@ def _execute(args: argparse.Namespace) -> int:
                 allow_remote=args.allow_remote,
                 markdown_output_path=args.markdown_output,
                 sarif_output_path=args.sarif_output,
-                html_output_path=args.html_output,
+                html_output_path=html_output,
                 language=args.language,
             )
         except (ValidationError, OSError) as exc:
@@ -382,8 +435,10 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Markdown report written to {args.markdown_output}")
         if args.sarif_output:
             print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
-        if args.html_output:
-            print(f"HTML report written to {args.html_output}")
+        if html_output:
+            print(f"HTML report written to {html_output}")
+        if args.open_report:
+            _open_html_report(html_output)
         summary = report["summary"]
         if summary["ERROR"] or summary["SKIPPED"]:
             return 2

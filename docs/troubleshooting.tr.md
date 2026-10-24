@@ -2,7 +2,7 @@
 
 ## Önce kurulumu kontrol et
 
-Python, PyYAML ve paketlenmiş API demo dosyalarını çevrimdışı kontrol etmek için `scopeguard doctor` çalıştır. Projeni taramaz ve ağa bağlanmaz.
+ScopeGuard açılıyorsa Python, PyYAML ve paketlenmiş API demo dosyalarını çevrimdışı kontrol etmek için `scopeguard doctor` (Windows kaynak deposunda `ScopeGuard.bat doctor`) çalıştır. Projeni taramaz ve ağa bağlanmaz. Komut bulunamıyorsa önce sonraki bölümü uygula.
 
 ## `scopeguard` komutu bulunamıyor
 

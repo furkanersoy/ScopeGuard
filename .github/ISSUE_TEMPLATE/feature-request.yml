@@ -1,0 +1,32 @@
+name: Feature request / Özellik isteği
+description: Suggest a user-facing improvement / Kullanıcıya yönelik bir geliştirme önerin
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What task is difficult? / Hangi işi yapmak zor?
+      description: Describe the user task and what makes it difficult today. / Kullanıcı işini ve şu anda neden zor olduğunu açıklayın.
+    validations:
+      required: true
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired behavior / İstenen davranış
+      description: Describe what ScopeGuard should do from a user's perspective. / ScopeGuard'ın kullanıcı açısından ne yapmasını istediğinizi açıklayın.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and context / Alternatifler ve bağlam
+      description: Mention workarounds, constraints, or examples that would help evaluate the idea. / Fikri değerlendirmeye yardımcı olacak geçici çözümleri, kısıtları veya örnekleri yazın.
+    validations:
+      required: false
+  - type: checkboxes
+    id: duplicate-check
+    attributes:
+      label: Before submitting / Göndermeden önce
+      options:
+        - label: I searched existing issues for a similar request. / Benzer bir istek için mevcut kayıtları aradım.
+          required: true

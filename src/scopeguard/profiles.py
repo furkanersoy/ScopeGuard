@@ -34,6 +34,15 @@ def _path_text(value: str) -> str:
     return value
 
 
+def _profile_relative_path(value: Path, profile_root: Path) -> str:
+    resolved = value.expanduser().resolve()
+    try:
+        return os.path.relpath(resolved, profile_root.resolve())
+    except ValueError:
+        # Windows cannot express a relative path across different drives.
+        return str(resolved)
+
+
 def _prompt_choice(label: str, default: str, choices: set[str], hint: str) -> str:
     while True:
         value = _prompt(label, default).lower()
@@ -72,6 +81,8 @@ def run_profile_wizard(path: Path, *, force: bool = False) -> Path:
         raise ValidationError(f"profile already exists: {path} (use --force to replace it)")
     print("This profile stores local scan settings only. It does not contact APIs or save credentials.")
     print("Bu profil yalnızca yerel tarama ayarlarını saklar. API'ye bağlanmaz ve kimlik bilgisi kaydetmez.")
+    print("Paths are saved relative to the profile when possible; review absolute paths before sharing the file.")
+    print("Yollar mümkün olduğunda profile göreli kaydedilir; dosyayı paylaşmadan önce mutlak yolları gözden geçir.")
     profile_root = path.resolve().parent
     try:
         default_scan_path = os.path.relpath(Path.cwd().resolve(), profile_root)
@@ -112,16 +123,21 @@ def run_profile_wizard(path: Path, *, force: bool = False) -> Path:
         "Fail threshold any/critical/high/medium/low/none / Bulgu eşiği", "any", _FAIL_LEVELS,
         "Enter any, critical, high, medium, low, or none / any, critical, high, medium, low veya none yazın",
     )
+    stored_scan_path = _profile_relative_path(scan_target, profile_root)
+    prefix_path = Path(report_prefix).expanduser()
+    if not prefix_path.is_absolute():
+        prefix_path = profile_root / prefix_path
+    stored_report_prefix = _profile_relative_path(prefix_path, profile_root)
     data: dict[str, Any] = {
         "version": 1,
-        "path": scan_path,
+        "path": stored_scan_path,
         "profile": profile,
         "language": language,
-        "report_prefix": report_prefix,
+        "report_prefix": stored_report_prefix,
         "fail_on": fail_on,
     }
     if suppressions:
-        data["suppressions"] = suppressions
+        data["suppressions"] = _profile_relative_path(suppression_path, profile_root)
     _write_profile(path, data, force=force)
     print(f"Project scan profile written to {path}")
     print(f"Run it with: scopeguard quick-scan --config \"{path}\"")

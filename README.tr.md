@@ -132,6 +132,10 @@ Bu çevrimiçi komut yalnızca `--allow-network` açıkça verildiğinde OSV'ye 
 
 ```powershell
 scopeguard dependencies --path . --allow-network --output dependencies.json --markdown-output dependencies.md --sarif-output dependencies.sarif --html-output dependencies.html --language tr
+
+### CI önem eşikleri
+
+`inspect` ve `dependencies` komutları `--fail-on any|critical|high|medium|low|none` seçeneğini destekler. Varsayılan `any`, etkin bulgu varsa komutu mevcut davranışta olduğu gibi `1` koduyla bitirir. Bir eşik, o önem düzeyindeki veya daha yüksek önem derecesindeki etkin bulgular bulunduğunda başarısız olur; bastırılmış bulgular kapıyı başarısız kılmaz. Örneğin `scopeguard inspect --path src --checks secrets python --fail-on high` derlemeyi yüksek veya kritik kaynak kod bulgularına göre durdurur. Yalnızca yeni bulguları engellemek için önceki JSON raporunu saklayıp `scopeguard compare --previous baseline.json --current current.json` çalıştır; yeni bulgu varsa komut `1` döndürür.
 ```
 
 ## HTML raporları ve rapor karşılaştırma
@@ -293,3 +297,10 @@ Mimari ve yol haritası için [docs/architecture.md](docs/architecture.md) dosya
 
 Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yeniden kullanım izni vermez.
 
+
+
+## Hızlı tarama ve güvenli HTTP yöntemleri
+
+`scopeguard quick-scan --path . --language tr` sır, Python, yapılandırma, Docker, Kubernetes ve Terraform için standart çevrimdışı kontrolleri çalıştırır. JSON, Markdown, SARIF ve HTML raporlarını geçerli klasöre kaydeder. İncelenmiş istisnalar için `--suppressions scopeguard-ignore.yaml`, CI önem eşiği için `--fail-on high` ekleyebilirsin.
+
+API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. Etkileşimli senaryo sihirbazı şimdilik GET senaryoları oluşturur. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.

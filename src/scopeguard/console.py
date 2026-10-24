@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import TextIO
 
 from . import __version__
+from .config import ValidationError
+from .report_compare import report_kind
 
 _COLORS = {"cyan": "36", "green": "32", "yellow": "33", "red": "31", "muted": "90"}
 
@@ -443,7 +445,7 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     output.write("\nCompare saved reports / Kaydedilmiş raporları karşılaştır\n")
     output.write("Compares two local JSON reports and lists new, resolved, and unchanged findings.\n")
     output.write("İki yerel JSON raporunu karşılaştırıp yeni, giderilmiş ve değişmeyen bulguları listeler.\n")
-    reports: list[tuple[str, Path]] = []
+    reports: list[tuple[str, Path, str]] = []
     for candidate in Path.cwd().glob("*.json"):
         try:
             if candidate.is_symlink() or candidate.stat().st_size > 25_000_000:
@@ -452,13 +454,22 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if isinstance(data, dict) and data.get("tool") == "ScopeGuard" and isinstance(data.get("findings"), list):
-            reports.append((str(data.get("generated_at", "")), candidate))
+            try:
+                kind = report_kind(data)
+            except ValidationError:
+                continue
+            reports.append((str(data.get("generated_at", "")), candidate, kind))
     reports.sort(key=lambda item: (item[0], item[1].name.lower()), reverse=True)
     reports = reports[:20]
     if reports:
         output.write("ScopeGuard reports in the current folder / Geçerli klasördeki ScopeGuard raporları:\n")
-        for index, (_, path) in enumerate(reports, 1):
-            output.write(f"  {index}. {path.name}\n")
+        kind_labels = {
+            "api": "API / API",
+            "local": "Local source / Yerel kaynak",
+            "dependencies": "Dependencies / Bağımlılıklar",
+        }
+        for index, (_, path, kind) in enumerate(reports, 1):
+            output.write(f"  {index}. {path.name} ({kind_labels[kind]})\n")
         output.write("Choose a number or enter a report path / Numara seç veya rapor yolu gir.\n")
     else:
         output.write("No ScopeGuard JSON reports found in the current folder; enter a report path.\n")

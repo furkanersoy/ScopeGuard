@@ -19,9 +19,28 @@ def _load(path: Path) -> dict[str, Any]:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError, UnicodeError) as exc:
         raise ValidationError(f"cannot read report {path}: {exc}") from exc
-    if not isinstance(data, dict) or not isinstance(data.get("findings"), list):
+    if not isinstance(data, dict) or data.get("tool") != "ScopeGuard" or not isinstance(data.get("findings"), list):
         raise ValidationError(f"unsupported ScopeGuard report format: {path}")
     return data
+
+
+def report_kind(report: dict[str, Any]) -> str:
+    """Return the comparable finding category for a supported report."""
+    mode = report.get("mode")
+    if mode == "offline-local-inspection":
+        return "local"
+    if mode == "online-dependency-audit":
+        return "dependencies"
+    if (
+        mode is None
+        and isinstance(report.get("spec_file"), str)
+        and isinstance(report.get("scenario_file"), str)
+        and isinstance(report.get("results"), list)
+    ):
+        return "api"
+    raise ValidationError(
+        "unsupported ScopeGuard report type; expected an API, local inspection, or dependency report"
+    )
 
 
 def _key(finding: dict[str, Any]) -> str:
@@ -36,6 +55,14 @@ def compare_reports(previous_path: Path, current_path: Path) -> dict[str, Any]:
     """Compare active findings; suppressions remain separate in each input report."""
     previous = _load(previous_path)
     current = _load(current_path)
+    previous_kind = report_kind(previous)
+    current_kind = report_kind(current)
+    if previous_kind != current_kind:
+        raise ValidationError(
+            "cannot compare different report types; choose two API reports, two local inspection reports, "
+            "or two dependency reports / farklı rapor türleri karşılaştırılamaz; iki API, iki yerel tarama "
+            "veya iki bağımlılık raporu seçin"
+        )
     old_items = [item for item in previous["findings"] if isinstance(item, dict)]
     new_items = [item for item in current["findings"] if isinstance(item, dict)]
     old_counts = Counter(_key(item) for item in old_items)
@@ -59,6 +86,7 @@ def compare_reports(previous_path: Path, current_path: Path) -> dict[str, Any]:
     return {
         "tool": "ScopeGuard",
         "mode": "report-comparison",
+        "report_kind": previous_kind,
         "previous_report": previous_path.name,
         "current_report": current_path.name,
         "summary": {

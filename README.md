@@ -34,7 +34,7 @@ You can also start a standard offline scan directly from PowerShell in the Scope
 .\ScopeGuard.bat quick-scan
 ```
 
-This scans the current folder without executing code or sending files over the network. Reports use the `scopeguard-scan` filename prefix. If `.scopeguard-profile.yaml` exists here, it is detected automatically; use `--config <path>` to choose another profile. The scan prints a severity summary; add `--open-report` to open its local HTML report in your browser.
+The launcher keeps the folder you started it from, so this scans your current project folder without executing code or sending files over the network. Reports use the `scopeguard-scan` filename prefix. To launch ScopeGuard from another directory, open PowerShell in the project folder and call its full path, for example `& "C:\Tools\ScopeGuard\ScopeGuard.bat" quick-scan`; reports are written to that project folder. If `.scopeguard-profile.yaml` exists here, it is detected automatically; use `--config <path>` to choose another profile. The scan prints a severity summary; add `--open-report` to open its local HTML report in your browser.
 
 To open the interactive menu later, double-click `ScopeGuard.bat` or run `.\ScopeGuard.bat` with no arguments. For Linux/macOS, use `./scopeguard.sh quick-scan` or `./scopeguard.sh`. The launchers reinstall dependencies only when `pyproject.toml` changes; code updates in the cloned folder are used directly.
 

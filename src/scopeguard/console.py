@@ -100,8 +100,8 @@ def _show_help(output: TextIO) -> None:
         "  quick-scan [--config .scopeguard-profile.yaml] [--path <file-or-folder>] [--profile standard|secrets|application|containers|infrastructure]\n"
         "      EN: Run all standard offline checks and save local reports.\n"
         "      TR: Seçilen çevrimdışı tarama profilini çalıştırıp yerel raporlar oluşturur.\n"
-        "      EN: Presets include standard, secrets, application, containers, and infrastructure. A saved config supplies path, language, output prefix, and threshold.\n"
-        "      TR: Hazır profiller standard, secrets, application, containers ve infrastructure seçenekleridir. Kayıtlı ayar dosyası yol, dil, rapor adı ve eşik sağlar.\n"
+        "      EN: Presets include standard, secrets, application, containers, and infrastructure. Automatically uses .scopeguard-profile.yaml in the current folder when present.\n"
+        "      TR: Hazır profiller standard, secrets, application, containers ve infrastructure seçenekleridir. Varsa geçerli klasördeki .scopeguard-profile.yaml otomatik kullanılır.\n"
         "      EN: inspect/dependencies accept --fail-on any|critical|high|medium|low|none for CI.\n"
         "      TR: inspect/dependencies komutları CI için --fail-on önem eşiğini destekler.\n"
         "  ignore --report <scan.json> [--output scopeguard-ignore.yaml]\n"
@@ -305,9 +305,24 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
     output.write("\nQuick local scan / Hızlı yerel tarama\n")
     output.write("Scans the selected project offline; it does not execute code or send files anywhere.\n")
     output.write("Seçilen projeyi çevrimdışı tarar; kod çalıştırmaz ve dosyaları hiçbir yere göndermez.\n")
-    saved_profile = _answer(source, output, "Saved project profile (optional; Enter for guided setup) / Kayıtlı proje profili (isteğe bağlı; sihirbaz için Enter)", "")
-    if saved_profile is None:
-        return False
+    default_profile = Path(".scopeguard-profile.yaml")
+    if default_profile.is_file():
+        saved_profile = _answer(
+            source,
+            output,
+            "Found .scopeguard-profile.yaml. Enter to use it, type n for guided setup, or enter another profile path / .scopeguard-profile.yaml bulundu. Kullanmak için Enter, sihirbaz için n veya başka profil yolu girin",
+            str(default_profile),
+        )
+        if saved_profile is None:
+            return False
+        if saved_profile.lower() in {"n", "no", "h", "hayır", "hayir"}:
+            saved_profile = ""
+        elif saved_profile.lower() in {"y", "yes", "e", "evet"}:
+            saved_profile = str(default_profile)
+    else:
+        saved_profile = _answer(source, output, "Saved project profile (optional; enter a path or press Enter for guided setup) / Kayıtlı proje profili (isteğe bağlı; yolu yaz veya sihirbaz için Enter)", "")
+        if saved_profile is None:
+            return False
     if saved_profile:
         _dispatch(command_handler, ["quick-scan", "--config", saved_profile], output)
         return True

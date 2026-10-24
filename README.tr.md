@@ -31,7 +31,7 @@ PowerShell'den doğrudan standart çevrimdışı tarama başlatmak için ScopeGu
 .\ScopeGuard.bat quick-scan
 ```
 
-Bu komut geçerli klasörü tarar; kod çalıştırmaz ve dosyaları ağa göndermez. Rapor dosyalarının adı `scopeguard-scan` önekiyle başlar.
+Bu komut geçerli klasörü tarar; kod çalıştırmaz ve dosyaları ağa göndermez. Rapor dosyalarının adı `scopeguard-scan` önekiyle başlar. Bu klasörde `.scopeguard-profile.yaml` varsa otomatik bulunur; başka bir profil için `--config <yol>` kullan.
 
 Menüyü daha sonra açmak için `ScopeGuard.bat` dosyasına çift tıkla veya `.\ScopeGuard.bat` komutunu argümansız çalıştır. Linux/macOS'ta `./scopeguard.sh quick-scan` ya da `./scopeguard.sh` kullan.
 

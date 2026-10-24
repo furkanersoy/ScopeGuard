@@ -69,7 +69,7 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
     inspect.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
     quick = subparsers.add_parser("quick-scan", help="Run a named offline local scan profile; defaults to the current directory.")
-    quick.add_argument("--config", type=Path, help="Reusable project scan profile created with `scopeguard configure`")
+    quick.add_argument("--config", type=Path, help="Scan profile; defaults to .scopeguard-profile.yaml in the current folder when present")
     quick.add_argument("--path", type=Path, help="File or directory to inspect; defaults to the saved profile or current directory")
     quick.add_argument("--profile", choices=tuple(PROFILE_CHECKS), help="Override the saved preset checks")
     quick.add_argument("--output", type=Path, help="Local JSON report path; other report formats use the same filename prefix")
@@ -169,9 +169,16 @@ def _execute(args: argparse.Namespace) -> int:
 
     if args.command == "quick-scan":
         profile_data = {}
-        if args.config:
+        profile_path = args.config
+        if profile_path is None:
+            candidate = Path(".scopeguard-profile.yaml")
+            if candidate.is_file():
+                profile_path = candidate
+                print(f"Found {candidate}; using the saved project scan profile.")
+                print(f"{candidate} bulundu; kayıtlı proje tarama profili kullanılıyor.")
+        if profile_path is not None:
             try:
-                profile_data = load_scan_profile(args.config)
+                profile_data = load_scan_profile(profile_path)
             except ValidationError as exc:
                 print(f"Cannot load scan profile: {exc}", file=sys.stderr)
                 return 2
@@ -197,7 +204,7 @@ def _execute(args: argparse.Namespace) -> int:
         args.suppressions = args.suppressions or profile_data.get("suppressions")
         args.language = args.language or profile_data.get("language", "en")
         args.fail_on = args.fail_on or profile_data.get("fail_on", "any")
-        args.profile_file = args.config
+        args.profile_file = profile_path
 
     if args.command in {"ignore", "suppress"}:
         try:

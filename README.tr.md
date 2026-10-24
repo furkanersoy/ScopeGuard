@@ -23,7 +23,7 @@
 
 1. Python 3.11 veya üzerini kur ve ScopeGuard deposunu indir veya klonla.
 2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta proje klasöründe `.venv` oluşturup ScopeGuard ve bağımlılıklarını kurar. Sonraki açılışlarda bu kurulumu tekrar kullanır.
-3. Başlangıç menüsünden bölüm seç: `1` API Güvenliği, `2` yerel kontroller, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolü, `6` rapordan geçici istisna oluşturma, `7` hızlı tarama sihirbazıdır.
+3. Başlangıç menüsünden bölüm seç: `1` API Güvenliği, `2` yerel kontroller, `3` sabit sır taraması, `4` gelişmiş komut konsolu, `5` isteğe bağlı bağımlılık kontrolü, `6` rapordan geçici istisna oluşturma, `7` hızlı tarama sihirbazı, `8` yeniden kullanılabilir proje profili kaydetmedir.
 4. Demo API'yi başlatmak için ikinci bir PowerShell penceresi açıp depo klasöründe `& .\.venv\Scripts\python.exe -m scopeguard_demo` komutunu çalıştır. API `127.0.0.1:8000` adresinde dinler.
 5. Etkileşimli konsoldan çıkmak için `exit` yaz. PowerShell'den doğrudan komut çalıştırmak için `ScopeGuard.bat` önekini kullan. Örneğin: ` .\ScopeGuard.bat validate --spec examples/api/openapi.yaml --config examples/scenarios/local-demo.yaml`.
 
@@ -45,6 +45,8 @@ Bu yöntem proje içinde `.venv` oluşturmaz ve bağımlılıkları kullanıcı 
 | Komut | Ne yapar? | Ağ kullanımı |
 | --- | --- | --- |
 | `init` | Anonim erişim, BOLA/IDOR, BFLA veya özel GET/HEAD/OPTIONS durum kodu kontrolleri için senaryo oluşturur. | Yok |
+| `configure` | Kimlik bilgisi veya API hedefi saklamadan yeniden kullanılabilir yerel tarama profili kaydeder. | Yok |
+| `quick-scan` | Kayıtlı profil veya hazır yerel tarama profillerini çalıştırır ve yerel rapor yazar. | Yok |
 | `inspect` | Sabit sır, Python, yapılandırma, Dockerfile, Kubernetes ve seçili Terraform risklerini yerel dosyalarda arar. | Yok; kod çalıştırılmaz |
 | `validate` | OpenAPI belgesini ve senaryo yapılandırmasını doğrular. | Yok |
 | `plan` | Senaryodaki istekleri ve kimlikleri önizler. | Yok; token okunmaz |
@@ -86,10 +88,11 @@ Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/ma
 1. **API Güvenliği** — API alt menüsünde başlangıç senaryosu oluşturma, OpenAPI ve senaryo dosyalarını doğrulama, istek planını önizleme, kimlik/uç nokta kapsamını görüntüleme ve kontrolleri çalıştırma seçenekleri vardır. Senaryo sihirbazı GET/HEAD/OPTIONS işlemlerini, örnek yol değerlerini, kimlikleri ve beklenen kodları sorar. API çalıştırması yerel JSON, Markdown, SARIF ve HTML raporları oluşturur. Dahil edilen demo üzerinde çalıştırmak için önce başka bir terminalde demo API'yi başlat.
 2. **Yerel Güvenlik Kontrollerini Seç** — virgülle ayırarak `secrets`, `python`, `config`, `docker`, `kubernetes` ve `terraform` kategorilerinden bir veya birkaçını seç. Varsayılan seçim `python,config,docker,kubernetes,terraform` olur; sır taraması ana menüde ayrıca kısayoldur. Tarama çevrimdışıdır; kod çalıştırılmaz, imaj oluşturulmaz ve Kubernetes kümesine bağlanılmaz. JSON, Markdown, SARIF ve HTML rapor yollarını ve isteğe bağlı istisna YAML dosyasını belirleyebilirsin.
 3. **Gizli Bilgi Taraması** — seçilen yerel dosya veya klasörde desteklenen sabit sır kalıplarını arar ve JSON, Markdown, SARIF ve HTML raporları kaydeder. Eşleşen gizli değerleri ekrana yazdırmaz.
-4. **Gelişmiş komut konsolu** — `help`, `version`, `init`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage` ve `run` komutlarını kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz.
+4. **Gelişmiş komut konsolu** — `help`, `version`, `init`, `configure`, `quick-scan`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage` ve `run` komutlarını kabul eder. Bölüm menüsüne dönmek için `menu`, ScopeGuard'dan çıkmak için `exit` yaz.
 5. **Bağımlılık Zafiyeti Taraması** — kilit dosyası veya klasör seçer; paket adı ve sürümlerini HTTPS ile OSV'ye göndermeden önce onay ister. JSON, Markdown, SARIF ve HTML raporları yerel kaydeder.
 6. **Rapordan geçici istisna oluştur** — yerel JSON raporundan bulgu seçip gerekçeli ve bitiş tarihli bir YAML istisnası oluşturur.
 7. **Hızlı tarama sihirbazı** — proje yolunu ve tarama profilini sorar; kod çalıştırmadan ve dosyaları ağa göndermeden JSON, Markdown, SARIF ve HTML raporları kaydeder.
+8. **Yeniden kullanılabilir proje profili oluştur** — proje yolunu, tarama profilini, rapor dilini/adını, isteğe bağlı istisna dosyasını ve CI eşiğini `.scopeguard-profile.yaml` dosyasına kaydeder. Ayarları 7. seçenekten veya `scopeguard quick-scan --config .scopeguard-profile.yaml` ile yeniden kullanabilirsin.
 
 Yerel tarama kontrolleri sezgiseldir; bulguları elle gözden geçir. Boşluk içeren yolları tırnak içine al. Komut satırında `--version` ve `--help` seçenekleri de kullanılabilir.
 
@@ -306,6 +309,15 @@ Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yen
 `scopeguard quick-scan --path . --language tr` sır, Python, yapılandırma, Docker, Kubernetes ve Terraform için standart çevrimdışı kontrolleri çalıştırır. JSON, Markdown, SARIF ve HTML raporlarını geçerli klasöre kaydeder. İncelenmiş istisnalar için `--suppressions scopeguard-ignore.yaml`, CI önem eşiği için `--fail-on high` ekleyebilirsin.
 
 Yol varsayılan olarak geçerli klasördür; taramayı başlatmak için `scopeguard quick-scan` yeterlidir. `--profile standard|secrets|application|containers|infrastructure` ile hazır profillerden birini seç. Örneğin `scopeguard quick-scan --profile containers --language tr` yalnızca Docker ve Kubernetes kontrollerini çalıştırır. Başlangıç menüsündeki **7. Hızlı tarama sihirbazı** proje klasörünü, profili, rapor dilini ve JSON rapor adını sorar; diğer rapor biçimlerini otomatik oluşturur.
+
+Tekrarlanan taramalar için proje profilini bir kez oluştur:
+
+```powershell
+scopeguard configure --output .scopeguard-profile.yaml
+scopeguard quick-scan --config .scopeguard-profile.yaml
+```
+
+Profil yalnızca yerel tarama ayarlarını saklar; kimlik bilgisi veya API hedefi içermez. Göreli proje, rapor ve istisna yolları profil dosyasının bulunduğu klasöre göre çözülür. Var olan profili değiştirmek için `scopeguard configure --force` kullan. Komut satırındaki `--path`, `--profile`, `--language` ve `--fail-on` seçenekleri kayıtlı değerleri geçersiz kılar.
 
 API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. `scopeguard init` içinde **Özel güvenli yöntem durum kodu kontrolü** profilini seçerek OpenAPI belgesinde tanımlı GET, HEAD veya OPTIONS işlemlerinden seçim yapabilirsin. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
 

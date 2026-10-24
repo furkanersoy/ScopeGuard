@@ -153,7 +153,7 @@ Without `--allow-network`, ScopeGuard does not make OSV requests. The command ha
 The `run`, `inspect`, and `dependencies` commands can write a self-contained HTML report with `--html-output report.html`. It can be opened locally and does not load remote scripts or styles. Compare earlier and current JSON reports (API findings are matched by check and identity; local and dependency findings by rule and location/package):
 
 ```powershell
-scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html
+scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html --open-report
 ```
 
 The comparison lists added, resolved, and unchanged findings. It exits with status `1` when active findings were added; reports that remove findings return `0`. It performs no network access.

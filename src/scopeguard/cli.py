@@ -25,7 +25,7 @@ from .profiles import PROFILE_CHECKS, load_scan_profile, run_profile_wizard
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="scopeguard",
-        description="Local-first API authorization checks with explicit scope controls.",
+        description="Local-first API authorization, offline source/infrastructure scanning, and opt-in dependency checks.",
         epilog="Run 'scopeguard' without arguments to open the interactive console.",
     )
     parser.add_argument("--version", action="version", version=f"ScopeGuard {__version__}")

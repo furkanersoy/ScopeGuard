@@ -28,7 +28,7 @@ fi
 if [ "$SG_PROJECT_HASH" != "$SG_INSTALLED_HASH" ]; then
     echo "Installing or updating ScopeGuard and its dependencies..."
     .venv/bin/python -m pip install --disable-pip-version-check -e "$(pwd)"
-    printf "%s\\n" "$SG_PROJECT_HASH" > .venv/.scopeguard-installed
+    printf "%s\n" "$SG_PROJECT_HASH" > .venv/.scopeguard-installed
 fi
 
 exec .venv/bin/scopeguard "$@"

@@ -2,19 +2,13 @@
 setlocal
 cd /d "%~dp0"
 
+rem Prefer the Python launcher, then fall back to python on PATH.
 set "SG_PYTHON=py -3"
-%SG_PYTHON% --version >nul 2>&1
-if errorlevel 1 (
-    echo ScopeGuard requires Python 3.11 or newer.
-    echo Install Python from https://www.python.org/downloads/ and try again.
-    pause
-    exit /b 2
-)
 %SG_PYTHON% -c "import sys; raise SystemExit(sys.version_info < (3, 11))" >nul 2>&1
 if errorlevel 1 (
-    echo ScopeGuard requires Python 3.11 or newer.
-    pause
-    exit /b 2
+    set "SG_PYTHON=python"
+    %SG_PYTHON% -c "import sys; raise SystemExit(sys.version_info < (3, 11))" >nul 2>&1
+    if errorlevel 1 goto python_required
 )
 
 if not exist ".venv\Scripts\python.exe" (
@@ -32,6 +26,12 @@ if not exist ".venv\.scopeguard-installed" (
 
 ".venv\Scripts\scopeguard.exe" %*
 exit /b %errorlevel%
+
+:python_required
+echo ScopeGuard requires Python 3.11 or newer, available as "py -3" or "python".
+echo Install Python from https://www.python.org/downloads/ and try again.
+pause
+exit /b 2
 
 :setup_failed
 echo ScopeGuard setup failed. Check your internet connection and Python installation, then run this file again.

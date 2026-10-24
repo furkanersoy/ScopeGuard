@@ -461,46 +461,79 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             reports.append((str(data.get("generated_at", "")), candidate, kind))
     reports.sort(key=lambda item: (item[0], item[1].name.lower()), reverse=True)
     reports = reports[:20]
-    if reports:
-        output.write("ScopeGuard reports in the current folder / Geçerli klasördeki ScopeGuard raporları:\n")
-        kind_labels = {
-            "api": "API / API",
-            "local": "Local source / Yerel kaynak",
-            "dependencies": "Dependencies / Bağımlılıklar",
-        }
-        for index, (_, path, kind) in enumerate(reports, 1):
-            output.write(f"  {index}. {path.name} ({kind_labels[kind]})\n")
-        output.write("Choose a number or enter a report path / Numara seç veya rapor yolu gir.\n")
-    else:
-        output.write("No ScopeGuard JSON reports found in the current folder; enter a report path.\n")
-        output.write("Geçerli klasörde ScopeGuard JSON raporu bulunamadı; rapor yolunu gir.\n")
+    kind_labels = {
+        "api": "API / API",
+        "local": "Local source / Yerel kaynak",
+        "dependencies": "Dependencies / Bağımlılıklar",
+    }
 
-    def report_prompt(label: str) -> Path | None:
+    def report_prompt(
+        label: str, expected_kind: str | None = None, excluded_path: Path | None = None
+    ) -> tuple[Path, str] | None:
+        available = [
+            item for item in reports
+            if (expected_kind is None or item[2] == expected_kind)
+            and (excluded_path is None or item[1].resolve() != excluded_path.resolve())
+        ]
+        if available:
+            output.write("Available reports / Kullanılabilir raporlar:\\n")
+            for index, (_, report_path, kind) in enumerate(available, 1):
+                output.write(f"  {index}. {report_path.name} ({kind_labels[kind]})\\n")
+        elif expected_kind:
+            output.write("No other report of this type was found; enter its path manually.\\n")
+            output.write("Bu türde başka rapor bulunamadı; dosya yolunu elle girin.\\n")
+        elif not reports:
+            output.write("No ScopeGuard JSON reports found in the current folder; enter a report path.\\n")
+            output.write("Geçerli klasörde ScopeGuard JSON raporu bulunamadı; rapor yolunu girin.\\n")
         while True:
             value = _answer(source, output, label, "")
             if value is None:
                 return None
-            if reports and value.isdigit():
+            if available and value.isdigit():
                 index = int(value)
-                if 1 <= index <= len(reports):
-                    return reports[index - 1][1]
-                output.write("Choose a listed report number / Listelenen rapor numaralarından birini seç.\n")
+                if 1 <= index <= len(available):
+                    _, report_path, kind = available[index - 1]
+                    return report_path, kind
+                output.write("Choose a listed report number / Listelenen rapor numaralarından birini seç.\\n")
                 continue
             candidate = Path(value).expanduser()
-            if candidate.is_file():
-                return candidate
-            output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\n")
+            if not candidate.is_file():
+                output.write(f"Report file not found / Rapor dosyası bulunamadı: {value}\\n")
+                continue
+            if excluded_path is not None and candidate.resolve() == excluded_path.resolve():
+                output.write("Choose a different report / Farklı bir rapor seçin.\\n")
+                continue
+            try:
+                if candidate.is_symlink() or candidate.stat().st_size > 25_000_000:
+                    raise ValidationError("report is a symlink or exceeds the 25 MB limit")
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+                if not isinstance(data, dict) or data.get("tool") != "ScopeGuard" or not isinstance(data.get("findings"), list):
+                    raise ValidationError("not a supported ScopeGuard report")
+                kind = report_kind(data)
+            except (OSError, UnicodeError, json.JSONDecodeError, ValidationError) as exc:
+                output.write(f"Not a supported ScopeGuard report / Desteklenen bir ScopeGuard raporu değil: {exc}\\n")
+                continue
+            if expected_kind is not None and kind != expected_kind:
+                expected_label = kind_labels[expected_kind]
+                output.write(
+                    f"Choose a report of the same type as the earlier report ({expected_label}) / "
+                    f"Önceki raporla aynı türde bir rapor seçin ({expected_label}).\\n"
+                )
+                continue
+            return candidate, kind
 
-    previous = report_prompt("Earlier report number or path / Önceki rapor numarası veya yolu")
-    if previous is None:
+    previous_selection = report_prompt("Earlier report number or path / Önceki rapor numarası veya yolu")
+    if previous_selection is None:
         return False
-    while True:
-        current = report_prompt("Current report number or path / Güncel rapor numarası veya yolu")
-        if current is None:
-            return False
-        if current.resolve() != previous.resolve():
-            break
-        output.write("Choose a different report for comparison / Karşılaştırma için farklı bir rapor seç.\n")
+    previous, previous_kind = previous_selection
+    current_selection = report_prompt(
+        "Current report number or path / Güncel rapor numarası veya yolu",
+        expected_kind=previous_kind,
+        excluded_path=previous,
+    )
+    if current_selection is None:
+        return False
+    current, _ = current_selection
     destination = _answer(source, output, "Comparison JSON report / Karşılaştırma JSON raporu", "scopeguard-diff.json")
     if destination is None:
         return False

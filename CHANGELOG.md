@@ -10,6 +10,7 @@
 - Optional dependency advisory lookups against OSV when the user explicitly enables network access.
 - Local JSON, Markdown, SARIF 2.1.0, and self-contained HTML reports; finding suppressions with a reason and expiry; and comparison of saved reports.
 - English and Turkish findings, help, README, and reporting options.
+- An offline `scopeguard doctor` command to check the Python runtime, PyYAML, and bundled demo inputs.
 - A GitHub Release workflow for validated package builds and PyPI Trusted Publishing.
 
 ### Scope and limitations

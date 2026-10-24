@@ -218,17 +218,12 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     if path is None:
         return False
     default_report = "scopeguard-secrets.json" if secrets_only else "scopeguard-source.json"
-    report = _answer(source, output, "JSON report path / JSON rapor yolu", default_report)
+    report = _answer(
+        source, output,
+        "JSON report path (other formats are created beside it) / JSON rapor yolu (diğer biçimler yanında oluşturulur)",
+        default_report,
+    )
     if report is None:
-        return False
-    markdown = _answer(source, output, "Markdown report path / Markdown rapor yolu", _report_sidecar(report, ".md"))
-    if markdown is None:
-        return False
-    sarif = _answer(source, output, "SARIF report path / SARIF rapor yolu", _report_sidecar(report, ".sarif"))
-    if sarif is None:
-        return False
-    html_report = _answer(source, output, "HTML report path / HTML rapor yolu", _report_sidecar(report, ".html"))
-    if html_report is None:
         return False
     suppressions = _answer(source, output, "Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter)", "")
     if suppressions is None:
@@ -251,7 +246,14 @@ def _inspect_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
             if checks and all(item in allowed for item in checks):
                 break
             output.write("Choose one or more listed checks / Listelenen kontrollerden bir veya birkaçını seçin.\n")
-    args = ["inspect", "--path", path, "--checks", *checks, "--output", report, "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report, "--language", language]
+    args = [
+        "inspect", "--path", path, "--checks", *checks,
+        "--output", report,
+        "--markdown-output", _report_sidecar(report, ".md"),
+        "--sarif-output", _report_sidecar(report, ".sarif"),
+        "--html-output", _report_sidecar(report, ".html"),
+        "--language", language,
+    ]
     if suppressions:
         args.extend(["--suppressions", suppressions])
     if open_report.lower() in {"y", "yes", "e", "evet"}:
@@ -273,17 +275,12 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     if consent.lower() not in {"y", "yes", "e", "evet"}:
         output.write("Online dependency check skipped / Çevrimiçi bağımlılık kontrolü atlandı.\n")
         return True
-    report = _answer(source, output, "JSON report path / JSON rapor yolu", "scopeguard-dependencies.json")
+    report = _answer(
+        source, output,
+        "JSON report path (other formats are created beside it) / JSON rapor yolu (diğer biçimler yanında oluşturulur)",
+        "scopeguard-dependencies.json",
+    )
     if report is None:
-        return False
-    markdown = _answer(source, output, "Markdown report path / Markdown rapor yolu", _report_sidecar(report, ".md"))
-    if markdown is None:
-        return False
-    sarif = _answer(source, output, "SARIF report path / SARIF rapor yolu", _report_sidecar(report, ".sarif"))
-    if sarif is None:
-        return False
-    html_report = _answer(source, output, "HTML report path / HTML rapor yolu", _report_sidecar(report, ".html"))
-    if html_report is None:
         return False
     suppressions = _answer(source, output, "Suppressions YAML (optional; Enter to skip) / İstisna YAML dosyası (isteğe bağlı; geçmek için Enter)", "")
     if suppressions is None:
@@ -294,9 +291,13 @@ def _dependencies_menu(command_handler: Callable[[Sequence[str]], int], source: 
     open_report = _answer(source, output, "Open the HTML report after the scan? [y/e=yes, n/h=no] / Tarama sonrası HTML raporu açılsın mı? [y/e=evet, n/h=hayır]", "y")
     if open_report is None:
         return False
-    args = ["dependencies", "--path", path, "--allow-network", "--output", report,
-            "--markdown-output", markdown, "--sarif-output", sarif, "--html-output", html_report,
-            "--language", language]
+    args = [
+        "dependencies", "--path", path, "--allow-network", "--output", report,
+        "--markdown-output", _report_sidecar(report, ".md"),
+        "--sarif-output", _report_sidecar(report, ".sarif"),
+        "--html-output", _report_sidecar(report, ".html"),
+        "--language", language,
+    ]
     if suppressions:
         args.extend(["--suppressions", suppressions])
     if open_report.lower() in {"y", "yes", "e", "evet"}:

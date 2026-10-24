@@ -93,11 +93,14 @@ def _show_help(output: TextIO) -> None:
         "  compare --previous <report.json> --current <report.json> [--output diff.json] [--markdown-output diff.md] [--html-output diff.html]\n"
         "      EN: Compare API, local, or dependency findings; exit 1 if findings were added.\n"
         "      TR: API, yerel tarama veya bağımlılık bulgularını karşılaştırır; yeni bulgu varsa 1 ile çıkar.\n"
-        "  quick-scan [--path <file-or-folder>] [--profile standard|secrets|application|containers|infrastructure] [--language tr|en]\n"
+        "  configure [--output .scopeguard-profile.yaml] [--force]\n"
+        "      EN: Save project scan settings once; no credentials or API target are stored.\n"
+        "      TR: Proje tarama ayarlarını bir kez kaydeder; kimlik bilgisi veya API hedefi saklamaz.\n"
+        "  quick-scan [--config .scopeguard-profile.yaml] [--path <file-or-folder>] [--profile standard|secrets|application|containers|infrastructure]\n"
         "      EN: Run all standard offline checks and save local reports.\n"
         "      TR: Seçilen çevrimdışı tarama profilini çalıştırıp yerel raporlar oluşturur.\n"
-        "      EN: Project-scoped profiles include standard, secrets, application, containers, and infrastructure.\n"
-        "      TR: Proje profilleri standard, secrets, application, containers ve infrastructure seçeneklerini içerir.\n"
+        "      EN: Presets include standard, secrets, application, containers, and infrastructure. A saved config supplies path, language, output prefix, and threshold.\n"
+        "      TR: Hazır profiller standard, secrets, application, containers ve infrastructure seçenekleridir. Kayıtlı ayar dosyası yol, dil, rapor adı ve eşik sağlar.\n"
         "      EN: inspect/dependencies accept --fail-on any|critical|high|medium|low|none for CI.\n"
         "      TR: inspect/dependencies komutları CI için --fail-on önem eşiğini destekler.\n"
         "  ignore --report <scan.json> [--output scopeguard-ignore.yaml]\n"
@@ -295,6 +298,12 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
     output.write("\nQuick local scan / Hızlı yerel tarama\n")
     output.write("Scans the selected project offline; it does not execute code or send files anywhere.\n")
     output.write("Seçilen projeyi çevrimdışı tarar; kod çalıştırmaz ve dosyaları hiçbir yere göndermez.\n")
+    saved_profile = _answer(source, output, "Saved project profile (optional; Enter for guided setup) / Kayıtlı proje profili (isteğe bağlı; sihirbaz için Enter)", "")
+    if saved_profile is None:
+        return False
+    if saved_profile:
+        _dispatch(command_handler, ["quick-scan", "--config", saved_profile], output)
+        return True
     path = _answer(source, output, "Project folder or file / Proje klasörü veya dosyası", ".")
     if path is None:
         return False
@@ -319,6 +328,17 @@ def _quick_scan_menu(command_handler: Callable[[Sequence[str]], int], source: Te
             "--sarif-output", _report_sidecar(report, ".sarif"),
             "--html-output", _report_sidecar(report, ".html")]
     _dispatch(command_handler, args, output)
+    return True
+
+
+def _configure_profile_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    output.write("\nConfigure a project scan profile / Proje tarama profili oluştur\n")
+    output.write("Save your choices once, then reuse them with the quick scan menu.\n")
+    output.write("Seçimlerini bir kez kaydet, sonra hızlı tarama menüsünde yeniden kullan.\n")
+    destination = _answer(source, output, "Profile YAML path / Profil YAML yolu", ".scopeguard-profile.yaml")
+    if destination is None:
+        return False
+    _dispatch(command_handler, ["configure", "--output", destination], output)
     return True
 
 
@@ -377,6 +397,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             "  5. Dependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n"
             "  6. Create suppression from a report / Rapordan geçici istisna oluştur\n"
             "  7. Guided quick scan / Hızlı tarama sihirbazı\n"
+            "  8. Configure reusable project profile / Yeniden kullanılabilir proje profili oluştur\n"
             "  0. Exit / Çıkış\n"
         )
         choice = _answer(source, output, "Choose a section / Bölüm seçin", "0")
@@ -410,12 +431,16 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
             if not _quick_scan_menu(command_handler, source, output):
                 output.write("ScopeGuard closed.\n")
                 return
+        elif choice == "8":
+            if not _configure_profile_menu(command_handler, source, output):
+                output.write("ScopeGuard closed.\n")
+                return
         elif choice.lower() in {"help", "?"}:
             _show_help(output)
         elif choice.lower() == "version":
             output.write(f"ScopeGuard {__version__}\n")
         elif choice.strip().isdigit():
-            output.write("Choose 1, 2, 3, 4, 5, 6, 7, or 0 / 1, 2, 3, 4, 5, 6, 7 veya 0 seçin.\n")
+            output.write("Choose 1, 2, 3, 4, 5, 6, 7, 8, or 0 / 1, 2, 3, 4, 5, 6, 7, 8 veya 0 seçin.\n")
         else:
             if not _command_console(command_handler, source, output, initial_line=choice):
                 return

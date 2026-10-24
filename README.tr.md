@@ -50,7 +50,7 @@ API kontrollerini denemek için dahil edilen demo API'yi ikinci bir terminalde b
 | `coverage` | Kimlik/uç nokta kontrollerini matriste gösterir; `--strict` zorunlu kapsamı uygular. | Yok; token okunmaz |
 | `run` | Tanımlı salt okunur GET, HEAD ve OPTIONS kontrollerini kapsam içindeki hedefte çalıştırır ve yerel rapor yazar. | Evet, yalnızca yapılandırılmış hedefe |
 | `dependencies` | Sabitlenmiş paket sürümlerini OSV ile karşılaştırır; `--allow-network` gerekir. | Evet; yalnızca paket adı, ekosistem ve sürümler |
-| `compare` | İki ScopeGuard JSON raporunu karşılaştırır. | Yok |
+| `compare` | Aynı türde iki raporu karşılaştırır: API, yerel tarama veya bağımlılık. | Yok |
 
 `inspect` sezgisel statik kontroller kullanır; kapsamlı bir güvenlik tarayıcısı değildir ve çalışan web servisini test etmez. API senaryoları yalnızca açıkça tanımlanmış güvenli GET, HEAD ve OPTIONS uç noktalarını ve beklenen sonuçları denetler; uç noktalara fuzzing uygulamaz ve uygulamanın yetkilendirme politikasını kendiliğinden çıkarmaz.
 
@@ -149,7 +149,7 @@ scopeguard dependencies --path . --allow-network --output dependencies.json --ma
 scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html --open-report
 ```
 
-Karşılaştırma yeni, giderilmiş ve aynı kalan bulguları listeler. Yeni etkin bulgu varsa çıkış kodu `1` olur; karşılaştırma ağ kullanmaz.
+Karşılaştırma yeni, giderilmiş ve aynı kalan bulguları listeler. İki rapor aynı türde olmalıdır (API, yerel tarama veya bağımlılık); yanıltıcı sonuçları önlemek için farklı türler reddedilir. Yeni etkin bulgu varsa çıkış kodu `1` olur; karşılaştırma ağ kullanmaz.
 
 ## GitHub Actions ve isteğe bağlı SARIF yükleme
 

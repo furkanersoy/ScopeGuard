@@ -51,7 +51,7 @@ To try API checks, start the included demo API in a second terminal and follow t
 | `coverage` | Shows configured identity/endpoint pairs; `--strict` enforces required coverage. | None; tokens are not read |
 | `run` | Sends configured read-only GET, HEAD, and OPTIONS checks to the scoped target and writes local reports. | Yes, to the configured target only |
 | `dependencies` | Checks pinned versions in supported lockfiles against OSV; requires `--allow-network`. | Yes; package names, ecosystems, and versions only |
-| `compare` | Compares two ScopeGuard JSON reports. | None |
+| `compare` | Compares two reports of the same type: API, local inspection, or dependencies. | None |
 
 The `inspect` checks are static heuristics, not a complete scanner. They do not test a live web service. API scenarios test only explicitly configured safe GET, HEAD, and OPTIONS operations and expected outcomes; they do not fuzz endpoints or infer the application's authorization policy.
 
@@ -157,7 +157,7 @@ The `run`, `inspect`, and `dependencies` commands can write a self-contained HTM
 scopeguard compare --previous previous.json --current current.json --output diff.json --markdown-output diff.md --html-output diff.html --open-report
 ```
 
-The comparison lists added, resolved, and unchanged findings. It exits with status `1` when active findings were added; reports that remove findings return `0`. It performs no network access.
+The comparison lists added, resolved, and unchanged findings. Both input reports must be the same type (API, local inspection, or dependencies); ScopeGuard rejects mixed report types to avoid misleading results. It exits with status `1` when active findings were added; reports that remove findings return `0`. It performs no network access.
 
 ### GitHub Actions and optional SARIF upload
 

@@ -304,3 +304,20 @@ Henüz lisans seçilmedi. Lisans eklenene kadar bu kaynak kodu açık kaynak yen
 `scopeguard quick-scan --path . --language tr` sır, Python, yapılandırma, Docker, Kubernetes ve Terraform için standart çevrimdışı kontrolleri çalıştırır. JSON, Markdown, SARIF ve HTML raporlarını geçerli klasöre kaydeder. İncelenmiş istisnalar için `--suppressions scopeguard-ignore.yaml`, CI önem eşiği için `--fail-on high` ekleyebilirsin.
 
 API senaryoları yalnızca HTTP güvenli yöntemleri olan `GET`, `HEAD` ve `OPTIONS` ile yapılandırılabilir. Örneğin senaryoda `operation: "OPTIONS /records/{record_id}"` kullanıp ilgili yol parametresini tanımla. `HEAD` kontrollerinde JSON gövde doğrulaması kullanılamaz. Etkileşimli senaryo sihirbazı şimdilik GET senaryoları oluşturur. ScopeGuard POST, PUT, PATCH veya DELETE gibi yazma yöntemlerini göndermez.
+
+
+## Rapor üzerinden istisna oluşturma
+
+Yerel taramadan sonra JSON raporundaki etkin bulguları listeleyip geçici istisna oluştur:
+
+```powershell
+scopeguard ignore --report inspect.json
+```
+
+ScopeGuard etkin bulguları listeler; bulgu numarasını, gerekçeyi ve bitiş tarihini sorar. Varsayılan bitiş tarihi 90 gün sonradır. Komut `scopeguard-ignore.yaml` dosyasını oluşturur veya günceller. Dosyayı gözden geçir, ardından sonraki yerel taramada `--suppressions scopeguard-ignore.yaml` seçeneğiyle kullan. Betik kullanımında tüm değerleri komutta verebilirsin:
+
+```powershell
+scopeguard ignore --report inspect.json --finding 2 --reason "İncelendi; düzeltme planlandı" --expires 2026-12-31 --output scopeguard-ignore.yaml
+```
+
+Başlangıç menüsünde **6. Rapordan istisna oluştur** seçeneğini kullan. Bastırılan bulgular gerekçesi ve bitiş tarihiyle raporlarda görünmeye devam eder.

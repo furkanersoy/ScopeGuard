@@ -17,6 +17,7 @@ from .report_compare import compare_reports, write_comparison_reports
 from .planner import build_plan
 from .runner import run_scenarios
 from .wizard import run_init_wizard
+from .ignore_wizard import run_ignore_wizard
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -93,6 +94,13 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--markdown-output", type=Path, help="Optional local Markdown comparison path")
     compare.add_argument("--html-output", type=Path, help="Optional local HTML comparison path")
 
+    ignore = subparsers.add_parser("ignore", aliases=["suppress"], help="Create a reasoned, expiring suppression from a saved local report.")
+    ignore.add_argument("--report", required=True, type=Path, help="Local JSON report containing the finding")
+    ignore.add_argument("--output", type=Path, default=Path("scopeguard-ignore.yaml"), help="Suppression YAML to create or update")
+    ignore.add_argument("--finding", type=int, help="1-based active finding number; prompts when omitted")
+    ignore.add_argument("--reason", help="Why this finding is temporarily accepted; prompts when omitted")
+    ignore.add_argument("--expires", help="Expiry date in YYYY-MM-DD format; defaults to 90 days from today")
+
     return parser
 
 
@@ -132,6 +140,19 @@ def _execute(args: argparse.Namespace) -> int:
         args.command = "inspect"
         args.checks = ["secrets", "python", "config", "docker", "kubernetes", "terraform"]
 
+    if args.command in {"ignore", "suppress"}:
+        try:
+            result = run_ignore_wizard(args.report, args.output, args.finding, args.reason, args.expires)
+        except (ValueError, OSError) as exc:
+            print(f"Suppression creation failed: {exc}", file=sys.stderr)
+            return 2
+        action = "Updated" if result["updated"] else "Created"
+        entry = result["entry"]
+        print(f"{action} suppression for {entry['rule_id']} at {entry['path']}; expires {entry['expires']}.")
+        print(f"Suppression file written to {result['output']}")
+        print("Review suppressions periodically; the finding remains visible as suppressed in scan reports.")
+        return 0
+
     if args.command == "inspect":
         outputs = [args.output]
         if args.markdown_output:
@@ -153,6 +174,8 @@ def _execute(args: argparse.Namespace) -> int:
         _print_suppression_audit(report)
         print("No code was executed and no network requests were sent. Matched secret values were omitted.")
         print(f"JSON report written to {args.output}")
+        if report["findings"]:
+            print(f'To create a temporary exception, run: scopeguard ignore --report "{args.output}"')
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
         if args.sarif_output:
@@ -181,6 +204,8 @@ def _execute(args: argparse.Namespace) -> int:
         _print_suppression_audit(report)
         print("Package names and versions were sent to OSV over HTTPS; manifests and source files were not uploaded.")
         print(f"JSON report written to {args.output}")
+        if report["findings"]:
+            print(f'To create a temporary exception, run: scopeguard ignore --report "{args.output}"')
         if args.markdown_output:
             print(f"Markdown report written to {args.markdown_output}")
         if args.sarif_output:

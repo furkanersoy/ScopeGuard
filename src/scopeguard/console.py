@@ -40,7 +40,7 @@ def show_banner(stream: TextIO | None = None, *, animate: bool | None = None) ->
         output.write(colorize(title, "cyan", output) + "\n")
     output.write(f"  API authorization testing and local security checks  |  v{__version__}\n")
     output.write("  Checks API access control and local source/configuration patterns.\n")
-    output.write("  API runs use configured GET checks; local inspect is offline and never executes code.\n")
+    output.write("  API runs use configured GET/HEAD/OPTIONS checks; local inspect is offline and never executes code.\n")
     output.write("  Loopback is the default. Remote testing needs an explicit allowlist and --allow-remote.\n")
     output.write("  API yetkilendirme açıklarını (BOLA/IDOR) sürüm öncesi bulur.\n")
     output.write("  OpenAPI tabanlı kontrolleri çevrimdışı doğrular; yalnızca tanımlı GET isteklerini çalıştırır.\n")
@@ -91,6 +91,11 @@ def _show_help(output: TextIO) -> None:
         "  compare --previous <report.json> --current <report.json> [--output diff.json] [--markdown-output diff.md] [--html-output diff.html]\n"
         "      EN: Compare API, local, or dependency findings; exit 1 if findings were added.\n"
         "      TR: API, yerel tarama veya bağımlılık bulgularını karşılaştırır; yeni bulgu varsa 1 ile çıkar.\n"
+        "  quick-scan --path <file-or-folder> [--language tr|en] [--fail-on high]\n"
+        "      EN: Run all standard offline checks and save local reports.\n"
+        "      TR: Standart Ã§evrimdÄ±ÅŸÄ± kontrolleri Ã§alÄ±ÅŸtÄ±rÄ±p yerel raporlar oluÅŸturur.\n"
+        "      EN: inspect/dependencies accept --fail-on any|critical|high|medium|low|none for CI.\n"
+        "      TR: inspect/dependencies komutlarÄ± CI iÃ§in --fail-on Ã¶nem eÅŸiÄŸini destekler.\n"
         "  menu | help | version | exit\n"
         "      EN: Return to sections | show help | show version | close ScopeGuard.\n"
         "      TR: Bölüm menüsüne dön | yardımı göster | sürümü göster | ScopeGuard'u kapat.\n"

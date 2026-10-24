@@ -206,6 +206,10 @@ scopeguard coverage --spec examples/api/openapi.yaml --config examples/scenarios
 
 The coverage matrix lists configured checks and marks empty identity/endpoint pairs as `not configured`. An empty cell is only a coverage gap in the scenario file; it is not evidence of a vulnerability. Declare required identity/endpoint pairs under `coverage.required` and exact check IDs under `coverage.required_checks` in the scenario YAML. `scopeguard coverage --strict` exits with status `1` if a required pair or check ID is missing, so CI can enforce both broad endpoint coverage and specific scenarios. This command is offline and does not read tokens.
 
+### CI severity gates
+
+`inspect` and `dependencies` accept `--fail-on any|critical|high|medium|low|none`. The default, `any`, keeps the existing behavior and exits with status `1` when any active finding remains. A threshold fails only when an active finding has that severity or higher; suppressed findings do not fail the gate. For example, `scopeguard inspect --path src --checks secrets python --fail-on high` gates a build on high or critical source findings. Use `--fail-on none` to produce reports without using findings as the command exit gate. To gate only on newly introduced findings, save the previous JSON report and use `scopeguard compare --previous baseline.json --current current.json`; it exits `1` when new findings are present.
+
 With the demo API still running, execute the checks in a second terminal:
 
 ```powershell
@@ -304,3 +308,10 @@ See [the architecture and roadmap](docs/architecture.md).
 
 No license has been selected yet. Until one is added, the source is not granted an open-source reuse license.
 
+
+
+## Quick scan and safe HTTP methods
+
+`scopeguard quick-scan --path . --language en` runs the standard offline checks for secrets, Python, configuration, Docker, Kubernetes, and Terraform. It writes JSON, Markdown, SARIF, and HTML reports to the current directory. Add `--suppressions scopeguard-ignore.yaml` for reviewed exceptions or `--fail-on high` to set a CI threshold.
+
+API scenarios can be configured for the HTTP safe methods `GET`, `HEAD`, and `OPTIONS`. For example, set `operation: "OPTIONS /records/{record_id}"` in a scenario and provide the matching path parameter. `HEAD` checks cannot include JSON body assertions. The interactive scenario wizard currently creates GET scenarios. ScopeGuard does not send write methods such as POST, PUT, PATCH, or DELETE.

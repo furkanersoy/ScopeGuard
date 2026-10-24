@@ -16,6 +16,18 @@ class ValidationError(ValueError):
     """Raised when a specification or scenario file is invalid."""
 
 
+SAFE_HTTP_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+def _parse_operation(operation: Any, label: str) -> tuple[str, str]:
+    if not isinstance(operation, str) or " " not in operation:
+        raise ValidationError(f"{label} must use a GET, HEAD, or OPTIONS operation followed by a path")
+    method, path = operation.split(" ", 1)
+    if method not in SAFE_HTTP_METHODS or not path.startswith("/"):
+        raise ValidationError(f"{label} must use a GET, HEAD, or OPTIONS operation followed by a path")
+    return method, path
+
+
 def _read_yaml(path: Path, label: str) -> Any:
     try:
         with path.open("r", encoding="utf-8") as stream:
@@ -146,10 +158,8 @@ def _validate_checks(config: dict[str, Any], spec: dict[str, Any]) -> int:
         seen_ids.add(check_id)
 
         operation = check_map.get("operation")
-        if not isinstance(operation, str) or not operation.startswith("GET /"):
-            raise ValidationError(f"check '{check_id}' must use a GET operation")
-        path = operation[4:]
-        if path not in paths or not isinstance(paths[path], dict) or not isinstance(paths[path].get("get"), dict):
+        method, path = _parse_operation(operation, f"check '{check_id}' operation")
+        if path not in paths or not isinstance(paths[path], dict) or not isinstance(paths[path].get(method.lower()), dict):
             raise ValidationError(f"check '{check_id}' operation '{operation}' is missing from the OpenAPI document")
 
         identity_name = check_map.get("identity")
@@ -173,6 +183,8 @@ def _validate_checks(config: dict[str, Any], spec: dict[str, Any]) -> int:
         assertions = check_map.get("assert_json", [])
         if not isinstance(assertions, list):
             raise ValidationError(f"check '{check_id}' assert_json must be a list")
+        if method == "HEAD" and assertions:
+            raise ValidationError(f"check '{check_id}' HEAD operations cannot use JSON assertions")
         for assertion_index, assertion in enumerate(assertions, start=1):
             assertion_map = _mapping(assertion, f"check '{check_id}' assert_json[{assertion_index}]")
             pointer = assertion_map.get("pointer")
@@ -197,10 +209,8 @@ def _validate_checks(config: dict[str, Any], spec: dict[str, Any]) -> int:
         operation = item_map["operation"]
         if not isinstance(identity_name, str) or identity_name not in identities:
             raise ValidationError(f"coverage.required[{index}] references an unknown identity")
-        if not isinstance(operation, str) or not operation.startswith("GET /"):
-            raise ValidationError(f"coverage.required[{index}].operation must use GET")
-        path = operation[4:]
-        if path not in paths or not isinstance(paths[path], dict) or not isinstance(paths[path].get("get"), dict):
+        method, path = _parse_operation(operation, f"coverage.required[{index}].operation")
+        if path not in paths or not isinstance(paths[path], dict) or not isinstance(paths[path].get(method.lower()), dict):
             raise ValidationError(f"coverage.required[{index}] operation '{operation}' is missing from the OpenAPI document")
         pair = (identity_name, operation)
         if pair in seen_required:

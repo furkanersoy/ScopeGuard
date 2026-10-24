@@ -41,7 +41,7 @@ def _parser() -> argparse.ArgumentParser:
     coverage.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
     coverage.add_argument("--strict", action="store_true", help="Exit with status 1 when a required identity/operation pair is missing")
 
-    run = subparsers.add_parser("run", help="Run configured read-only GET checks against the explicitly scoped target.")
+    run = subparsers.add_parser("run", help="Run configured read-only GET, HEAD, and OPTIONS checks against the explicitly scoped target.")
     run.add_argument("--spec", required=True, type=Path, help="Path to an OpenAPI 3.x YAML or JSON file")
     run.add_argument("--config", required=True, type=Path, help="Path to a ScopeGuard scenario YAML file")
     run.add_argument("--output", required=True, type=Path, help="Path for the redacted JSON report")
@@ -65,6 +65,16 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--html-output", type=Path, help="Optional local self-contained HTML report path")
     inspect.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     inspect.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
+    inspect.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
+    quick = subparsers.add_parser("quick-scan", help="Run the standard offline local checks with short options.")
+    quick.add_argument("--path", required=True, type=Path, help="File or directory to inspect")
+    quick.add_argument("--output", type=Path, default=Path("scopeguard-scan.json"), help="Local JSON report path")
+    quick.add_argument("--markdown-output", type=Path, default=Path("scopeguard-scan.md"), help="Local Markdown report path")
+    quick.add_argument("--sarif-output", type=Path, default=Path("scopeguard-scan.sarif"), help="Local SARIF report path")
+    quick.add_argument("--html-output", type=Path, default=Path("scopeguard-scan.html"), help="Local HTML report path")
+    quick.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
+    quick.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
+    quick.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI severity gate")
     dependencies = subparsers.add_parser("dependencies", help="Check pinned lockfile versions against OSV; sends package names and versions over HTTPS only when --allow-network is supplied.")
     dependencies.add_argument("--path", required=True, type=Path, help="Lockfile or directory containing supported lockfiles")
     dependencies.add_argument("--allow-network", action="store_true", required=True, help="Explicitly permit HTTPS queries to api.osv.dev")
@@ -74,6 +84,7 @@ def _parser() -> argparse.ArgumentParser:
     dependencies.add_argument("--html-output", type=Path, help="Optional local HTML report path")
     dependencies.add_argument("--suppressions", type=Path, help="Optional YAML file of reasoned, expiring finding suppressions")
     dependencies.add_argument("--language", choices=("tr", "en"), default="en", help="Report language: Turkish (tr) or English (en); default: en")
+    dependencies.add_argument("--fail-on", choices=("any", "critical", "high", "medium", "low", "none"), default="any", help="CI gate: fail when an active finding meets this severity threshold (default: any)")
 
     compare = subparsers.add_parser("compare", help="Compare two local ScopeGuard JSON reports and list added, resolved, and unchanged findings.")
     compare.add_argument("--previous", required=True, type=Path, help="Earlier JSON report")
@@ -85,7 +96,42 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _findings_trigger_gate(findings: list[dict], threshold: str) -> bool:
+    """Return whether active findings meet the requested CI severity gate."""
+    if threshold == "none":
+        return False
+    if threshold == "any":
+        return bool(findings)
+    ranks = {"critical": 4, "high": 3, "medium": 2, "moderate": 2, "low": 1, "unknown": 0}
+    minimum = ranks[threshold]
+    for finding in findings:
+        severity = str(finding.get("severity", "unknown")).strip().lower()
+        if severity == "yüksek":
+            severity = "high"
+        elif severity == "orta":
+            severity = "medium"
+        elif severity == "düşük":
+            severity = "low"
+        if ranks.get(severity, 0) >= minimum:
+            return True
+    return False
+
+
+def _print_suppression_audit(report: dict) -> None:
+    audit = report.get("suppression_audit", {})
+    if not audit.get("entries"):
+        return
+    unused = audit.get("unused_entries", [])
+    print(f"Suppression rules used: {audit.get('used_entries', 0)}/{audit['entries']}; unused: {len(unused)}.")
+    for item in unused:
+        print(f"  Unused suppression: {item['rule_id']} at {item['path']} (expires {item['expires']})")
+
+
 def _execute(args: argparse.Namespace) -> int:
+    if args.command == "quick-scan":
+        args.command = "inspect"
+        args.checks = ["secrets", "python", "config", "docker", "kubernetes", "terraform"]
+
     if args.command == "inspect":
         outputs = [args.output]
         if args.markdown_output:
@@ -104,6 +150,7 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Inspection failed: {exc}", file=sys.stderr)
             return 2
         print(f"Scanned {report['scanned_files']} local file(s); active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
+        _print_suppression_audit(report)
         print("No code was executed and no network requests were sent. Matched secret values were omitted.")
         print(f"JSON report written to {args.output}")
         if args.markdown_output:
@@ -112,7 +159,7 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
         if args.html_output:
             print(f"HTML report written to {args.html_output}")
-        return 1 if report["findings"] else 0
+        return 1 if _findings_trigger_gate(report["findings"], args.fail_on) else 0
 
     if args.command == "dependencies":
         outputs = [args.output]
@@ -131,6 +178,7 @@ def _execute(args: argparse.Namespace) -> int:
             return 2
         print(f"Queried {report['queries_sent']} pinned package version(s) in {report['scanned_files']} lockfile(s) against OSV.")
         print(f"Active findings: {len(report['findings'])}; suppressed: {len(report.get('suppressed_findings', []))}.")
+        _print_suppression_audit(report)
         print("Package names and versions were sent to OSV over HTTPS; manifests and source files were not uploaded.")
         print(f"JSON report written to {args.output}")
         if args.markdown_output:
@@ -139,7 +187,7 @@ def _execute(args: argparse.Namespace) -> int:
             print(f"Local SARIF report written to {args.sarif_output}; no upload was performed")
         if args.html_output:
             print(f"HTML report written to {args.html_output}")
-        return 1 if report["findings"] else 0
+        return 1 if _findings_trigger_gate(report["findings"], args.fail_on) else 0
 
     if args.command == "compare":
         try:
@@ -182,7 +230,7 @@ def _execute(args: argparse.Namespace) -> int:
 
         print(f"Valid: {args.spec}")
         print(f"Valid: {args.config}")
-        print(f"{check_count} read-only GET check(s) are ready. No network requests were sent.")
+        print(f"{check_count} read-only safe-method check(s) are ready. No network requests were sent.")
         return 0
 
     if args.command == "plan":

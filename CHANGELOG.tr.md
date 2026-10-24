@@ -12,6 +12,9 @@
 - Türkçe ve İngilizce bulgular, yardım, README ve raporlama seçenekleri.
 - Python ortamını, PyYAML'ı ve paketlenmiş demo girdilerini kontrol eden çevrimdışı `scopeguard doctor` komutu.
 - Doğrulanmış paket oluşturma ve PyPI Trusted Publishing için GitHub Release iş akışı.
+- Windows ve Linux/macOS başlatıcıları, tarama ve yerel raporların seçilen proje klasörünü kullanması için çağıran klasörü korur.
+- İlk PyPI yayını beklenirken GitHub'dan pipx ile kurulum yolu; bunun beta geliştirme sürümü olduğu açıkça belirtilir.
+- Gizlilik hatırlatmaları içeren iki dilli GitHub hata bildirimi ve özellik isteği formları.
 
 ### Kapsam ve sınırlamalar
 

@@ -198,7 +198,17 @@ def _collect(path: Path) -> tuple[dict[tuple[str, str, str], list[dict[str, Any]
         if len(found) > MAX_DEPENDENCIES:
             raise ValidationError("dependency inventory exceeds 1,000 unique package versions; narrow --path")
     if not files:
-        raise ValidationError("no supported dependency lockfiles found (requirements*.txt, poetry.lock, Pipfile.lock, package-lock.json, Cargo.lock, go.sum)")
+        supported = "requirements*.txt, poetry.lock, Pipfile.lock, package-lock.json, npm-shrinkwrap.json, Cargo.lock, go.sum"
+        raise ValidationError(
+            f"No supported dependency lockfile found in '{path}'. Exact pinned versions are required; "
+            "pyproject.toml or package.json alone is not enough. "
+            f"Supported files: {supported}. Generate or commit a lockfile, then rerun "
+            "`scopeguard dependencies --path <folder> --allow-network`.\n"
+            f"'{path}' içinde desteklenen bir bağımlılık kilit dosyası bulunamadı. Kesin sürüm bilgisi gerekir; "
+            "tek başına pyproject.toml veya package.json yeterli değildir. "
+            f"Desteklenen dosyalar: {supported}. Paket yöneticinle kilit dosyası oluşturup veya depoya ekleyip "
+            "dependencies komutunu yeniden çalıştır."
+        )
     if not found:
         raise ValidationError("supported lockfiles were found, but no exact package versions could be extracted")
     return found, scanned_files

@@ -57,39 +57,43 @@ Hızlı tarama desteklenen dosyaları inceler; proje kodunu çalıştırmaz ve d
 
 ## Kurulum ve çalıştırma
 
-Bir sorunla karşılaşırsan [sorun giderme rehberine](docs/troubleshooting.tr.md) bak.
+Python 3.11 veya üzeri gerekir. ScopeGuard'ı diğer Python araçlarından yalıtmak için pipx ile kurmanı öneririz.
 
-Python 3.11 veya üzeri gerekir.
+### Windows PowerShell
+
+pipx kurulu değilse:
 
 ```powershell
-git clone https://github.com/furkanersoy/ScopeGuard.git
-cd ScopeGuard
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-py -m pip install .
+py -m pip install --user pipx
+py -m pipx ensurepath
 ```
 
-Linux veya macOS:
+`ensurepath` sonrasında PowerShell'i kapatıp yeniden aç. Ardından ScopeGuard'ı kur:
+
+```powershell
+pipx install scopeguard
+```
+
+### Linux veya macOS
+
+pipx'i [resmî pipx rehberine](https://pipx.pypa.io/latest/how-to/install-pipx.html) göre kurduktan sonra:
 
 ```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install .
+pipx install scopeguard
 ```
 
-Linux/macOS'ta ilk kurulumdan sonra `chmod +x scopeguard.sh` komutunu bir kez çalıştırıp `./scopeguard.sh` ile başlatabilirsin. Betik ilk açılışta sanal ortamı kurar, sonraki çalıştırmalarda tekrar kullanır. Komutları doğrudan da betiğe iletebilirsin: `./scopeguard.sh inspect --path . --checks secrets python config docker kubernetes terraform`.
+Menüyü `scopeguard` komutuyla aç. Proje klasöründe `scopeguard quick-scan` standart çevrimdışı taramayı başlatır. Güncellemek için `pipx upgrade scopeguard` çalıştır.
 
-Geliştiriciler düzenlenebilir kurulum için `py -m pip install -e .` (Linux/macOS'ta `python -m pip install -e .`) kullanabilir.
-
-İlk PyPI sürümü henüz yayımlanmadı. O zamana kadar GitHub'daki güncel sürümü pipx ile yalıtılmış bir ortama kurabilirsin (Git de kurulu olmalı):
+pipx kullanmak istemezsen paketi Python kullanıcı hesabına kurup modül olarak başlatabilirsin:
 
 ```powershell
-pipx install git+https://github.com/furkanersoy/ScopeGuard.git
+py -m pip install --user scopeguard
+py -m scopeguard
 ```
 
-Bu komut sürümlenmiş bir PyPI paketi yerine beta geliştirme sürümü olan güncel `master` dalını kurar. Daha sonra güncellemek için `pipx install --force git+https://github.com/furkanersoy/ScopeGuard.git` çalıştır. Windows'ta pipx kurulu değilse `py -m pip install --user pipx`, ardından `py -m pipx ensurepath` çalıştırıp terminali yeniden aç. Diğer sistemlerde kurulum için [resmî pipx rehberine](https://pipx.pypa.io/latest/how-to/install-pipx.html) bak.
+Linux/macOS'ta `python3 -m pip install --user scopeguard` ve `python3 -m scopeguard` kullan.
 
-İlk PyPI sürümü yayımlandıktan sonra kararlı kurulum komutu `pipx install scopeguard` veya `py -m pip install --user scopeguard` olacak. Ayrıntılar için [PyPI yayın rehberine](docs/publishing.tr.md) bak.
+Kaynak kodu incelemek isteyen katkıcılar depoyu klonlayıp `py -m pip install .` (veya `python3 -m pip install .`) kullanabilir. Düzenlenebilir geliştirici kurulumu için `py -m pip install -e .` çalıştır.
 
 ## Başlangıç menüsünü kullanma
 

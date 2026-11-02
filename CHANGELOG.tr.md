@@ -1,5 +1,13 @@
 # ScopeGuard Sürüm Notları
 
+## [0.2.1] - 2026-11-02
+
+### İyileştirildi
+
+- Başlangıç menüsü API Güvenliği, Proje Güvenliği ve Gelişmiş Araçlar olarak sadeleştirildi; hızlı tarama sihirbazı proje menüsünün ilk seçeneği oldu.
+- Türkçe ve İngilizce ilk tarama yönergeleri yeni menüye göre güncellendi.
+
+
 ## [0.2.0] - 2026-10-24
 
 ### Eklenenler

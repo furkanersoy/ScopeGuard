@@ -20,7 +20,7 @@ Trusted Publishing, GitHub OIDC kimliğini ve kısa ömürlü erişim belirtecin
 
 1. `pyproject.toml` içinde yeni sürüm numarasını seç; iki changelog dosyasını ve İngilizce README'yi güncelle.
 2. Gözden geçirilmiş değişiklikleri `master` dalına birleştir ve CI'ın geçtiğini doğrula.
-3. Sürümle aynı etiketi kullanarak GitHub Release oluştur; örneğin `v0.2.1`. Etiket paket sürümüyle tam eşleşmezse workflow durur.
+3. Sürümle aynı etiketi kullanarak GitHub Release oluştur; örneğin `v0.2.2`. Etiket paket sürümüyle tam eşleşmezse workflow durur.
 4. Release workflow'unu bekle. Derleme işi `python -m build` ve `twine check --strict` çalıştırır; yayın işi yalnızca ikisi başarılı olursa başlar.
 5. PyPI sürümü işledikten sonra kullanıcılar komut satırı uygulamasını `pipx install scopeguard` ile kurabilir veya `pipx upgrade scopeguard` ile güncelleyebilir. Etkileşimli API menüsü, wheel içindeki demo OpenAPI ve senaryo dosyalarını kullanır; demo sunucusunu başka terminalde `scopeguard-demo` ile başlat.
 

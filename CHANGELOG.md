@@ -1,5 +1,13 @@
 # ScopeGuard Changelog
 
+## [0.2.1] - 2026-11-02
+
+### Improved
+
+- Simplified the startup menu into API Security, Project Security, and Advanced Tools; the guided quick scan is now the first project workflow.
+- Updated the English and Turkish first-scan instructions to match the menu.
+
+
 ## [0.2.0] - 2026-10-24
 
 ### Added

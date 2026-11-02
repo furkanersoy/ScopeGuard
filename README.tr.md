@@ -23,21 +23,19 @@
 
 ## İlk tarama (Windows)
 
-1. Python 3.11 veya üzerini kur, ardından bu depoyu indir veya klonla.
-2. `ScopeGuard.bat` dosyasına çift tıkla. İlk açılışta izole bir `.venv` oluşturup bağımlılıkları kurar; sonraki açılışlarda bu kurulumu kullanır.
-3. İlk tarama için menüden **7. Hızlı tarama sihirbazı** seçeneğini seç, proje klasörünü gir ve bir profil belirle. JSON, Markdown, SARIF ve HTML raporları bilgisayarına kaydedilir.
+Python 3.11 veya üzeri gerekir. ScopeGuard'ı [pipx yönergeleriyle](#kurulum-ve-çalıştırma) bir kez kurduktan sonra:
 
-PowerShell'den doğrudan standart çevrimdışı tarama başlatmak için ScopeGuard klasöründe:
+1. İncelemek istediğin proje klasöründe PowerShell aç.
+2. `scopeguard` komutunu çalıştırıp **7. Hızlı tarama sihirbazı** seçeneğini seç.
+3. Klasörü ve tarama profilini belirle. ScopeGuard JSON, Markdown, SARIF ve HTML raporlarını proje klasörüne kaydeder.
+
+Menüyü açmadan standart çevrimdışı tarama için:
 
 ```powershell
-.\ScopeGuard.bat quick-scan
+scopeguard quick-scan
 ```
 
-Başlatıcı, komutu çalıştırdığın klasörü korur; böylece geçerli proje klasörünü kod çalıştırmadan ve dosyaları ağa göndermeden tarar. Rapor dosyalarının adı `scopeguard-scan` önekiyle başlar. ScopeGuard'ı başka bir klasörden başlatmak için PowerShell'i proje klasöründe açıp başlatıcının tam yolunu çalıştır; örneğin `& "C:\Tools\ScopeGuard\ScopeGuard.bat" quick-scan`. Raporlar o proje klasörüne yazılır. Linux/macOS'ta terminali proje klasöründe açıp başlatıcıyı yolu ile çalıştır; örneğin `sh /opt/ScopeGuard/scopeguard.sh quick-scan`. Bu klasörde `.scopeguard-profile.yaml` varsa otomatik bulunur; başka bir profil için `--config <yol>` kullan. Tarama önem derecelerinin özetini gösterir; yerel HTML raporunu tarayıcıda açmak için `--open-report` ekle.
-
-Menüyü daha sonra açmak için `ScopeGuard.bat` dosyasına çift tıkla veya `.\ScopeGuard.bat` komutunu argümansız çalıştır. Linux/macOS'ta `./scopeguard.sh quick-scan` ya da `./scopeguard.sh` kullan. Başlatıcılar bağımlılıkları yalnızca `pyproject.toml` değiştiğinde yeniden kurar; klonlanan klasördeki kod güncellemeleri doğrudan kullanılır.
-
-API kontrollerini denemek için dahil edilen demo API'yi ikinci bir terminalde başlat ve aşağıdaki API adımlarını izle. Gerçek servisleri yalnızca açıkça yetkilendirildiğin testlerde kontrol et.
+Hızlı tarama desteklenen dosyaları inceler; proje kodunu çalıştırmaz ve dosyaları ağa göndermez. API kontrollerini denemek için sentetik demo sunucusunu başka bir terminalde `scopeguard-demo` komutuyla başlat. Gerçek servisleri yalnızca açıkça yetkilendirildiğin testlerde kontrol et.
 
 ## Kontroller ve komutlar
 

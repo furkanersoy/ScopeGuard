@@ -15,7 +15,7 @@
 - Windows ve Linux/macOS başlatıcıları, tarama ve yerel raporların seçilen proje klasörünü kullanması için çağıran klasörü korur.
 - Windows konsol çıktısı, Türkçe ve diğer ASCII dışı karakterlerin doğru görünmesi için UTF-8 kullanır.
 - CI; Ubuntu, Windows ve macOS üzerinde Python 3.11–3.14 sürümlerini doğrular.
-- Son kullanıcılar için pipx ve pip kurulum yönergeleriyle ilk PyPI yayını.
+
 - Gizlilik hatırlatmaları içeren iki dilli GitHub hata bildirimi ve özellik isteği formları.
 
 ### Kapsam ve sınırlamalar

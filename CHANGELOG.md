@@ -15,7 +15,7 @@
 - Cross-platform launchers preserve the caller's working directory so scans and local reports use the selected project folder.
 - Windows console output uses UTF-8 so Turkish and other non-ASCII text remains readable.
 - CI validates Python 3.11 through 3.14 on Ubuntu, Windows, and macOS.
-- First PyPI release with pipx and pip installation instructions for end users.
+
 - Bilingual GitHub bug-report and feature-request forms with privacy reminders.
 
 ### Scope and limitations

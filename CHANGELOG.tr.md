@@ -1,6 +1,6 @@
 # ScopeGuard Sürüm Notları
 
-## [0.2.0] - Yayımlanmadı
+## [0.2.0] - 2026-10-24
 
 ### Eklenenler
 
@@ -15,7 +15,7 @@
 - Windows ve Linux/macOS başlatıcıları, tarama ve yerel raporların seçilen proje klasörünü kullanması için çağıran klasörü korur.
 - Windows konsol çıktısı, Türkçe ve diğer ASCII dışı karakterlerin doğru görünmesi için UTF-8 kullanır.
 - CI; Ubuntu, Windows ve macOS üzerinde Python 3.11–3.14 sürümlerini doğrular.
-- İlk PyPI yayını beklenirken GitHub'dan pipx ile kurulum yolu; bunun beta geliştirme sürümü olduğu açıkça belirtilir.
+- Son kullanıcılar için pipx ve pip kurulum yönergeleriyle ilk PyPI yayını.
 - Gizlilik hatırlatmaları içeren iki dilli GitHub hata bildirimi ve özellik isteği formları.
 
 ### Kapsam ve sınırlamalar

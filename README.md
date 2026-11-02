@@ -24,21 +24,19 @@
 
 ## First scan (Windows)
 
-1. Install Python 3.11 or newer, then clone or download this repository.
-2. Double-click `ScopeGuard.bat`. On first launch it creates an isolated `.venv` and installs the dependencies; later launches reuse them.
-3. For the easiest first scan, choose **7. Guided quick scan** in the menu, enter the project folder, and select a profile. The JSON, Markdown, SARIF, and HTML reports are saved locally.
+Requires Python 3.11 or newer. Install ScopeGuard once using the [pipx instructions](#install-and-run), then:
 
-You can also start a standard offline scan directly from PowerShell in the ScopeGuard folder:
+1. Open PowerShell in the project folder you want to inspect.
+2. Run `scopeguard` and choose **7. Guided quick scan**.
+3. Select the folder and a scan profile. ScopeGuard saves JSON, Markdown, SARIF, and HTML reports in the project folder.
+
+To run the standard offline scan without opening the menu:
 
 ```powershell
-.\ScopeGuard.bat quick-scan
+scopeguard quick-scan
 ```
 
-The launcher keeps the folder you started it from, so this scans your current project folder without executing code or sending files over the network. Reports use the `scopeguard-scan` filename prefix. To launch ScopeGuard from another directory, open PowerShell in the project folder and call its full path, for example `& "C:\Tools\ScopeGuard\ScopeGuard.bat" quick-scan`; reports are written to that project folder. On Linux/macOS, open a terminal in the project folder and run the launcher by path, for example `sh /opt/ScopeGuard/scopeguard.sh quick-scan`. If `.scopeguard-profile.yaml` exists here, it is detected automatically; use `--config <path>` to choose another profile. The scan prints a severity summary; add `--open-report` to open its local HTML report in your browser.
-
-To open the interactive menu later, double-click `ScopeGuard.bat` or run `.\ScopeGuard.bat` with no arguments. For Linux/macOS, use `./scopeguard.sh quick-scan` or `./scopeguard.sh`. The launchers reinstall dependencies only when `pyproject.toml` changes; code updates in the cloned folder are used directly.
-
-To try API checks, start the included demo API in a second terminal and follow the API steps below. Only test real services when you have explicit authorization.
+Quick scans inspect supported files without executing project code or sending files over the network. To try API checks, start the synthetic demo in another terminal with `scopeguard-demo`; test real services only with explicit authorization.
 
 ## Security checks and commands
 

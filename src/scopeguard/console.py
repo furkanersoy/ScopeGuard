@@ -68,8 +68,8 @@ def show_banner(stream: TextIO | None = None, *, animate: bool | None = None) ->
     output.write("  Varsayılan hedef yerel makinedir; uzak test için izin listesi ve --allow-remote gerekir.\n")
     output.write("  Choose a security section from the menu below.\n")
     output.write("  Aşağıdaki menüden güvenlik bölümünü seçin.\n")
-    output.write("  First scan? Choose option 7 for a guided quick scan.\n")
-    output.write("  İlk taraman mı? Hızlı tarama sihirbazı için 7. seçeneği kullan.\n\n")
+    output.write("  First scan? Choose 2, then 1 for a guided quick scan.\n")
+    output.write("  İlk taraman mı? Hızlı tarama sihirbazı için önce 2, sonra 1'i seç.\n\n")
     output.flush()
 
 
@@ -692,8 +692,68 @@ def _compare_menu(command_handler: Callable[[Sequence[str]], int], source: TextI
     return True
 
 
+def _project_security_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    actions: dict[str, Callable[[], bool]] = {
+        "1": lambda: _quick_scan_menu(command_handler, source, output),
+        "2": lambda: _inspect_menu(command_handler, source, output, secrets_only=False),
+        "3": lambda: _inspect_menu(command_handler, source, output, secrets_only=True),
+        "4": lambda: _dependencies_menu(command_handler, source, output),
+        "5": lambda: _configure_profile_menu(command_handler, source, output),
+        "6": lambda: _ignore_menu(command_handler, source, output),
+        "7": lambda: _compare_menu(command_handler, source, output),
+    }
+    while True:
+        output.write(
+            "\nProject Security / Proje Güvenliği\n"
+            "  1. Guided quick scan / Hızlı tarama sihirbazı\n"
+            "  2. Choose local checks / Yerel kontrolleri seç\n"
+            "  3. Detect secrets / Gizli bilgileri bul\n"
+            "  4. Check dependencies online / Bağımlılıkları çevrimiçi denetle\n"
+            "  5. Configure a reusable profile / Yeniden kullanılabilir profil oluştur\n"
+            "  6. Create a temporary exception / Geçici istisna oluştur\n"
+            "  7. Compare saved reports / Kaydedilmiş raporları karşılaştır\n"
+            "  0. Back to main menu / Ana menüye dön\n"
+        )
+        choice = _answer(source, output, "Choose a project security action / Proje güvenliği işlemi seçin", "1")
+        if choice is None:
+            return False
+        if choice == "0":
+            return True
+        action = actions.get(choice)
+        if action is None:
+            output.write("Choose one of the listed options / Listelenen seçeneklerden birini seçin.\n")
+            continue
+        if not action():
+            return False
+
+
+def _advanced_tools_menu(command_handler: Callable[[Sequence[str]], int], source: TextIO, output: TextIO) -> bool:
+    while True:
+        output.write(
+            "\nAdvanced Tools / Gelişmiş Araçlar\n"
+            "  1. Command console / Komut konsolu\n"
+            "  2. Help / Yardım\n"
+            "  3. Version / Sürüm\n"
+            "  0. Back to main menu / Ana menüye dön\n"
+        )
+        choice = _answer(source, output, "Choose an advanced tool / Gelişmiş araç seçin", "0")
+        if choice is None:
+            return False
+        if choice == "0":
+            return True
+        if choice == "1":
+            if not _command_console(command_handler, source, output):
+                return False
+        elif choice == "2" or choice.lower() in {"help", "?"}:
+            _show_help(output)
+        elif choice == "3" or choice.lower() == "version":
+            output.write(f"ScopeGuard {__version__}\n")
+        else:
+            output.write("Choose one of the listed options / Listelenen seçeneklerden birini seçin.\n")
+
+
 def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream: TextIO | None = None, output_stream: TextIO | None = None) -> None:
-    """Show the security-section menu, then dispatch to the selected local workflow."""
+    """Show three clear security sections, then dispatch to the selected workflow."""
     source = input_stream or sys.stdin
     output = output_stream or sys.stdout
     show_banner(output)
@@ -701,17 +761,11 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
         output.write(
             "Main menu / Ana menü:\n"
             "  1. API Security / API Güvenliği\n"
-            "  2. Select Local Security Checks / Yerel Güvenlik Kontrollerini Seç\n"
-            "  3. Secret Detection / Gizli Bilgi Taraması\n"
-            "  4. Advanced command console / Gelişmiş komut konsolu\n"
-            "  5. Dependency Vulnerability Check / Bağımlılık Zafiyeti Taraması\n"
-            "  6. Create suppression from a report / Rapordan geçici istisna oluştur\n"
-            "  7. Guided quick scan / Hızlı tarama sihirbazı\n"
-            "  8. Configure reusable project profile / Yeniden kullanılabilir proje profili oluştur\n"
-            "  9. Compare saved reports / Kaydedilmiş raporları karşılaştır\n"
+            "  2. Project Security / Proje Güvenliği\n"
+            "  3. Advanced Tools / Gelişmiş Araçlar\n"
             "  0. Exit / Çıkış\n"
         )
-        choice = _answer(source, output, "Choose a section / Bölüm seçin", "0")
+        choice = _answer(source, output, "Choose a section / Bölüm seçin", "2")
         if choice is None or choice.lower() in {"0", "exit", "quit"}:
             output.write("ScopeGuard closed.\n")
             return
@@ -720,34 +774,11 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
                 output.write("ScopeGuard closed.\n")
                 return
         elif choice == "2":
-            if not _inspect_menu(command_handler, source, output, secrets_only=False):
+            if not _project_security_menu(command_handler, source, output):
                 output.write("ScopeGuard closed.\n")
                 return
         elif choice == "3":
-            if not _inspect_menu(command_handler, source, output, secrets_only=True):
-                output.write("ScopeGuard closed.\n")
-                return
-        elif choice == "4":
-            if not _command_console(command_handler, source, output):
-                return
-        elif choice == "5":
-            if not _dependencies_menu(command_handler, source, output):
-                output.write("ScopeGuard closed.\n")
-                return
-        elif choice == "6":
-            if not _ignore_menu(command_handler, source, output):
-                output.write("ScopeGuard closed.\n")
-                return
-        elif choice == "7":
-            if not _quick_scan_menu(command_handler, source, output):
-                output.write("ScopeGuard closed.\n")
-                return
-        elif choice == "8":
-            if not _configure_profile_menu(command_handler, source, output):
-                output.write("ScopeGuard closed.\n")
-                return
-        elif choice == "9":
-            if not _compare_menu(command_handler, source, output):
+            if not _advanced_tools_menu(command_handler, source, output):
                 output.write("ScopeGuard closed.\n")
                 return
         elif choice.lower() in {"help", "?"}:
@@ -755,7 +786,7 @@ def run_console(command_handler: Callable[[Sequence[str]], int], *, input_stream
         elif choice.lower() == "version":
             output.write(f"ScopeGuard {__version__}\n")
         elif choice.strip().isdigit():
-            output.write("Choose 1, 2, 3, 4, 5, 6, 7, 8, 9, or 0 / 1, 2, 3, 4, 5, 6, 7, 8, 9 veya 0 seçin.\n")
+            output.write("Choose 1, 2, 3, or 0 / 1, 2, 3 veya 0 seçin.\n")
         else:
             if not _command_console(command_handler, source, output, initial_line=choice):
                 return

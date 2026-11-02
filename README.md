@@ -27,7 +27,7 @@
 Requires Python 3.11 or newer. Install ScopeGuard once using the [pipx instructions](#install-and-run), then:
 
 1. Open PowerShell in the project folder you want to inspect.
-2. Run `scopeguard` and choose **7. Guided quick scan**.
+2. Run `scopeguard`, choose **2. Project Security**, then **1. Guided quick scan**.
 3. Select the folder and a scan profile. ScopeGuard saves JSON, Markdown, SARIF, and HTML reports in the project folder.
 
 To run the standard offline scan without opening the menu:
@@ -98,17 +98,13 @@ Contributors who need the source code can clone the repository and use `py -m pi
 
 ### Startup menu
 
-Run `scopeguard` with no arguments (or double-click `ScopeGuard.bat` on Windows) to open the bilingual menu:
+Run \`scopeguard\` with no arguments (or double-click \`ScopeGuard.bat\` on Windows) to open the bilingual menu. It is organized into three sections:
 
-1. **API Security** — opens an API submenu: create a starter scenario, validate the OpenAPI and scenario files, preview planned requests, inspect identity/endpoint coverage, or run configured checks. Scenario creation asks for an OpenAPI file, selected GET/HEAD/OPTIONS operations, sample path values, identities, and expected status codes. API runs save JSON, Markdown, SARIF, and HTML reports locally. Start the included demo in a second terminal before running its checks.
-2. **Select Local Security Checks** — choose one or more categories separated by commas: `secrets`, `python`, `config`, `docker`, `kubernetes`, and `terraform`. The default is `python,config,docker,kubernetes,terraform`; secret scanning remains a separate main-menu shortcut. The selected local file or folder is scanned offline, without executing code, building images, or connecting to a Kubernetes cluster. Enter one JSON report path; Markdown, SARIF, and HTML sidecars are created beside it automatically. The menu can load an optional suppression YAML. Use the advanced console to customize each output path.
-3. **Secret Detection** — scans a selected local file or folder for supported hard-coded secret patterns and saves local JSON, Markdown, SARIF, and HTML reports. It does not print matched secret values.
-4. **Advanced command console** — accepts the normal CLI commands (`help`, `version`, `doctor`, `init`, `configure`, `quick-scan`, `inspect`, `dependencies`, `compare`, `validate`, `plan`, `coverage`, and `run`). Enter `menu` to return to the section menu or `exit` to close ScopeGuard. Choose `0` in a menu to go back or exit as indicated.
-5. **Dependency Vulnerability Check** — selects a lockfile or folder and asks before sending exact package names and versions to OSV over HTTPS. Enter one JSON report path; Markdown, SARIF, and HTML sidecars are created beside it automatically.
-6. **Create suppression from a report** — selects a finding from a local JSON report and creates a reasoned, expiring suppression YAML.
-7. **Guided quick scan** — choose a project folder and a described preset: `standard` (all local checks), `application` (secrets, Python, configuration), `containers` (Docker and Kubernetes), `infrastructure` (configuration and Terraform), or `secrets` only. It saves JSON, Markdown, SARIF, and HTML reports without executing code or sending files over the network.
-8. **Configure reusable project profile** — saves the project path, scan preset, report language/name, optional suppression file, and CI threshold in `.scopeguard-profile.yaml`. Reuse these settings from option 7 or with `scopeguard quick-scan --config .scopeguard-profile.yaml`.
-9. **Compare saved reports** — select numbered ScopeGuard JSON reports found in the current folder or enter paths. After choosing the earlier report, the menu lists only matching report types; manual paths are checked too. ScopeGuard writes JSON, Markdown, and HTML comparison files and can open the HTML report.
+1. **API Security** — create a starter scenario, validate the OpenAPI and scenario files, preview requests, review identity/endpoint coverage, or run configured checks. API checks use the safe methods configured in the scenario.
+2. **Project Security** — the first option is **Guided quick scan**. Choose a project folder and scan preset to create local reports. This section also includes category-based local checks, secret detection, the opt-in online dependency check, reusable profiles, temporary suppressions, and report comparison.
+3. **Advanced Tools** — open the command console, read help, or view the installed version.
+
+Choose \`0\` to go back or exit as shown. For your first scan, choose **2**, then **1**. You can also run \`scopeguard quick-scan\` directly from the project folder. Start the included demo with \`scopeguard-demo\` in a second terminal before using the API section.
 
 When a default report filename already exists, the menu picks the next available numbered name. If you enter an existing report name yourself, ScopeGuard asks before overwriting it. Default reports and `.scopeguard-profile.yaml` are ignored by Git to keep local findings and machine-specific paths out of commits. Add custom report filenames to your `.gitignore` if needed.
 

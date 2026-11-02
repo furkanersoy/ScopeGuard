@@ -58,37 +58,43 @@ The `inspect` checks are static heuristics, not a complete scanner. They do not 
 
 ## Install and run
 
-If something goes wrong, see the [troubleshooting guide](docs/troubleshooting.md).
+Requires Python 3.11 or newer. The recommended installation uses pipx to keep ScopeGuard isolated from other Python tools.
 
-Requires Python 3.11 or newer.
+### Windows PowerShell
+
+If pipx is not installed:
 
 ```powershell
-git clone https://github.com/furkanersoy/ScopeGuard.git
-cd ScopeGuard
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-py -m pip install .
+py -m pip install --user pipx
+py -m pipx ensurepath
 ```
 
-On Linux or macOS:
+Restart PowerShell after `ensurepath`, then install ScopeGuard:
+
+```powershell
+pipx install scopeguard
+```
+
+### Linux or macOS
+
+Install pipx using the [official pipx guide](https://pipx.pypa.io/latest/how-to/install-pipx.html), then run:
 
 ```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install .
+pipx install scopeguard
 ```
 
-Developers can use `py -m pip install -e .` (or `python -m pip install -e .`) for an editable install.
+Open the menu with `scopeguard`. From a project folder, `scopeguard quick-scan` starts the default offline scan. To update later, run `pipx upgrade scopeguard`.
 
-The first PyPI release is not published yet. Until then, you can install the current GitHub version in an isolated environment with pipx (Git must also be installed):
+If you do not want pipx, install into your Python user account and launch as a module:
 
 ```powershell
-pipx install git+https://github.com/furkanersoy/ScopeGuard.git
+py -m pip install --user scopeguard
+py -m scopeguard
 ```
 
-This installs the current `master` branch, which is a beta development version rather than a versioned PyPI release. To refresh it later, run `pipx install --force git+https://github.com/furkanersoy/ScopeGuard.git`. On Windows, if pipx is not installed, run `py -m pip install --user pipx`, then `py -m pipx ensurepath` and restart the terminal. See the [official pipx installation guide](https://pipx.pypa.io/latest/how-to/install-pipx.html) for other systems.
+On Linux or macOS, use `python3 -m pip install --user scopeguard` and `python3 -m scopeguard`.
 
-After the first PyPI release, the stable install command will be `pipx install scopeguard` or `py -m pip install --user scopeguard`. See [PyPI publishing setup](docs/publishing.md).
+Contributors who need the source code can clone the repository and use `py -m pip install .` (or `python3 -m pip install .`). For an editable development install, use `py -m pip install -e .`.
 
 ### Startup menu
 

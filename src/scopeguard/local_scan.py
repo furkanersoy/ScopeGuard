@@ -929,7 +929,7 @@ def _is_existing_scopeguard_report(path: Path) -> bool:
             )
         if suffix == ".md":
             with path.open("r", encoding="utf-8") as stream:
-                lines = [stream.readline().rstrip("\\r\\n") for _ in range(4)]
+                lines = [stream.readline().strip() for _ in range(4)]
             title = lines[0]
             if title in {"# ScopeGuard local inspection", "# ScopeGuard yerel inceleme"}:
                 return any(line.startswith("- Scanned files:") for line in lines[1:])

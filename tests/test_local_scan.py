@@ -21,25 +21,35 @@ class LocalScanOutputTests(unittest.TestCase):
                 inspect_path(root, ["config"], output_paths=[source])
             self.assertEqual(source.read_text(encoding="utf-8"), original)
 
-    def test_scopeguard_readme_is_not_mistaken_for_a_report(self) -> None:
+    def test_report_cannot_overwrite_document_with_scopeguard_title(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             readme = root / "README.md"
-            original = "# ScopeGuard\\nProject documentation.\\n"
+            original = "# ScopeGuard local inspection\\nProject documentation.\\n"
             readme.write_text(original, encoding="utf-8")
             with self.assertRaisesRegex(ValidationError, "must not overwrite a file being inspected"):
                 inspect_path(root, ["secrets"], output_paths=[readme])
             self.assertEqual(readme.read_text(encoding="utf-8"), original)
 
-    def test_scopeguard_html_page_is_not_mistaken_for_a_report(self) -> None:
+    def test_report_cannot_overwrite_page_with_scopeguard_title(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             page = root / "index.html"
-            original = "<!doctype html><title>ScopeGuard docs</title><p>Project page</p>"
+            original = "<!doctype html><title>ScopeGuard local inspection</title><p>Project page</p>"
             page.write_text(original, encoding="utf-8")
             with self.assertRaisesRegex(ValidationError, "must not overwrite a file being inspected"):
                 inspect_path(root, ["secrets"], output_paths=[page])
             self.assertEqual(page.read_text(encoding="utf-8"), original)
+
+    def test_scopeguard_json_like_project_file_is_not_a_report(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "fixture.json"
+            original = '{"tool":"ScopeGuard","findings":[]}\\n'
+            source.write_text(original, encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "must not overwrite a file being inspected"):
+                inspect_path(root, ["secrets"], output_paths=[source])
+            self.assertEqual(source.read_text(encoding="utf-8"), original)
 
     def test_existing_scopeguard_reports_can_be_replaced_on_rerun(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

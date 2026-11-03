@@ -198,20 +198,26 @@ def _make_profile_checks(profile: str, spec: dict[str, Any], identities: dict[st
 
 def run_init_wizard(spec_path: Path, output_path: Path, *, force: bool = False) -> Path:
     """Generate a validated starter scenario without sending network requests."""
+    if output_path.resolve() == spec_path.resolve():
+        raise ValidationError("scenario output must not overwrite the OpenAPI document")
     spec = _validate_spec(_read_yaml(spec_path, "OpenAPI"))
     if output_path.exists() and not force:
         raise ValidationError(f"output file already exists: {output_path} (use --force to replace it)")
     print("ScopeGuard init creates a starter scenario only; it does not contact the API.")
     print("ScopeGuard init başlangıç senaryosu oluşturur; API'ye bağlanmaz.")
     base_url = _ask("API base URL / API temel adresi", "http://127.0.0.1:8000").rstrip("/")
-    parsed = urlsplit(base_url)
-    if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.path not in {"", "/"} or parsed.query or parsed.fragment or parsed.username or parsed.password:
+    try:
+        parsed = urlsplit(base_url)
+        parsed_hostname = parsed.hostname
+    except ValueError:
+        raise ValidationError("base URL is malformed") from None
+    if parsed.scheme not in {"http", "https"} or not parsed_hostname or parsed.path not in {"", "/"} or parsed.query or parsed.fragment or parsed.username or parsed.password:
         raise ValidationError("base URL must be an http(s) origin without credentials, path, query, or fragment")
     try:
         parsed.port
     except ValueError:
         raise ValidationError("base URL contains an invalid port") from None
-    host = parsed.hostname.lower()
+    host = parsed_hostname.lower()
     remote = not is_loopback_host(host)
     if remote:
         if parsed.scheme != "https":

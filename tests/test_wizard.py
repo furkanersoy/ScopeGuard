@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,7 +20,7 @@ class InitWizardTests(unittest.TestCase):
     def test_rejects_malformed_base_url_as_validation_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "scenario.yaml"
-            with patch("builtins.input", return_value="http://[::1"):
+            with patch("builtins.input", return_value="http://[::1"), redirect_stdout(StringIO()):
                 with self.assertRaisesRegex(ValidationError, "base URL is malformed"):
                     run_init_wizard(SPEC, output)
             self.assertFalse(output.exists())

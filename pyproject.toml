@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scopeguard"
-version = "0.2.1"
+version = "0.2.2"
 description = "Local-first API, source code, and dependency security checks"
 requires-python = ">=3.11"
 dependencies = ["PyYAML>=6.0"]

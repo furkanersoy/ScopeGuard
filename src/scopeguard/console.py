@@ -216,7 +216,10 @@ def _json_output_answer(
 
 
 def _report_outputs_exist(json_path: Path, sidecars: tuple[str, ...]) -> bool:
-    return any(path.exists() for path in (json_path, *(_report_sidecar(json_path, suffix) for suffix in sidecars)))
+    return any(
+        path.exists()
+        for path in (json_path, *(Path(_report_sidecar(json_path, suffix)) for suffix in sidecars))
+    )
 
 
 def _unused_report_path(json_path: Path, sidecars: tuple[str, ...]) -> Path:

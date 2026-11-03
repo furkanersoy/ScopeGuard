@@ -112,6 +112,15 @@ class ConfigValidationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValidationError, "port is not listed"):
                 validate_inputs(SPEC, scenario)
 
+    def test_rejects_malformed_target_url_without_traceback(self) -> None:
+        config = yaml.safe_load(SCENARIO.read_text(encoding="utf-8"))
+        config["target"]["base_url"] = "http://[::1"
+        with tempfile.TemporaryDirectory() as directory:
+            scenario = Path(directory) / "scenario.yaml"
+            scenario.write_text(yaml.safe_dump(config), encoding="utf-8")
+            with self.assertRaisesRegex(ValidationError, "target.base_url is malformed"):
+                validate_inputs(SPEC, scenario)
+
 
 if __name__ == "__main__":
     unittest.main()

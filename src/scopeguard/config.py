@@ -61,8 +61,12 @@ def _validate_target(target: Any) -> None:
     if not isinstance(base_url, str):
         raise ValidationError("target.base_url must be a URL string")
 
-    parsed = urlsplit(base_url)
-    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+    try:
+        parsed = urlsplit(base_url)
+        parsed_hostname = parsed.hostname
+    except ValueError:
+        raise ValidationError("target.base_url is malformed") from None
+    if parsed.scheme not in {"http", "https"} or not parsed_hostname:
         raise ValidationError("target.base_url must use http or https and include a hostname")
     if parsed.username or parsed.password or parsed.query or parsed.fragment:
         raise ValidationError("target.base_url must not contain credentials, query, or fragment")
@@ -76,7 +80,7 @@ def _validate_target(target: Any) -> None:
     allowed_hosts = target_map.get("allowed_hosts")
     if not isinstance(allowed_hosts, list) or not allowed_hosts or not all(isinstance(host, str) for host in allowed_hosts):
         raise ValidationError("target.allowed_hosts must be a non-empty list of hostnames")
-    hostname = parsed.hostname.lower()
+    hostname = parsed_hostname.lower()
     if hostname not in {host.lower() for host in allowed_hosts}:
         raise ValidationError("target.base_url hostname is not listed in target.allowed_hosts")
     remote_opt_in = target_map.get("allow_remote", False)

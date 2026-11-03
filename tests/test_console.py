@@ -20,7 +20,7 @@ class ConsoleTests(unittest.TestCase):
         text = output.getvalue()
         self.assertIn("SCOPEGUARD", text)
         self.assertIn("validate --spec", text)
-        self.assertIn("ScopeGuard 0.2.1", text)
+        self.assertIn("ScopeGuard 0.2.2", text)
         self.assertIn("ScopeGuard closed.", text)
         self.assertNotIn("\x1b[", text)
 

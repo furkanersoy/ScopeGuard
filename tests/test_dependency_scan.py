@@ -35,7 +35,7 @@ class DependencyInputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             manifest = root / "package.json"
-            original = '{"name":"demo","dependencies":{}}\\n'
+            original = '{"name":"demo","dependencies":{}}\n'
             manifest.write_text(original, encoding="utf-8")
             with self.assertRaisesRegex(ValidationError, "must not overwrite a file in the scan path"):
                 validate_dependency_outputs(root, [manifest])
@@ -46,7 +46,7 @@ class DependencyInputTests(unittest.TestCase):
             root = Path(directory)
             output = root / "scopeguard-dependencies.json"
             output.write_text(
-                '{"tool":"ScopeGuard","mode":"online-dependency-audit","scanned_files":1,"checks":["dependencies"],"findings":[]}\\n',
+                '{"tool":"ScopeGuard","mode":"online-dependency-audit","scanned_files":1,"checks":["dependencies"],"findings":[]}\n',
                 encoding="utf-8",
             )
             validate_dependency_outputs(root, [output])

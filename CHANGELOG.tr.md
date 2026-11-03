@@ -1,5 +1,11 @@
 # ScopeGuard Sürüm Notları
 
+## [0.2.2] - 2026-11-03
+
+### Düzeltildi
+
+- Etkileşimli hızlı tarama menüsünde mevcut rapor dosyalarını kontrol ederken Markdown, SARIF ve HTML ek dosya yolları nedeniyle oluşan çökme giderildi.
+
 ## [0.2.1] - 2026-11-02
 
 ### İyileştirildi

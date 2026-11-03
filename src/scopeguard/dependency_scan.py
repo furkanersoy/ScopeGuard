@@ -13,6 +13,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
 
 from .config import ValidationError
+from .local_scan import _is_existing_scopeguard_report
 
 OSV_QUERY_BATCH = "https://api.osv.dev/v1/querybatch"
 MAX_LOCKFILE_BYTES = 1_000_000
@@ -127,7 +128,7 @@ def _parse_go_sum(source: str, relative: str, found: dict[tuple[str, str, str], 
 
 
 def validate_dependency_outputs(path: Path, outputs: list[Path]) -> None:
-    """Reject duplicate report paths or paths that would overwrite a scanned lockfile."""
+    """Reject duplicate outputs and protect existing files in the dependency scan tree."""
     resolved_outputs = [item.resolve() for item in outputs]
     if len(set(resolved_outputs)) != len(resolved_outputs):
         raise ValidationError("dependency report output paths must be different")
@@ -140,9 +141,15 @@ def validate_dependency_outputs(path: Path, outputs: list[Path]) -> None:
         lockfiles = []
         for current, dirs, names in os.walk(root, followlinks=False):
             dirs[:] = [name for name in dirs if name not in _SKIP_DIRS and not (Path(current) / name).is_symlink()]
+            output_set = set(resolved_outputs)
             for name in names:
                 candidate = Path(current) / name
-                if not candidate.is_symlink() and _eligible(candidate):
+                if candidate.is_symlink():
+                    continue
+                resolved_candidate = candidate.resolve()
+                if resolved_candidate in output_set and not _is_existing_scopeguard_report(resolved_candidate):
+                    raise ValidationError(f"dependency report output must not overwrite a file in the scan path: {resolved_candidate}")
+                if _eligible(candidate):
                     lockfiles.append(candidate.absolute())
     else:
         lockfiles = []

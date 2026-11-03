@@ -71,6 +71,8 @@ def _parse_poetry(source: str, relative: str, found: dict[tuple[str, str, str], 
 
 def _parse_pipfile_lock(source: str, relative: str, found: dict[tuple[str, str, str], list[dict[str, Any]]]) -> None:
     data = json.loads(source)
+    if not isinstance(data, dict):
+        raise ValueError("Pipfile.lock must contain a JSON object")
     for section in ("default", "develop"):
         packages = data.get(section, {})
         if not isinstance(packages, dict):
@@ -83,6 +85,8 @@ def _parse_pipfile_lock(source: str, relative: str, found: dict[tuple[str, str, 
 
 def _parse_npm_lock(source: str, relative: str, found: dict[tuple[str, str, str], list[dict[str, Any]]]) -> None:
     data = json.loads(source)
+    if not isinstance(data, dict):
+        raise ValueError("npm lockfile must contain a JSON object")
     packages = data.get("packages", {})
     if isinstance(packages, dict):
         for path, package in packages.items():
@@ -259,12 +263,25 @@ def _severity(vulnerability: dict[str, Any]) -> str:
 
 def _fixed_versions(vulnerability: dict[str, Any], package_name: str) -> list[str]:
     fixed: set[str] = set()
-    for affected in vulnerability.get("affected", []):
-        package = affected.get("package", {}) if isinstance(affected, dict) else {}
-        if package.get("name") != package_name:
+    affected_items = vulnerability.get("affected", [])
+    if not isinstance(affected_items, list):
+        return []
+    for affected in affected_items:
+        if not isinstance(affected, dict):
             continue
-        for range_item in affected.get("ranges", []):
-            for event in range_item.get("events", []):
+        package = affected.get("package", {})
+        if not isinstance(package, dict) or package.get("name") != package_name:
+            continue
+        ranges = affected.get("ranges", [])
+        if not isinstance(ranges, list):
+            continue
+        for range_item in ranges:
+            if not isinstance(range_item, dict):
+                continue
+            events = range_item.get("events", [])
+            if not isinstance(events, list):
+                continue
+            for event in events:
                 if isinstance(event, dict) and isinstance(event.get("fixed"), str):
                     fixed.add(event["fixed"])
     return sorted(fixed)
